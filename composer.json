@@ -12,5 +12,10 @@
             "email": "kylekatarnls@gmail.com"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-0": {
+            "Jade": "src/"
+        },
+    }
 }
