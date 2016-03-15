@@ -1,0 +1,16 @@
+{
+    "name": "kylekatarnls/jade-symfony",
+    "description": "Jade template engine for Symfony",
+    "type": "library",
+    "require": {
+        "kylekatarnls/jade-php": "^1.8"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kyle Katarn",
+            "email": "kylekatarnls@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
