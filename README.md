@@ -15,6 +15,13 @@ services:
         class: Jade\JadeSymfonyEngine
 ```
 
+Add jade in the templating.engines setting in **app/config/config.yml**:
+```yml
+...
+    templating:
+        engines: ['jade', 'twig', 'php']
+```
+
 ## Usage
 Create jade views by creating files with .jade extension
 in **app/Resources/views** such as contact.html.jade with
