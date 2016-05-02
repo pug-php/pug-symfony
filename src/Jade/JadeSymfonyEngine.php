@@ -11,7 +11,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected $jade;
     protected $helpers;
 
-    public function __construct($assets = null)
+    public function __construct()
     {
         global $kernel;
         $cache = $kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'jade';
@@ -23,9 +23,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'extension' => '.jade',
             'cache' => $cache
         ));
-        $this->helpers = array(
-            'assets' => $assets
-        );
+        foreach (func_get_args() as $helper) {
+            $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
+            $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
+            $this->helpers[$name] = $helper;
+        }
     }
 
     protected function getFileFromName($name)
