@@ -10,10 +10,15 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected $container;
     protected $jade;
     protected $helpers;
+    protected $kernel;
 
-    public function __construct()
+    public function __construct($kernel)
     {
-        global $kernel;
+        if (empty($kernel) || !method_exists($kernel, 'getCacheDir')) {
+            throw new Exception("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.jade service arguments, see https://github.com/kylekatarnls/jade-symfony#readme", 1);
+        }
+
+        $this->kernel = $kernel;
         $cache = $kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'jade';
         if (!file_exists($cache)) {
             mkdir($cache);
@@ -23,7 +28,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'extension' => '.jade',
             'cache' => $cache
         ));
-        foreach (func_get_args() as $helper) {
+        foreach (array_slice(func_get_args(), 1) as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
             $this->helpers[$name] = $helper;
@@ -32,15 +37,14 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     protected function getFileFromName($name)
     {
-        global $kernel;
         $parts = explode(':', $name);
-        $directory = $kernel->getRootDir();
+        $directory = $this->kernel->getRootDir();
         if (count($parts) > 1) {
             $name = $parts[2];
             if (!empty($parts[1])) {
                 $name = $parts[1] . DIRECTORY_SEPARATOR . $name;
             }
-            if ($bundle = $kernel->getBundle($parts[0])) {
+            if ($bundle = $this->kernel->getBundle($parts[0])) {
                 $directory = $bundle->getPath();
             }
         }
