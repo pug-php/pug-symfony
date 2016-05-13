@@ -13,7 +13,7 @@ Add in **app/config/services.yml**:
 services:
     templating.engine.jade:
         class: Jade\JadeSymfonyEngine
-        arguments: ["@templating.helper.assets", "@templating.helper.router"]
+        arguments: ["@kernel", "@templating.helper.assets", "@templating.helper.router"]
 ```
 
 Add jade in the templating.engines setting in **app/config/config.yml**:
