@@ -15,16 +15,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     public function __construct($kernel)
     {
         if (empty($kernel) || !method_exists($kernel, 'getCacheDir')) {
-            throw new Exception("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.jade service arguments, see https://github.com/kylekatarnls/jade-symfony#readme", 1);
+            throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.jade service arguments, see https://github.com/kylekatarnls/jade-symfony#readme", 1);
         }
 
         $this->kernel = $kernel;
-        $cache = $kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'jade';
+        $cache = $this->getCacheDir();
         if (!file_exists($cache)) {
             mkdir($cache);
         }
         $this->jade = new Jade(array(
-            'prettyprint' => true,
+            'prettyprint' => $kernel->isDebug(),
             'extension' => '.jade',
             'cache' => $cache
         ));
@@ -33,6 +33,31 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
             $this->helpers[$name] = $helper;
         }
+    }
+
+    public function getOption($name)
+    {
+        return $this->jade->getOption($name);
+    }
+
+    public function setOption($name, $value)
+    {
+        return $this->jade->setOption($name, $value);
+    }
+
+    public function setOptions(array $options)
+    {
+        return $this->jade->setOptions($options);
+    }
+
+    public function setCustomOptions(array $options)
+    {
+        return $this->jade->setCustomOptions($options);
+    }
+
+    public function getCacheDir()
+    {
+        return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'jade';
     }
 
     protected function getFileFromName($name)
@@ -74,7 +99,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function supports($name)
     {
-        return substr($name, -5) === '.jade';
+        return substr($name, -5) === $this->getOption('extension');
     }
 
     public function offsetGet($name)
