@@ -60,6 +60,21 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'jade';
     }
 
+    public function filter($name, $filter)
+    {
+        return $this->jade->filter($name, $filter);
+    }
+
+    public function hasFilter($name)
+    {
+        return $this->jade->hasFilter($name);
+    }
+
+    public function getFilter($name)
+    {
+        return $this->jade->getFilter($name);
+    }
+
     protected function getFileFromName($name)
     {
         $parts = explode(':', $name);
