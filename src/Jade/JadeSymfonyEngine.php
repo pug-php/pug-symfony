@@ -15,7 +15,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     public function __construct($kernel)
     {
         if (empty($kernel) || !method_exists($kernel, 'getCacheDir')) {
-            throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.jade service arguments, see https://github.com/kylekatarnls/jade-symfony#readme", 1);
+            throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.pug service arguments, see https://github.com/pug-php/pug-symfony#readme", 1);
         }
 
         $this->kernel = $kernel;
@@ -25,7 +25,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
         $this->jade = new Jade(array(
             'prettyprint' => $kernel->isDebug(),
-            'extension' => '.jade',
+            'extension' => '.pug',
             'cache' => $cache
         ));
         foreach (array_slice(func_get_args(), 1) as $helper) {
@@ -57,7 +57,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function getCacheDir()
     {
-        return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'jade';
+        return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'pug';
     }
 
     public function filter($name, $filter)

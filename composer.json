@@ -1,9 +1,12 @@
 {
-    "name": "kylekatarnls/jade-symfony",
-    "description": "Jade template engine for Symfony",
+    "name": "pug-php/pug-symfony",
+    "replace": {
+        "kylekatarnls/jade-symfony": "self.version"
+    },
+    "description": "Pug template engine for Symfony",
     "type": "library",
     "require": {
-        "kylekatarnls/jade-php": "^1.8"
+        "pug-php/pug": "^1.8"
     },
     "license": "MIT",
     "authors": [
@@ -15,7 +18,8 @@
     "minimum-stability": "stable",
     "autoload": {
         "psr-0": {
-            "Jade": "src/"
+            "Jade": "src/",
+            "Pug": "src/"
         }
     }
 }
