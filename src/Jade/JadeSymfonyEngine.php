@@ -114,7 +114,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function supports($name)
     {
-        return substr($name, -5) === $this->getOption('extension');
+        foreach ($this->jade->getExtensions() as $extension) {
+            if (substr($name, -strlen($extension)) === $extension) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function offsetGet($name)

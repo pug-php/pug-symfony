@@ -6,7 +6,7 @@
     "description": "Pug template engine for Symfony",
     "type": "library",
     "require": {
-        "pug-php/pug": "^1.8"
+        "pug-php/pug": "^1.12.2"
     },
     "license": "MIT",
     "authors": [
