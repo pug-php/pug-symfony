@@ -4,6 +4,6 @@ namespace Pug;
 
 use Jade\JadeSymfonyEngine;
 
-class JadeSymfonyEngine extends JadeSymfonyEngine
+class PugSymfonyEngine extends JadeSymfonyEngine
 {
 }

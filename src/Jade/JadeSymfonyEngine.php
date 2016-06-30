@@ -25,7 +25,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
         $this->jade = new Jade(array(
             'prettyprint' => $kernel->isDebug(),
-            'extension' => '.pug',
+            'extension' => array('.pug', '.jade'),
             'cache' => $cache
         ));
         foreach (array_slice(func_get_args(), 1) as $helper) {
