@@ -55,6 +55,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $this->jade->setCustomOptions($options);
     }
 
+    public function getEngine()
+    {
+        return $this->jade;
+    }
+
     public function getCacheDir()
     {
         return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'pug';
