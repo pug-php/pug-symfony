@@ -10,6 +10,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected $container;
     protected $jade;
     protected $helpers;
+    protected $assets;
     protected $kernel;
 
     public function __construct($kernel)
@@ -23,16 +24,22 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         if (!file_exists($cache)) {
             mkdir($cache);
         }
+        $container = $kernel->getContainer();
+        $environment = $container->getParameter('kernel.environment');
         $this->jade = new Jade(array(
             'prettyprint' => $kernel->isDebug(),
             'extension' => array('.pug', '.jade'),
-            'cache' => $cache
+            'cache' => substr($environment, 0, 3)  === 'dev' ? $cache : false,
+            'assetDirectory' => __DIR__ . '/../Resources/assets',
+            'outputDirectory' => __DIR__ . '/../../../web',
+            'environment' => $environment,
         ));
         foreach (array_slice(func_get_args(), 1) as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
             $this->helpers[$name] = $helper;
         }
+        $this->assets = new Assets($this->jade);
     }
 
     public function getOption($name)
