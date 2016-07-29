@@ -2,8 +2,7 @@
 Pug template engine for Symfony
 
 ## Install
-In the root directory of your Symfony project, open a
-terminal and enter:
+In the root directory of your Symfony project, open a terminal and enter:
 ```shell
 composer require pug-php/pug-symfony
 ```
