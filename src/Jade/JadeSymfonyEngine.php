@@ -4,6 +4,7 @@ namespace Jade;
 
 use Symfony\Component\Templating\EngineInterface;
 use Jade\Jade;
+use Pug\Assets;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 {
