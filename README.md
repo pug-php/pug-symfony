@@ -12,7 +12,7 @@ Add in **app/config/services.yml**:
 services:
     templating.engine.pug:
         class: Pug\PugSymfonyEngine
-        arguments: ["@kernel", "@templating.helper.assets", "@templating.helper.router"]
+        arguments: ["@kernel"]
 ```
 
 Add jade in the templating.engines setting in **app/config/config.yml**:
