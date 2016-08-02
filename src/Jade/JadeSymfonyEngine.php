@@ -2,8 +2,11 @@
 
 namespace Jade;
 
+use Symfony\Bridge\Twig\AppVariable;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Templating\EngineInterface;
-use Jade\Jade;
+use Jade\Symfony\JadeEngine as Jade;
 use Pug\Assets;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
@@ -16,7 +19,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function __construct($kernel)
     {
-        if (empty($kernel) || !method_exists($kernel, 'getCacheDir')) {
+        if (empty($kernel) || !($kernel instanceof Kernel)) {
             throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.pug service arguments, see https://github.com/pug-php/pug-symfony#readme", 1);
         }
 
@@ -26,21 +29,79 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             mkdir($cache);
         }
         $container = $kernel->getContainer();
+        $this->container = $container;
         $environment = $container->getParameter('kernel.environment');
+        $appDir = $container->getParameter('kernel.root_dir');
+        $assetsDirectories = array($appDir . '/Resources/assets');
+        $srcDir = dirname($appDir) . '/src';
+        $baseDir = null;
+        foreach (scandir($srcDir) as $directory) {
+            if (is_null($baseDir) && is_dir($srcDir . '/Resources/views')) {
+                $baseDir = $appDir . '/Resources/views';
+            }
+            $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
+        }
+        if (is_null($baseDir)) {
+            $baseDir = $appDir . '/Resources/views';
+        }
         $this->jade = new Jade(array(
-            'prettyprint' => $kernel->isDebug(),
-            'extension' => array('.pug', '.jade'),
-            'cache' => substr($environment, 0, 3)  === 'dev' ? $cache : false,
-            'assetDirectory' => __DIR__ . '/../Resources/assets',
-            'outputDirectory' => __DIR__ . '/../../../web',
+            'assetDirectory' => $assetsDirectories,
+            'baseDir' => $baseDir,
+            'cache' => substr($environment, 0, 3)  === 'dev' ? false : $cache,
             'environment' => $environment,
+            'extension' => array('.pug', '.jade'),
+            'outputDirectory' => __DIR__ . '/../../../web',
+            'preRender' => array($this, 'preRender'),
+            'prettyprint' => $kernel->isDebug(),
         ));
-        foreach (array_slice(func_get_args(), 1) as $helper) {
+        $this->registerHelpers($container, array_slice(func_get_args(), 1));
+        $this->assets = new Assets($this->jade);
+        $app = new AppVariable();
+        $app->setDebug($kernel->isDebug());
+        $app->setEnvironment($environment);
+        $app->setRequestStack($container->get('request_stack'));
+        $app->setTokenStorage($container->get('security.token_storage'));
+        $this->jade->share('app', $app);
+    }
+
+    /**
+     * Pug code transformation to do before Pug render.
+     *
+     * @param string $pugCode code input
+     *
+     * @return string
+     */
+    public function preRender($pugCode)
+    {
+        return preg_replace('/(?<=\=\>|[=\.,:\?\(])\s*asset\s*\(/', '$view[\'assets\']->getUrl(', $pugCode);
+    }
+
+    protected function registerHelpers(ContainerInterface $services, $helpers)
+    {
+        $this->helpers = array();
+        foreach (array(
+            'actions',
+            'assets',
+            'code',
+            'form' ,
+            'logout_url',
+            'request',
+            'router',
+            'security',
+            'session',
+            'slots',
+            'stopwatch',
+            'translator',
+        ) as $helper) {
+            if ($instance = $services->get('templating.helper.' . $helper)) {
+                $this->helpers[$helper] = $instance;
+            }
+        }
+        foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
             $this->helpers[$name] = $helper;
         }
-        $this->assets = new Assets($this->jade);
     }
 
     public function getOption($name)
