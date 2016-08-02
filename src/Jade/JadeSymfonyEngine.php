@@ -32,8 +32,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $this->container = $container;
         $environment = $container->getParameter('kernel.environment');
         $appDir = $container->getParameter('kernel.root_dir');
+        $rootDir = dirname($appDir);
         $assetsDirectories = array($appDir . '/Resources/assets');
-        $srcDir = dirname($appDir) . '/src';
+        $srcDir = $rootDir . '/src';
+        $webDir = $rootDir . '/web';
         $baseDir = null;
         foreach (scandir($srcDir) as $directory) {
             if (is_null($baseDir) && is_dir($srcDir . '/Resources/views')) {
@@ -50,7 +52,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'cache' => substr($environment, 0, 3)  === 'dev' ? false : $cache,
             'environment' => $environment,
             'extension' => array('.pug', '.jade'),
-            'outputDirectory' => __DIR__ . '/../../../web',
+            'outputDirectory' => $webDir,
             'preRender' => array($this, 'preRender'),
             'prettyprint' => $kernel->isDebug(),
         ));
