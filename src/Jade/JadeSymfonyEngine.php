@@ -38,6 +38,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $webDir = $rootDir . '/web';
         $baseDir = null;
         foreach (scandir($srcDir) as $directory) {
+            if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
+                continue;
+            }
             if (is_null($baseDir) && is_dir($srcDir . '/Resources/views')) {
                 $baseDir = $appDir . '/Resources/views';
             }
