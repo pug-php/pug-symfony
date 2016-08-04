@@ -3,10 +3,12 @@
 namespace Jade;
 
 use Symfony\Bridge\Twig\AppVariable;
+use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Templating\EngineInterface;
 use Jade\Symfony\JadeEngine as Jade;
+use Jade\Symfony\Logout;
 use Pug\Assets;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
