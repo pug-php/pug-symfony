@@ -78,7 +78,23 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      */
     public function preRender($pugCode)
     {
-        return preg_replace('/(?<=\=\>|[=\.,:\?\(])\s*asset\s*\(/', '$view[\'assets\']->getUrl(', $pugCode);
+        foreach (array(
+            'random' => 'mt_rand',
+            'asset' => '$view[\'assets\']->getUrl',
+            'asset_version' => '$view[\'assets\']->getVersion',
+            'csrf_token' => '$view[\'form\']->csrfToken',
+            'logout_url' => '$view[\'logout\']->url',
+            'logout_path' => '$view[\'logout\']->path',
+            'url' => '$view[\'router\']->url',
+            'path' => '$view[\'router\']->path',
+            'absolute_url' => '$view[\'http\']->generateAbsoluteUrl',
+            'relative_path' => '$view[\'http\']->generateRelativePath',
+            'is_granted' => '$view[\'security\']->isGranted',
+        ) as $name => $function) {
+            $pugCode = preg_replace('/(?<=\=\>|[=\.,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
+        }
+
+        return $pugCode;
     }
 
     protected function registerHelpers(ContainerInterface $services, $helpers)
@@ -102,6 +118,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 $this->helpers[$helper] = $instance;
             }
         }
+        $this->helpers['logout'] = new Logout($this->helpers['logout_url']);
+        $this->helpers['http'] = new HttpFoundationExtension($services->get('request_stack'), $services->get('router.request_context'));
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
