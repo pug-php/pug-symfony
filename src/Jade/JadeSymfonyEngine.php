@@ -35,7 +35,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $environment = $kernel->getEnvironment();
         $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
-        $assetsDirectories = array($appDir . '/Resources/assets');
+        $assetsDirectories = [$appDir . '/Resources/assets'];
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
         $baseDir = null;
@@ -51,16 +51,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         if (is_null($baseDir)) {
             $baseDir = $appDir . '/Resources/views';
         }
-        $this->jade = new Jade(array(
+        $this->jade = new Jade([
             'assetDirectory' => $assetsDirectories,
             'baseDir' => $baseDir,
             'cache' => substr($environment, 0, 3)  === 'dev' ? false : $cache,
             'environment' => $environment,
-            'extension' => array('.pug', '.jade'),
+            'extension' => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            'preRender' => array($this, 'preRender'),
+            'preRender' => [$this, 'preRender'],
             'prettyprint' => $kernel->isDebug(),
-        ));
+        ]);
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
         $app = new AppVariable();
@@ -82,7 +82,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      */
     public function preRender($pugCode)
     {
-        foreach (array(
+        foreach ([
             'random' => 'mt_rand',
             'asset' => '$view[\'assets\']->getUrl',
             'asset_version' => '$view[\'assets\']->getVersion',
@@ -94,7 +94,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'absolute_url' => '$view[\'http\']->generateAbsoluteUrl',
             'relative_path' => '$view[\'http\']->generateRelativePath',
             'is_granted' => '$view[\'security\']->isGranted',
-        ) as $name => $function) {
+        ] as $name => $function) {
             $pugCode = preg_replace('/(?<=\=\>|[=\.,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
         }
 
@@ -103,8 +103,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
-        $this->helpers = array();
-        foreach (array(
+        $this->helpers = [];
+        foreach ([
             'actions',
             'assets',
             'code',
@@ -117,7 +117,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'slots',
             'stopwatch',
             'translator',
-        ) as $helper) {
+        ] as $helper) {
             if (
                 $services->has('templating.helper.' . $helper) &&
                 ($instance = $services->get('templating.helper.' . $helper))
@@ -201,9 +201,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             DIRECTORY_SEPARATOR . $name;
     }
 
-    public function render($name, array $parameters = array())
+    public function render($name, array $parameters = [])
     {
-        foreach (array('view', 'this') as $forbiddenKey) {
+        foreach (['view', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
                 throw new \ArgumentException('The "' . $forbiddenKey . '" key is forbidden.');
             }

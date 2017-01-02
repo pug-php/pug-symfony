@@ -7,10 +7,10 @@ class AppKernel extends Kernel
 {
     public function registerBundles()
     {
-        $bundles = array(
+        $bundles = [
             new Symfony\Bundle\FrameworkBundle\FrameworkBundle(),
             new Pug\PugSymfonyBundle\PugSymfonyBundle(),
-        );
+        ];
 
         return $bundles;
     }

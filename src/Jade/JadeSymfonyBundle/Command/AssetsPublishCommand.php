@@ -20,7 +20,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
     {
         $success = 0;
         $errors = 0;
-        $directories = array();
+        $directories = [];
         foreach ($pug->getOption('assetDirectory') as $assetDirectory) {
             $viewDirectory = $assetDirectory . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'views';
             if (!is_dir($viewDirectory)) {
@@ -32,7 +32,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
             $errors += $data[1];
         }
 
-        return array($directories, $success, $errors);
+        return [$directories, $success, $errors];
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
