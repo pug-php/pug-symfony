@@ -25,12 +25,12 @@ class TokenStorage extends BaseTokenStorage
 
 class LogoutUrlGenerator extends BaseLogoutUrlGenerator
 {
-    public function getLogoutUrl($key = NULL)
+    public function getLogoutUrl($key = null)
     {
         return 'logout-url';
     }
 
-    public function getLogoutPath($key = NULL)
+    public function getLogoutPath($key = null)
     {
         return 'logout-path';
     }
@@ -46,18 +46,18 @@ class LogoutUrlHelper extends BaseLogoutUrlHelper
 
 class PugSymfonyEngineTest extends KernelTestCase
 {
-    static private function clearCache()
+    private static function clearCache()
     {
         $fs = new Filesystem();
         $fs->remove(__DIR__ . '/../project/app/cache');
     }
 
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         self::clearCache();
     }
 
-    static public function tearDownAfterClass()
+    public static function tearDownAfterClass()
     {
         self::clearCache();
     }
