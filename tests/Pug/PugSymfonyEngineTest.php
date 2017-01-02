@@ -69,7 +69,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testPreRender()
     {
-        $template = $this->getMockForAbstractClass('Pug\\PugSymfonyEngine', array(), '', false);
+        $template = $this->getMockForAbstractClass('Pug\\PugSymfonyEngine', [], '', false);
         $code = $template->preRender('p=asset("foo")');
 
         self::assertSame('p=$view[\'assets\']->getUrl("foo")', $code);
