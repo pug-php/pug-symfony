@@ -32,8 +32,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
         $container = $kernel->getContainer();
         $this->container = $container;
-        $environment = $container->getParameter('kernel.environment');
-        $appDir = $container->getParameter('kernel.root_dir');
+        $environment = $kernel->getEnvironment();
+        $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = array($appDir . '/Resources/assets');
         $srcDir = $rootDir . '/src';
@@ -43,8 +43,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                 continue;
             }
-            if (is_null($baseDir) && is_dir($srcDir . '/Resources/views')) {
-                $baseDir = $appDir . '/Resources/views';
+            if (is_null($baseDir) && is_dir($srcDir . '/' . $directory . '/Resources/views')) {
+                $baseDir = $srcDir . '/' . $directory . '/Resources/views';
             }
             $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
         }
@@ -67,7 +67,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $app->setDebug($kernel->isDebug());
         $app->setEnvironment($environment);
         $app->setRequestStack($container->get('request_stack'));
-        $app->setTokenStorage($container->get('security.token_storage'));
+        if ($container->has('security.token_storage')) {
+            $app->setTokenStorage($container->get('security.token_storage'));
+        }
         $this->jade->share('app', $app);
     }
 
@@ -116,11 +118,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'stopwatch',
             'translator',
         ) as $helper) {
-            if ($instance = $services->get('templating.helper.' . $helper)) {
+            if (
+                $services->has('templating.helper.' . $helper) &&
+                ($instance = $services->get('templating.helper.' . $helper))
+            ) {
                 $this->helpers[$helper] = $instance;
             }
         }
-        $this->helpers['logout'] = new Logout($this->helpers['logout_url']);
+        if (isset($this->helpers['logout_url'])) {
+            $this->helpers['logout'] = new Logout($this->helpers['logout_url']);
+        }
         $this->helpers['http'] = new HttpFoundationExtension($services->get('request_stack'), $services->get('router.request_context'));
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
