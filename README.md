@@ -1,4 +1,10 @@
 # Pug-Symfony
+[![Latest Stable Version](https://poser.pugx.org/pug-php/pug-symfony/v/stable.png)](https://packagist.org/packages/pug-php/pug-symfony)
+[![Build Status](https://travis-ci.org/pug-php/pug-symfony.svg?branch=master)](https://travis-ci.org/pug-php/pug-symfony)
+[![StyleCI](https://styleci.io/repos/61784988/shield?style=flat)](https://styleci.io/repos/61784988)
+[![Test Coverage](https://codeclimate.com/github/pug-php/pug-symfony/badges/coverage.svg)](https://codecov.io/github/pug-php/pug-symfony?branch=master)
+[![Code Climate](https://codeclimate.com/github/pug-php/pug-symfony/badges/gpa.svg)](https://codeclimate.com/github/pug-php/pug-symfony)
+
 Pug template engine for Symfony
 
 ## Install
