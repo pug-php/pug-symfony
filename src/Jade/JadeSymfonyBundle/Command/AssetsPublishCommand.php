@@ -13,8 +13,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
     {
         $this
             ->setName('assets:publish')
-            ->setDescription('Export your assets in the web directory.')
-        ;
+            ->setDescription('Export your assets in the web directory.');
     }
 
     protected function cacheTemplates(Jade $pug)
