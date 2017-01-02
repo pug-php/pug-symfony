@@ -2,14 +2,14 @@
 
 namespace Jade;
 
+use Jade\Symfony\JadeEngine as Jade;
+use Jade\Symfony\Logout;
+use Pug\Assets;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Templating\EngineInterface;
-use Jade\Symfony\JadeEngine as Jade;
-use Jade\Symfony\Logout;
-use Pug\Assets;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 {
@@ -52,14 +52,14 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $baseDir = $appDir . '/Resources/views';
         }
         $this->jade = new Jade([
-            'assetDirectory' => $assetsDirectories,
-            'baseDir' => $baseDir,
-            'cache' => substr($environment, 0, 3)  === 'dev' ? false : $cache,
-            'environment' => $environment,
-            'extension' => ['.pug', '.jade'],
+            'assetDirectory'  => $assetsDirectories,
+            'baseDir'         => $baseDir,
+            'cache'           => substr($environment, 0, 3) === 'dev' ? false : $cache,
+            'environment'     => $environment,
+            'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            'preRender' => [$this, 'preRender'],
-            'prettyprint' => $kernel->isDebug(),
+            'preRender'       => [$this, 'preRender'],
+            'prettyprint'     => $kernel->isDebug(),
         ]);
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
@@ -108,7 +108,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'actions',
             'assets',
             'code',
-            'form' ,
+            'form',
             'logout_url',
             'request',
             'router',
