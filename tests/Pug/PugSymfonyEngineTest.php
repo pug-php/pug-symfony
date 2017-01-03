@@ -2,6 +2,9 @@
 
 namespace Pug\Tests;
 
+use Jade\Compiler;
+use Jade\Filter\AbstractFilter;
+use Jade\Nodes\Filter;
 use Jade\Symfony\JadeEngine as Jade;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -20,6 +23,22 @@ class TokenStorage extends BaseTokenStorage
     public function getToken()
     {
         return 'token';
+    }
+}
+
+class CustomHelper
+{
+    public function foo()
+    {
+        return 'bar';
+    }
+}
+
+class Upper extends AbstractFilter
+{
+    public function __invoke(Filter $node, Compiler $compiler)
+    {
+        return strtoupper($this->getNodeString($node, $compiler));
     }
 }
 
@@ -125,5 +144,102 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<a href="logout-url"></a><a href="logout-path"></a>', trim($pugSymfony->render('logout.pug')));
+    }
+
+    public function testCustomHelper()
+    {
+        $helper = new CustomHelper();
+        $pugSymfony = new PugSymfonyEngine(self::$kernel, $helper);
+
+        self::assertTrue(isset($pugSymfony['custom']));
+        self::assertSame($helper, $pugSymfony['custom']);
+
+        self::assertSame('<u>bar</u>', trim($pugSymfony->render('custom-helper.pug')));
+
+        unset($pugSymfony['custom']);
+        self::assertFalse(isset($pugSymfony['custom']));
+
+        self::assertSame('<s>Noop</s>', trim($pugSymfony->render('custom-helper.pug')));
+
+        $pugSymfony['custom'] = $helper;
+        self::assertTrue(isset($pugSymfony['custom']));
+        self::assertSame($helper, $pugSymfony['custom']);
+
+        self::assertSame('<u>bar</u>', trim($pugSymfony->render('custom-helper.pug')));
+    }
+
+    public function testOptions()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        $message = null;
+        try {
+            $pugSymfony->getOption('foo');
+        } catch(\InvalidArgumentException $e) {
+            $message = $e->getMessage();
+        }
+        self::assertSame('foo is not a valid option name.', $message);
+
+        $pugSymfony->setCustomOptions(['foo' => 'bar']);
+        self::assertSame('bar', $pugSymfony->getOption('foo'));
+    }
+
+    public function testBundleView()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame('<p>Hello</p>', trim($pugSymfony->render('TestBundle::bundle.pug')));
+        self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
+    }
+
+    public function testFilter()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $engine = $pugSymfony->getEngine();
+
+        self::assertFalse($pugSymfony->hasFilter('upper'));
+
+        $pugSymfony->filter('upper', Upper::class);
+        self::assertTrue($pugSymfony->hasFilter('upper'));
+        self::assertSame(Upper::class, $pugSymfony->getFilter('upper'));
+        self::assertSame('FOO', trim($pugSymfony->render('filter.pug')));
+    }
+
+    public function testExists()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertTrue($pugSymfony->exists('logout.pug'));
+        self::assertFalse($pugSymfony->exists('login.pug'));
+    }
+
+    public function testSupports()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertTrue($pugSymfony->supports('foo-bar.pug'));
+        self::assertTrue($pugSymfony->supports('foo-bar.jade'));
+        self::assertFalse($pugSymfony->supports('foo-bar.twig'));
+        self::assertFalse($pugSymfony->supports('foo-bar'));
+    }
+
+    public function testCustomOptions()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOptions([
+            'prettyprint' => true,
+            'cache' => null,
+        ]);
+
+        $pugSymfony->setOption('indentSize', 3);
+
+        self::assertSame(3, $pugSymfony->getOption('indentSize'));
+        self::assertSame("<div>\n   <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
+
+        $pugSymfony->setOptions(['indentSize' => 5]);
+
+        self::assertSame(5, $pugSymfony->getOption('indentSize'));
+        self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
+        self::assertSame("<div>\n     <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
     }
 }
