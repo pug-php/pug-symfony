@@ -188,14 +188,13 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertSame('<p>Hello</p>', trim($pugSymfony->render('TestBundle::bundle.pug')));
+        self::assertSame('<p>Hello</p>', trim($pugSymfony->render('TestBundle::bundle.pug', ['text' => 'Hello'])));
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
     public function testFilter()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $engine = $pugSymfony->getEngine();
 
         self::assertFalse($pugSymfony->hasFilter('upper'));
 
@@ -241,5 +240,23 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame(5, $pugSymfony->getOption('indentSize'));
         self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
         self::assertSame("<div>\n     <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
+    }
+
+    /**
+     * @expectedException        \ErrorException
+     * @expectedExceptionMessage The "this" key is forbidden.
+     */
+    public function testForbidThis()
+    {
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['this' => 42]);
+    }
+
+    /**
+     * @expectedException        \ErrorException
+     * @expectedExceptionMessage The "view" key is forbidden.
+     */
+    public function testForbidView()
+    {
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['view' => 42]);
     }
 }

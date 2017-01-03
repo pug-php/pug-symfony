@@ -209,7 +209,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     {
         foreach (['view', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
-                throw new \ArgumentException('The "' . $forbiddenKey . '" key is forbidden.');
+                throw new \ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
             }
         }
         $parameters['view'] = $this;
