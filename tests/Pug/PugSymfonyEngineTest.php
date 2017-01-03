@@ -48,8 +48,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 {
     private static function clearCache()
     {
-        $fs = new Filesystem();
-        $fs->remove(__DIR__ . '/../project/app/cache');
+        (new Filesystem())->remove(__DIR__ . '/../project/app/cache');
     }
 
     public static function setUpBeforeClass()
