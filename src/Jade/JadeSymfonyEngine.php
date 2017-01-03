@@ -38,19 +38,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $assetsDirectories = [$appDir . '/Resources/assets'];
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
-        $baseDir = null;
-        foreach (scandir($srcDir) as $directory) {
-            if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
-                continue;
-            }
-            if (is_null($baseDir) && is_dir($srcDir . '/' . $directory . '/Resources/views')) {
-                $baseDir = $srcDir . '/' . $directory . '/Resources/views';
-            }
-            $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
-        }
-        if (is_null($baseDir)) {
-            $baseDir = $appDir . '/Resources/views';
-        }
+        $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories);
         $this->jade = new Jade([
             'assetDirectory'  => $assetsDirectories,
             'baseDir'         => $baseDir,
@@ -71,6 +59,22 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $app->setTokenStorage($container->get('security.token_storage'));
         }
         $this->jade->share('app', $app);
+    }
+
+    protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories)
+    {
+        $baseDir = null;
+        foreach (scandir($srcDir) as $directory) {
+            if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
+                continue;
+            }
+            if (is_null($baseDir) && is_dir($srcDir . '/' . $directory . '/Resources/views')) {
+                $baseDir = $srcDir . '/' . $directory . '/Resources/views';
+            }
+            $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
+        }
+
+        return $baseDir ?: $appDir . '/Resources/views';
     }
 
     /**
