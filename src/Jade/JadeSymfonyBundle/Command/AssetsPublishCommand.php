@@ -23,13 +23,12 @@ class AssetsPublishCommand extends ContainerAwareCommand
         $directories = [];
         foreach ($pug->getOption('assetDirectory') as $assetDirectory) {
             $viewDirectory = $assetDirectory . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'views';
-            if (!is_dir($viewDirectory)) {
-                continue;
+            if (is_dir($viewDirectory)) {
+                $directories[] = $viewDirectory;
+                $data = $pug->cacheDirectory($viewDirectory);
+                $success += $data[0];
+                $errors += $data[1];
             }
-            $directories[] = $viewDirectory;
-            $data = $pug->cacheDirectory($viewDirectory);
-            $success += $data[0];
-            $errors += $data[1];
         }
 
         return [$directories, $success, $errors];
