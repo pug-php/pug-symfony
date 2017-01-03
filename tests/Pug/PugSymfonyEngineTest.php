@@ -175,7 +175,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $message = null;
         try {
             $pugSymfony->getOption('foo');
-        } catch(\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException $e) {
             $message = $e->getMessage();
         }
         self::assertSame('foo is not a valid option name.', $message);
@@ -228,7 +228,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOptions([
             'prettyprint' => true,
-            'cache' => null,
+            'cache'       => null,
         ]);
 
         $pugSymfony->setOption('indentSize', 3);
