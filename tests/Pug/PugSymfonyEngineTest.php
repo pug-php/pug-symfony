@@ -67,7 +67,9 @@ class PugSymfonyEngineTest extends KernelTestCase
 {
     private static function clearCache()
     {
-        (new Filesystem())->remove(__DIR__ . '/../project/app/cache');
+        if (is_dir(__DIR__ . '/../project/app/cache')) {
+            (new Filesystem())->remove(__DIR__ . '/../project/app/cache');
+        }
     }
 
     public static function setUpBeforeClass()
@@ -87,8 +89,8 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testPreRender()
     {
-        $template = $this->getMockForAbstractClass('Pug\\PugSymfonyEngine', [], '', false);
-        $code = $template->preRender('p=asset("foo")');
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $code = $pugSymfony->preRender('p=asset("foo")');
 
         self::assertSame('p=$view[\'assets\']->getUrl("foo")', $code);
     }
@@ -190,6 +192,48 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         self::assertSame('<p>Hello</p>', trim($pugSymfony->render('TestBundle::bundle.pug', ['text' => 'Hello'])));
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
+    }
+
+    /**
+     * @group asset
+     */
+    public function testAssetHelperPhp()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOption('expressionLanguage', 'php');
+
+        self::assertSame(
+            '<div style="'.
+                'background-position: 50% -402px; '.
+                'background-image: url(\'/assets/img/patterns/5.png\');'.
+                '" class="foo"></div>' . "\n" .
+            '<div style="'.
+                'background-position:50% -402px;'.
+                'background-image:url(\'/assets/img/patterns/5.png\')'.
+                '" class="foo"></div>',
+            trim($pugSymfony->render('style-php.pug'))
+        );
+    }
+
+    /**
+     * @group asset
+     */
+    public function testAssetHelperJs()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOption('expressionLanguage', 'js');
+
+        self::assertSame(
+            '<div style="'.
+                'background-position: 50% -402px; '.
+                'background-image: url(\'/assets/img/patterns/5.png\');'.
+                '" class="foo"></div>' . "\n" .
+            '<div style="'.
+                'background-position:50% -402px;'.
+                'background-image:url(\'/assets/img/patterns/5.png\')'.
+                '" class="foo"></div>',
+            trim($pugSymfony->render('style-js.pug'))
+        );
     }
 
     public function testFilter()
