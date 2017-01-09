@@ -194,9 +194,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
-    /**
-     * @group asset
-     */
     public function testAssetHelperPhp()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -215,9 +212,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         );
     }
 
-    /**
-     * @group asset
-     */
     public function testAssetHelperJs()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
