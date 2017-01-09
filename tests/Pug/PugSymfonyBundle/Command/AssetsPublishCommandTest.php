@@ -28,7 +28,7 @@ class AssetsPublishCommandTest extends KernelTestCase
 
         $output = $commandTester->getDisplay();
 
-        $this->assertContains('6 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
+        $this->assertContains('8 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
         $this->assertContains('1 templates failed to be cached', $output, 'filter.pug fails as the upper filter does not exists.');
     }
 }

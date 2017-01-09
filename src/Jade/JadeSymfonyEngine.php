@@ -2,6 +2,7 @@
 
 namespace Jade;
 
+use Jade\Symfony\Css;
 use Jade\Symfony\JadeEngine as Jade;
 use Jade\Symfony\Logout;
 use Pug\Assets;
@@ -86,20 +87,27 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      */
     public function preRender($pugCode)
     {
+        $helperPattern = $this->getOption('expressionLanguage') === 'js'
+            ? 'view.%s.%s'
+            : '$view[\'%s\']->%s';
         foreach ([
             'random' => 'mt_rand',
-            'asset' => '$view[\'assets\']->getUrl',
-            'asset_version' => '$view[\'assets\']->getVersion',
-            'csrf_token' => '$view[\'form\']->csrfToken',
-            'logout_url' => '$view[\'logout\']->url',
-            'logout_path' => '$view[\'logout\']->path',
-            'url' => '$view[\'router\']->url',
-            'path' => '$view[\'router\']->path',
-            'absolute_url' => '$view[\'http\']->generateAbsoluteUrl',
-            'relative_path' => '$view[\'http\']->generateRelativePath',
-            'is_granted' => '$view[\'security\']->isGranted',
+            'asset' => ['assets', 'getUrl'],
+            'asset_version' => ['assets', 'getVersion'],
+            'css_url' => ['css', 'getUrl'],
+            'csrf_token' => ['form', 'csrfToken'],
+            'logout_url' => ['logout', 'url'],
+            'logout_path' => ['logout', 'path'],
+            'url' => ['router', 'url'],
+            'path' => ['router', 'path'],
+            'absolute_url' => ['http', 'generateAbsoluteUrl'],
+            'relative_path' => ['http', 'generateRelativePath'],
+            'is_granted' => ['security', 'isGranted'],
         ] as $name => $function) {
-            $pugCode = preg_replace('/(?<=\=\>|[=\.,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
+            if (is_array($function)) {
+                $function = sprintf($helperPattern, $function[0], $function[1]);
+            }
+            $pugCode = preg_replace('/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
         }
 
         return $pugCode;
@@ -132,6 +140,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         if (isset($this->helpers['logout_url'])) {
             $this->helpers['logout'] = new Logout($this->helpers['logout_url']);
         }
+        $this->helpers['css'] = new Css($this->helpers['assets']);
         $this->helpers['http'] = new HttpFoundationExtension($services->get('request_stack'), $services->get('router.request_context'));
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
