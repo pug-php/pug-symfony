@@ -107,7 +107,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             if (is_array($function)) {
                 $function = sprintf($helperPattern, $function[0], $function[1]);
             }
-            $pugCode = preg_replace('/(?<=\=\>|[=\.,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
+            $pugCode = preg_replace('/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
         }
 
         return $pugCode;
