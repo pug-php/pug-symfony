@@ -203,13 +203,13 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony->setOption('expressionLanguage', 'php');
 
         self::assertSame(
-            '<div style="'.
-                'background-position: 50% -402px; '.
-                'background-image: url(\'/assets/img/patterns/5.png\');'.
+            '<div style="' .
+                'background-position: 50% -402px; ' .
+                'background-image: url(\'/assets/img/patterns/5.png\');' .
                 '" class="foo"></div>' . "\n" .
-            '<div style="'.
-                'background-position:50% -402px;'.
-                'background-image:url(\'/assets/img/patterns/5.png\')'.
+            '<div style="' .
+                'background-position:50% -402px;' .
+                'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
             trim($pugSymfony->render('style-php.pug'))
         );

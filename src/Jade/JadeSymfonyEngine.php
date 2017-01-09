@@ -2,8 +2,8 @@
 
 namespace Jade;
 
-use Jade\Symfony\JadeEngine as Jade;
 use Jade\Symfony\Css;
+use Jade\Symfony\JadeEngine as Jade;
 use Jade\Symfony\Logout;
 use Pug\Assets;
 use Symfony\Bridge\Twig\AppVariable;
