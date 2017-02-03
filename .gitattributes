@@ -5,3 +5,4 @@
 /.travis.yml        export-ignore
 /.codeclimate.yml   export-ignore
 /*.md               export-ignore
+/phpunit.xml        export-ignore
