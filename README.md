@@ -28,6 +28,24 @@ Add jade in the templating.engines setting in **app/config/config.yml**:
         engines: ['pug', 'twig', 'php']
 ```
 
+## Configure
+
+You can set pug options by accessing the container (from controller or from the kernel) in Symfony.
+```php
+$services = $kernel->getContainer();
+$pug = $services->get('templating.engine.pug');
+$pug->setOptions(array(
+  'pretty' => true,
+  'pugjs' => true,
+  // ...
+));
+// You can get the Pug engine to call any method available in pug-php
+$pug->getEngine()->share('globalVar', 'foo');
+$pug->getEngine()->addKeyword('customKeyword', $bar);
+```
+See the options in the pug-php README: https://github.com/pug-php/pug
+And methods directly available on the service: https://github.com/pug-php/pug-symfony/blob/master/src/Jade/JadeSymfonyEngine.php
+
 ## Usage
 Create jade views by creating files with .pug extension
 in **app/Resources/views** such as contact.html.pug with
