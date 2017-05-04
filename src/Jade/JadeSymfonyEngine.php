@@ -78,14 +78,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $baseDir ?: $appDir . '/Resources/views';
     }
 
-    /**
-     * Pug code transformation to do before Pug render.
-     *
-     * @param string $pugCode code input
-     *
-     * @return string
-     */
-    public function preRender($pugCode)
+    protected function replaceCode($pugCode)
     {
         $helperPattern = $this->getOption('expressionLanguage') === 'js'
             ? 'view.%s.%s'
@@ -111,6 +104,30 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
 
         return $pugCode;
+    }
+
+    /**
+     * Pug code transformation to do before Pug render.
+     *
+     * @param string $pugCode code input
+     *
+     * @return string
+     */
+    public function preRender($pugCode)
+    {
+        $newCode = '';
+        while (mb_strlen($pugCode)) {
+            if (!preg_match('/^(.*)("(?:\\\\[\\s\\S]|[^"\\\\])*"|\'(?:\\\\[\\s\\S]|[^\'\\\\])*\')/U', $pugCode, $match)) {
+                $newCode .= $this->replaceCode($pugCode);
+
+                break;
+            }
+
+            $newCode .= $this->replaceCode($match[1]) . $match[2];
+            $pugCode = mb_substr($pugCode, mb_strlen($match[0]));
+        }
+
+        return $newCode;
     }
 
     protected function registerHelpers(ContainerInterface $services, $helpers)

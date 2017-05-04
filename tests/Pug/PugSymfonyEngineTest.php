@@ -297,4 +297,13 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['view' => 42]);
     }
+
+    public function testIssue11BackgroundImage()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOption('expressionLanguage', 'js');
+        $html = trim($pugSymfony->render('background-image.pug', ['image' => 'foo']));
+
+        self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
+    }
 }
