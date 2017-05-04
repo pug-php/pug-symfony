@@ -304,6 +304,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony->setOption('expressionLanguage', 'js');
         $html = trim($pugSymfony->render('background-image.pug', ['image' => 'foo']));
 
-        self::assertSame('<div style="background-image:url(foo);" class="slide"></div>', $html);
+        self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
     }
 }
