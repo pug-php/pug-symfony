@@ -30,6 +30,6 @@
         }
     },
     "scripts": {
-        "post-autoload-dump": "php install.php"
+        "post-update-cmd": "php install.php"
     }
 }
