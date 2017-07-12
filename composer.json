@@ -8,7 +8,8 @@
     "require": {
         "php": ">=5.5.9",
         "pug-php/pug": "^2.1.3",
-        "pug-php/pug-assets": "^1.0.1"
+        "pug-php/pug-assets": "^1.0.1",
+        "composer/composer": "^1.2"
     },
     "require-dev": {
         "phpunit/phpunit": ">=4.8 <6.0",
@@ -30,6 +31,11 @@
         }
     },
     "scripts": {
-        "post-update-cmd": "Pug\\PugSymfonyEngine::install"
+        "post-update-cmd": [
+            "Pug\\PugSymfonyEngine::install"
+        ]
+    },
+    "extra": {
+        "class": "Pug\\ComposerPlugin"
     }
 }

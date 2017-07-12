@@ -4,3 +4,4 @@ composer.phar
 .idea
 /vendor/
 /coverage/
+installed
