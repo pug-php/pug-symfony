@@ -28,5 +28,8 @@
             "Jade": "src/",
             "Pug": "src/"
         }
+    },
+    "scripts": {
+        "post-package-install": "php install.php"
     }
 }
