@@ -13,11 +13,12 @@ function ask()
 
 function confirm()
 {
-    while (!in_array($answer = mb_strtoupper(mb_substr(ask(), 0, 1)), ['Y', 'N'])) {
+    $answer = null;
+    while (($input = trim(ask())) !== '' && !in_array($answer = mb_strtoupper(mb_substr($input, 0, 1)), ['Y', 'N'])) {
         echo "Please enter Y for yes or N for no.\n";
     }
 
-    return $answer === 'Y';
+    return $input === '' || $answer === 'Y';
 }
 
 $dir = __DIR__ . '/../../..';
