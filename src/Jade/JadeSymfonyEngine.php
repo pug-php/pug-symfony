@@ -287,15 +287,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             exit(0);
         }
 
-        $ask = function ()
-        {
+        $ask = function () {
             return PHP_OS == 'WINNT'
                 ? stream_get_line(STDIN, 1024, PHP_EOL)
                 : readline('$ ');
         };
 
-        $confirm = function () use ($ask)
-        {
+        $confirm = function () use ($ask) {
             $answer = null;
             while (($input = trim($ask())) !== '' && !in_array($answer = mb_strtoupper(mb_substr($input, 0, 1)), ['Y', 'N'])) {
                 echo "Please enter Y for yes or N for no.\n";
@@ -307,7 +305,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $dir = $baseDirectory . '/../../..';
 
         $service = "\n    templating.engine.pug:\n" .
-            "        class: Pug\PugSymfonyEngine\n".
+            "        class: Pug\PugSymfonyEngine\n" .
             "        arguments: [\"@kernel\"]\n";
 
         $bundle = 'new Pug\PugSymfonyBundle\PugSymfonyBundle()';
