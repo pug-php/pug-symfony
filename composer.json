@@ -30,6 +30,6 @@
         }
     },
     "scripts": {
-        "post-update-cmd": "php install.php"
+        "post-update-cmd": "Pug\\PugSymfonyEngine::install"
     }
 }
