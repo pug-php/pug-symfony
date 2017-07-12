@@ -18,11 +18,11 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
 
     public static function getSubscribedEvents()
     {
-        return array(
-            'post-autoload-dump' => array(
-                array('onAutoloadDump', 0),
-            ),
-        );
+        return [
+            'post-autoload-dump' => [
+                ['onAutoloadDump', 0],
+            ],
+        ];
     }
 
     public function onAutoloadDump()
