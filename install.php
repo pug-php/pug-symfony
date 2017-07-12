@@ -4,13 +4,15 @@ if (file_exists(__DIR__ . '/installed')) {
     exit(0);
 }
 
-function ask() {
+function ask()
+{
     return PHP_OS == 'WINNT'
         ? stream_get_line(STDIN, 1024, PHP_EOL)
         : readline('$ ');
 }
 
-function confirm() {
+function confirm()
+{
     while (!in_array($answer = mb_strtoupper(mb_substr(ask(), 0, 1)), ['Y', 'N'])) {
         echo "Please enter Y for yes or N for no.\n";
     }
@@ -82,7 +84,7 @@ if (confirm()) {
             if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimedLine, $match)) {
                 $engines = @json_decode(str_replace("'", '"', trim($match[1])));
                 if (!is_array($engines)) {
-                    echo "Automatic engine adding is only possible if framework.templating.engines is a ".
+                    echo "Automatic engine adding is only possible if framework.templating.engines is a " .
                         "one-line setting in config.yml.\n.\n";
 
                     break;
@@ -100,7 +102,7 @@ if (confirm()) {
             }
         }
         if ($proceeded) {
-            $contents = implode("\n",$lines);
+            $contents = implode("\n", $lines);
             if (file_put_contents($configFile, $contents)) {
                 $flags |= ENGINE_OK;
                 echo "Engine added to framework.templating.engines in config.yml\n";
