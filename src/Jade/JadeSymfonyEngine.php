@@ -37,11 +37,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
+        $viewDirectories = [$appDir . '/Resources/views'];
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
-        $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories);
+        $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
         $this->jade = new Jade([
             'assetDirectory'  => $assetsDirectories,
+            'viewDirectories' => $viewDirectories,
             'baseDir'         => $baseDir,
             'cache'           => substr($environment, 0, 3) === 'dev' ? false : $cache,
             'environment'     => $environment,
@@ -62,15 +64,19 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $this->jade->share('app', $app);
     }
 
-    protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories)
+    protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories, &$viewDirectories)
     {
         $baseDir = null;
         foreach (scandir($srcDir) as $directory) {
             if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                 continue;
             }
-            if (is_null($baseDir) && is_dir($srcDir . '/' . $directory . '/Resources/views')) {
-                $baseDir = $srcDir . '/' . $directory . '/Resources/views';
+            $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
+            if (is_dir($viewDirectory)) {
+                if (is_null($baseDir)) {
+                    $baseDir = $viewDirectory;
+                }
+                $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
             }
             $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
         }
@@ -130,6 +136,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $newCode;
     }
 
+    protected function getTemplatingHelper($name)
+    {
+        return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
+    }
+
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
         $this->helpers = [];
@@ -154,10 +165,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 $this->helpers[$helper] = $instance;
             }
         }
-        if (isset($this->helpers['logout_url'])) {
-            $this->helpers['logout'] = new Logout($this->helpers['logout_url']);
+        if ($helper = $this->getTemplatingHelper('logout_url')) {
+            $this->helpers['logout'] = new Logout($helper);
         }
-        $this->helpers['css'] = new Css($this->helpers['assets']);
+        $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
         $this->helpers['http'] = new HttpFoundationExtension($services->get('request_stack'), $services->get('router.request_context'));
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
@@ -279,28 +290,15 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         unset($this->helpers[$name]);
     }
 
-    public static function install()
+    public static function install($event)
     {
+        /** @var \Composer\Script\Event $event */
+        $io = $event->getIO();
         $baseDirectory = __DIR__ . '/../..';
 
-        if (file_exists($baseDirectory . '/installed')) {
-            exit(0);
+        if (!$io->isInteractive() || file_exists($baseDirectory . '/installed')) {
+            return true;
         }
-
-        $ask = function () {
-            return PHP_OS == 'WINNT'
-                ? stream_get_line(STDIN, 1024, PHP_EOL)
-                : readline('$ ');
-        };
-
-        $confirm = function () use ($ask) {
-            $answer = null;
-            while (($input = trim($ask())) !== '' && !in_array($answer = mb_strtoupper(mb_substr($input, 0, 1)), ['Y', 'N'])) {
-                echo "Please enter Y for yes or N for no.\n";
-            }
-
-            return $input === '' || $answer === 'Y';
-        };
 
         $dir = $baseDirectory . '/../../..';
 
@@ -316,9 +314,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
         $flags = 0;
 
-        echo 'Would you like us to add automatically needed settings in your config.yml? [Y/N] ';
-
-        if ($confirm()) {
+        if ($io->askConfirmation('Would you like us to add automatically needed settings in your config.yml?')) {
             $configFile = $dir . '/app/config/config.yml';
             $contents = @file_get_contents($configFile) ?: '';
 
@@ -330,13 +326,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     $contents = preg_replace('/^services\s*:/m', "\$0$service", $contents);
                     if (file_put_contents($configFile, $contents)) {
                         $flags |= CONFIG_OK;
-                        echo "Engine service added in config.yml\n";
+                        $io->write("Engine service added in config.yml\n");
                     } else {
-                        echo "Unable to add the engine service in config.yml\n";
+                        $io->write("Unable to add the engine service in config.yml\n");
                     }
                 } else {
                     $flags |= CONFIG_OK;
-                    echo "templating.engine.pug setting in config.yml already exists.\n";
+                    $io->write("templating.engine.pug setting in config.yml already exists.\n");
                 }
                 $lines = explode("\n", $contents);
                 $proceeded = false;
@@ -344,13 +340,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 $inTemplating = false;
                 $templatingIndent = 0;
                 foreach ($lines as &$line) {
-                    $trimedLine = ltrim($line);
-                    $indent = mb_strlen($line) - mb_strlen($trimedLine);
+                    $trimmedLine = ltrim($line);
+                    $indent = mb_strlen($line) - mb_strlen($trimmedLine);
                     if (preg_match('/^framework\s*:/', $line)) {
                         $inFramework = true;
                         continue;
                     }
-                    if ($inFramework && preg_match('/^templating\s*:/', $trimedLine)) {
+                    if ($inFramework && preg_match('/^templating\s*:/', $trimmedLine)) {
                         $templatingIndent = $indent;
                         $inTemplating = true;
                         continue;
@@ -361,17 +357,17 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     if ($indent === 0) {
                         $inFramework = false;
                     }
-                    if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimedLine, $match)) {
+                    if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimmedLine, $match)) {
                         $engines = @json_decode(str_replace("'", '"', trim($match[1])));
                         if (!is_array($engines)) {
-                            echo "Automatic engine adding is only possible if framework.templating.engines is a " .
-                                "one-line setting in config.yml.\n.\n";
+                            $io->write("Automatic engine adding is only possible if framework.templating.engines is a " .
+                                "one-line setting in config.yml.\n");
 
                             break;
                         }
                         if (in_array('pug', $engines)) {
                             $flags |= ENGINE_OK;
-                            echo "Pug engine already exist in framework.templating.engines in config.yml.\n";
+                            $io->write("Pug engine already exist in framework.templating.engines in config.yml.\n");
 
                             break;
                         }
@@ -385,21 +381,19 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     $contents = implode("\n", $lines);
                     if (file_put_contents($configFile, $contents)) {
                         $flags |= ENGINE_OK;
-                        echo "Engine added to framework.templating.engines in config.yml\n";
+                        $io->write("Engine added to framework.templating.engines in config.yml\n");
                     } else {
-                        echo "Unable to add the templating engine in framework.templating.engines in config.yml\n";
+                        $io->write("Unable to add the templating engine in framework.templating.engines in config.yml\n");
                     }
                 }
             } else {
-                echo "framework entry not found in config.yml.\n";
+                $io->write("framework entry not found in config.yml.\n");
             }
         } else {
             $flags |= CONFIG_OK | ENGINE_OK;
         }
 
-        echo 'Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ';
-
-        if ($confirm()) {
+        if ($io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php?')) {
             $appFile = $dir . '/app/AppKernel.php';
             $contents = @file_get_contents($appFile) ?: '';
 
@@ -408,16 +402,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     $contents = preg_replace('/^([ \\t]*)new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', "\$0,\n\$1$bundle", $contents);
                     if (file_put_contents($appFile, $contents)) {
                         $flags |= KERNEL_OK;
-                        echo "Bundle added to AppKernel.php\n";
+                        $io->write("Bundle added to AppKernel.php\n");
                     } else {
-                        echo "Unable to add the bundle engine in AppKernel.php\n";
+                        $io->write("Unable to add the bundle engine in AppKernel.php\n");
                     }
                 } else {
                     $flags |= KERNEL_OK;
-                    echo "The bundle already exists in AppKernel.php\n";
+                    $io->write("The bundle already exists in AppKernel.php\n");
                 }
             } else {
-                echo "Sorry, AppKernel.php has a format we can't handle automatically.\n";
+                $io->write("Sorry, AppKernel.php has a format we can't handle automatically.\n");
             }
         } else {
             $flags |= KERNEL_OK;
@@ -427,6 +421,6 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             touch($baseDirectory . '/installed');
         }
 
-        exit(0);
+        return true;
     }
 }
