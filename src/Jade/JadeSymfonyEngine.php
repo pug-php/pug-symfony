@@ -392,6 +392,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         } else {
             $flags |= CONFIG_OK | ENGINE_OK;
         }
+        $io->write("\n");
 
         if ($io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ')) {
             $appFile = $dir . '/app/AppKernel.php';
@@ -416,6 +417,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         } else {
             $flags |= KERNEL_OK;
         }
+        $io->write("\n");
 
         if (($flags & KERNEL_OK) && ($flags & CONFIG_OK) && ($flags & ENGINE_OK)) {
             touch($baseDirectory . '/installed');

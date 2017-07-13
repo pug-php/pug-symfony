@@ -15,7 +15,7 @@ composer require pug-php/pug-symfony
 When your are asked to install automatically needed settings, enter yes ;
 or if you prefer, follow the manual installation steps below.
 
-## Manual install
+### Manual alternative steps
 
 Add pug in the templating.engines setting in **app/config/config.yml**
 by merging the following to your settings:
