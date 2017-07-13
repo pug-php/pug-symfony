@@ -37,11 +37,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
+        $viewDirectories = [$appDir . '/Resources/views'];
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
-        $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories);
+        $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
         $this->jade = new Jade([
             'assetDirectory'  => $assetsDirectories,
+            'viewDirectories' => $viewDirectories,
             'baseDir'         => $baseDir,
             'cache'           => substr($environment, 0, 3) === 'dev' ? false : $cache,
             'environment'     => $environment,
@@ -62,15 +64,19 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $this->jade->share('app', $app);
     }
 
-    protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories)
+    protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories, &$viewDirectories)
     {
         $baseDir = null;
         foreach (scandir($srcDir) as $directory) {
             if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                 continue;
             }
-            if (is_null($baseDir) && is_dir($srcDir . '/' . $directory . '/Resources/views')) {
-                $baseDir = $srcDir . '/' . $directory . '/Resources/views';
+            $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
+            if (is_dir($viewDirectory)) {
+                if (is_null($baseDir)) {
+                    $baseDir = $viewDirectory;
+                }
+                $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
             }
             $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
         }

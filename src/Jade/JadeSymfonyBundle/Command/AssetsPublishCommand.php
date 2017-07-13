@@ -21,8 +21,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
         $success = 0;
         $errors = 0;
         $directories = [];
-        foreach ($pug->getOption('assetDirectory') as $assetDirectory) {
-            $viewDirectory = $assetDirectory . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'views';
+        foreach ($pug->getOption('viewDirectories') as $viewDirectory) {
             if (is_dir($viewDirectory)) {
                 $directories[] = $viewDirectory;
                 $data = $pug->cacheDirectory($viewDirectory);
