@@ -314,7 +314,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
         $flags = 0;
 
-        if ($io->askConfirmation('Would you like us to add automatically needed settings in your config.yml?')) {
+        if ($io->askConfirmation('Would you like us to add automatically needed settings in your config.yml? [Y/N] ')) {
             $configFile = $dir . '/app/config/config.yml';
             $contents = @file_get_contents($configFile) ?: '';
 
@@ -326,13 +326,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     $contents = preg_replace('/^services\s*:/m', "\$0$service", $contents);
                     if (file_put_contents($configFile, $contents)) {
                         $flags |= CONFIG_OK;
-                        $io->write("Engine service added in config.yml\n");
+                        $io->write('Engine service added in config.yml');
                     } else {
-                        $io->write("Unable to add the engine service in config.yml\n");
+                        $io->write('Unable to add the engine service in config.yml');
                     }
                 } else {
                     $flags |= CONFIG_OK;
-                    $io->write("templating.engine.pug setting in config.yml already exists.\n");
+                    $io->write('templating.engine.pug setting in config.yml already exists.');
                 }
                 $lines = explode("\n", $contents);
                 $proceeded = false;
@@ -360,14 +360,14 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimmedLine, $match)) {
                         $engines = @json_decode(str_replace("'", '"', trim($match[1])));
                         if (!is_array($engines)) {
-                            $io->write("Automatic engine adding is only possible if framework.templating.engines is a " .
-                                "one-line setting in config.yml.\n");
+                            $io->write('Automatic engine adding is only possible if framework.templating.engines is a ' .
+                                'one-line setting in config.yml.');
 
                             break;
                         }
                         if (in_array('pug', $engines)) {
                             $flags |= ENGINE_OK;
-                            $io->write("Pug engine already exist in framework.templating.engines in config.yml.\n");
+                            $io->write('Pug engine already exist in framework.templating.engines in config.yml.');
 
                             break;
                         }
@@ -381,19 +381,19 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     $contents = implode("\n", $lines);
                     if (file_put_contents($configFile, $contents)) {
                         $flags |= ENGINE_OK;
-                        $io->write("Engine added to framework.templating.engines in config.yml\n");
+                        $io->write('Engine added to framework.templating.engines in config.yml');
                     } else {
-                        $io->write("Unable to add the templating engine in framework.templating.engines in config.yml\n");
+                        $io->write('Unable to add the templating engine in framework.templating.engines in config.yml');
                     }
                 }
             } else {
-                $io->write("framework entry not found in config.yml.\n");
+                $io->write('framework entry not found in config.yml.');
             }
         } else {
             $flags |= CONFIG_OK | ENGINE_OK;
         }
 
-        if ($io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php?')) {
+        if ($io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ')) {
             $appFile = $dir . '/app/AppKernel.php';
             $contents = @file_get_contents($appFile) ?: '';
 
@@ -402,16 +402,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     $contents = preg_replace('/^([ \\t]*)new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', "\$0,\n\$1$bundle", $contents);
                     if (file_put_contents($appFile, $contents)) {
                         $flags |= KERNEL_OK;
-                        $io->write("Bundle added to AppKernel.php\n");
+                        $io->write('Bundle added to AppKernel.php');
                     } else {
-                        $io->write("Unable to add the bundle engine in AppKernel.php\n");
+                        $io->write('Unable to add the bundle engine in AppKernel.php');
                     }
                 } else {
                     $flags |= KERNEL_OK;
-                    $io->write("The bundle already exists in AppKernel.php\n");
+                    $io->write('The bundle already exists in AppKernel.php');
                 }
             } else {
-                $io->write("Sorry, AppKernel.php has a format we can't handle automatically.\n");
+                $io->write('Sorry, AppKernel.php has a format we can\'t handle automatically.');
             }
         } else {
             $flags |= KERNEL_OK;
