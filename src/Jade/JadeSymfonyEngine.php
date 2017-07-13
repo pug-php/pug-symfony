@@ -130,6 +130,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $newCode;
     }
 
+    protected function getTemplatingHelper($name)
+    {
+        return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
+    }
+
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
         $this->helpers = [];
@@ -154,10 +159,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 $this->helpers[$helper] = $instance;
             }
         }
-        if (isset($this->helpers['logout_url'])) {
-            $this->helpers['logout'] = new Logout($this->helpers['logout_url']);
+        if ($helper = $this->getTemplatingHelper('logout_url')) {
+            $this->helpers['logout'] = new Logout($helper);
         }
-        $this->helpers['css'] = new Css($this->helpers['assets']);
+        $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
         $this->helpers['http'] = new HttpFoundationExtension($services->get('request_stack'), $services->get('router.request_context'));
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
