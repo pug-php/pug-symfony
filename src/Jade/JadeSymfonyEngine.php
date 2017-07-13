@@ -2,7 +2,6 @@
 
 namespace Jade;
 
-use Composer\Installer\InstallerEvent;
 use Jade\Symfony\Css;
 use Jade\Symfony\JadeEngine as Jade;
 use Jade\Symfony\Logout;
@@ -293,7 +292,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public static function install($event)
     {
-        /** @var InstallerEvent $event */
+        /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
         $baseDirectory = __DIR__ . '/../..';
 
@@ -341,13 +340,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 $inTemplating = false;
                 $templatingIndent = 0;
                 foreach ($lines as &$line) {
-                    $trimedLine = ltrim($line);
-                    $indent = mb_strlen($line) - mb_strlen($trimedLine);
+                    $trimmedLine = ltrim($line);
+                    $indent = mb_strlen($line) - mb_strlen($trimmedLine);
                     if (preg_match('/^framework\s*:/', $line)) {
                         $inFramework = true;
                         continue;
                     }
-                    if ($inFramework && preg_match('/^templating\s*:/', $trimedLine)) {
+                    if ($inFramework && preg_match('/^templating\s*:/', $trimmedLine)) {
                         $templatingIndent = $indent;
                         $inTemplating = true;
                         continue;
@@ -358,7 +357,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     if ($indent === 0) {
                         $inFramework = false;
                     }
-                    if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimedLine, $match)) {
+                    if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimmedLine, $match)) {
                         $engines = @json_decode(str_replace("'", '"', trim($match[1])));
                         if (!is_array($engines)) {
                             $io->write("Automatic engine adding is only possible if framework.templating.engines is a " .

@@ -7,6 +7,7 @@
     "type": "library",
     "require": {
         "php": ">=5.5.9",
+        "pug/installer": "^0.1.0",
         "pug-php/pug": "^2.1.3",
         "pug-php/pug-assets": "^1.0.1"
     },
@@ -32,16 +33,13 @@
     },
     "scripts": {
         "post-install-cmd": [
-            "Pug\\PugSymfonyEngine::install"
+            "Pug\\Installer\\Installer::onAutoloadDump"
         ],
         "post-update-cmd": [
-            "Pug\\PugSymfonyEngine::install"
-        ],
-        "post-autoload-dump": [
-            "Pug\\PugSymfonyEngine::install"
+            "Pug\\Installer\\Installer::onAutoloadDump"
         ]
     },
     "extra": {
-        "class": "Pug\\ComposerPlugin"
+        "installer": "Pug\\PugSymfonyEngine::install"
     }
 }
