@@ -25,8 +25,8 @@ class ComposerPlugin implements PluginInterface, EventSubscriberInterface
         ];
     }
 
-    public function onAutoloadDump()
+    public function onAutoloadDump($event)
     {
-        JadeSymfonyEngine::install();
+        JadeSymfonyEngine::install($event);
     }
 }

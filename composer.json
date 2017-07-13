@@ -31,7 +31,16 @@
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "Pug\\PugSymfonyEngine::install"
+        ],
         "post-update-cmd": [
+            "Pug\\PugSymfonyEngine::install"
+        ],
+        "post-package-install": [
+            "Pug\\PugSymfonyEngine::install"
+        ],
+        "post-package-update": [
             "Pug\\PugSymfonyEngine::install"
         ]
     },
