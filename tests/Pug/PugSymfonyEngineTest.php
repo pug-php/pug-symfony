@@ -405,7 +405,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
             'Engine service added in config.yml',
-            'Automatic engine adding is only possible if framework.templating.engines is a '.
+            'Automatic engine adding is only possible if framework.templating.engines is a ' .
             'one-line setting in config.yml.',
             'The bundle already exists in AppKernel.php',
         ], $io->getLastOutput());
