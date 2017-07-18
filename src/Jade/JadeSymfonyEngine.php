@@ -313,8 +313,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         define('KERNEL_OK', 4);
 
         $flags = 0;
+        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config.yml?');
+        $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php?');
 
-        if ($io->askConfirmation('Would you like us to add automatically needed settings in your config.yml?')) {
+        if ($addConfig) {
             $configFile = $dir . '/app/config/config.yml';
             $contents = @file_get_contents($configFile) ?: '';
 
@@ -393,7 +395,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $flags |= CONFIG_OK | ENGINE_OK;
         }
 
-        if ($io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php?')) {
+        if ($addBundle) {
             $appFile = $dir . '/app/AppKernel.php';
             $contents = @file_get_contents($appFile) ?: '';
 
