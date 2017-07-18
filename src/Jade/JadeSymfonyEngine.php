@@ -289,4 +289,140 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     {
         unset($this->helpers[$name]);
     }
+
+    public static function install($event)
+    {
+        /** @var \Composer\Script\Event $event */
+        $io = $event->getIO();
+        $baseDirectory = __DIR__ . '/../..';
+
+        if (!$io->isInteractive() || file_exists($baseDirectory . '/installed')) {
+            return true;
+        }
+
+        $dir = $baseDirectory . '/../../..';
+
+        $service = "\n    templating.engine.pug:\n" .
+            "        class: Pug\PugSymfonyEngine\n" .
+            "        arguments: [\"@kernel\"]\n";
+
+        $bundle = 'new Pug\PugSymfonyBundle\PugSymfonyBundle()';
+
+        define('CONFIG_OK', 1);
+        define('ENGINE_OK', 2);
+        define('KERNEL_OK', 4);
+
+        $flags = 0;
+        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config.yml? [Y/N] ');
+        $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ');
+
+        if ($addConfig) {
+            $configFile = $dir . '/app/config/config.yml';
+            $contents = @file_get_contents($configFile) ?: '';
+
+            if (preg_match('/^framework\s*:/m', $contents)) {
+                if (strpos($contents, 'templating.engine.pug') === false) {
+                    if (!preg_match('/^services\s*:/m', $contents)) {
+                        $contents = preg_replace('/^framework\s*:/m', "services:\n\$0", $contents);
+                    }
+                    $contents = preg_replace('/^services\s*:/m', "\$0$service", $contents);
+                    if (file_put_contents($configFile, $contents)) {
+                        $flags |= CONFIG_OK;
+                        $io->write('Engine service added in config.yml');
+                    } else {
+                        $io->write('Unable to add the engine service in config.yml');
+                    }
+                } else {
+                    $flags |= CONFIG_OK;
+                    $io->write('templating.engine.pug setting in config.yml already exists.');
+                }
+                $lines = explode("\n", $contents);
+                $proceeded = false;
+                $inFramework = false;
+                $inTemplating = false;
+                $templatingIndent = 0;
+                foreach ($lines as &$line) {
+                    $trimmedLine = ltrim($line);
+                    $indent = mb_strlen($line) - mb_strlen($trimmedLine);
+                    if (preg_match('/^framework\s*:/', $line)) {
+                        $inFramework = true;
+                        continue;
+                    }
+                    if ($inFramework && preg_match('/^templating\s*:/', $trimmedLine)) {
+                        $templatingIndent = $indent;
+                        $inTemplating = true;
+                        continue;
+                    }
+                    if ($indent < $templatingIndent) {
+                        $inTemplating = false;
+                    }
+                    if ($indent === 0) {
+                        $inFramework = false;
+                    }
+                    if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimmedLine, $match)) {
+                        $engines = @json_decode(str_replace("'", '"', trim($match[1])));
+                        if (!is_array($engines)) {
+                            $io->write('Automatic engine adding is only possible if framework.templating.engines is a ' .
+                                'one-line setting in config.yml.');
+
+                            break;
+                        }
+                        if (in_array('pug', $engines)) {
+                            $flags |= ENGINE_OK;
+                            $io->write('Pug engine already exist in framework.templating.engines in config.yml.');
+
+                            break;
+                        }
+                        array_unshift($engines, 'pug');
+                        $line = preg_replace('/^(\s+engines\s*:)(.*)$/', '$1 ' . json_encode($engines), $line);
+                        $proceeded = true;
+                        break;
+                    }
+                }
+                if ($proceeded) {
+                    $contents = implode("\n", $lines);
+                    if (file_put_contents($configFile, $contents)) {
+                        $flags |= ENGINE_OK;
+                        $io->write('Engine added to framework.templating.engines in config.yml');
+                    } else {
+                        $io->write('Unable to add the templating engine in framework.templating.engines in config.yml');
+                    }
+                }
+            } else {
+                $io->write('framework entry not found in config.yml.');
+            }
+        } else {
+            $flags |= CONFIG_OK | ENGINE_OK;
+        }
+
+        if ($addBundle) {
+            $appFile = $dir . '/app/AppKernel.php';
+            $contents = @file_get_contents($appFile) ?: '';
+
+            if (preg_match('/^[ \\t]*new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', $contents)) {
+                if (strpos($contents, $bundle) === false) {
+                    $contents = preg_replace('/^([ \\t]*)new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', "\$0,\n\$1$bundle", $contents);
+                    if (file_put_contents($appFile, $contents)) {
+                        $flags |= KERNEL_OK;
+                        $io->write('Bundle added to AppKernel.php');
+                    } else {
+                        $io->write('Unable to add the bundle engine in AppKernel.php');
+                    }
+                } else {
+                    $flags |= KERNEL_OK;
+                    $io->write('The bundle already exists in AppKernel.php');
+                }
+            } else {
+                $io->write('Sorry, AppKernel.php has a format we can\'t handle automatically.');
+            }
+        } else {
+            $flags |= KERNEL_OK;
+        }
+
+        if (($flags & KERNEL_OK) && ($flags & CONFIG_OK) && ($flags & ENGINE_OK)) {
+            touch($baseDirectory . '/installed');
+        }
+
+        return true;
+    }
 }

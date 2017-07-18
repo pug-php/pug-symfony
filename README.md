@@ -12,21 +12,27 @@ In the root directory of your Symfony project, open a terminal and enter:
 ```shell
 composer require pug-php/pug-symfony
 ```
+When your are asked to install automatically needed settings, enter yes ;
+or if you prefer, follow the manual installation steps below.
 
-Add in **app/config/services.yml**:
+### Manual alternative steps
+
+Add pug in the templating.engines setting in **app/config/config.yml**
+by merging the following to your settings:
 ```yml
 services:
     templating.engine.pug:
         class: Pug\PugSymfonyEngine
         arguments: ["@kernel"]
-```
 
-Add jade in the templating.engines setting in **app/config/config.yml**:
-```yml
-...
+framework:
     templating:
         engines: ['pug', 'twig', 'php']
 ```
+
+In order to use pug cli commands, you will also need to add
+`Pug\PugSymfonyBundle\PugSymfonyBundle()`
+to your **AppKenel.php**.
 
 ## Configure
 
@@ -48,7 +54,7 @@ And methods directly available on the service: https://github.com/pug-php/pug-sy
 
 ## Usage
 Create jade views by creating files with .pug extension
-in **app/Resources/views** such as contact.html.pug with
+in **app/Resources/views** such as contact.pug with
 some Jade like this:
 ```pug
 h1
@@ -62,7 +68,7 @@ Then call it in your controller:
  */
 public function contactAction()
 {
-    return $this->render('contact/contact.html.pug', [
+    return $this->render('contact/contact.pug', [
         'name' => 'Bob',
     ]);
 }
@@ -72,7 +78,8 @@ public function contactAction()
 
 In production, you better have to pre-render all your templates to improve performances. To do that, you have to add Pug\PugSymfonyBundle\PugSymfonyBundle in your registered bundles.
 
-In **app/AppKernel.php**, in the ```registerBundles()``` method, add the Pug bundle:
+In **app/AppKernel.php**, in the ```registerBundles()``` method, add the Pug bundle (this
+has been done automatically if you installed pug-symfony 2.3 or above with automated script):
 ```php
 public function registerBundles()
 {
