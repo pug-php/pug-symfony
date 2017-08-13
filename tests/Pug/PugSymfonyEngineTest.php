@@ -181,6 +181,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         $message = null;
+
         try {
             $pugSymfony->getOption('foo');
         } catch (\InvalidArgumentException $e) {
