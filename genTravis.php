@@ -22,7 +22,7 @@ $travisData = array(
         'vendor/bin/test-reporter --coverage-report coverage.xml',
     ),
     'after_success' => array(
-        'bash <(curl -s https://codecov.io/bash)'
+        'bash <(curl -s https://codecov.io/bash)',
     ),
     'addons' => array(
         'code_climate' => array(
@@ -32,7 +32,6 @@ $travisData = array(
 );
 
 $matrix = array(
-    '5.3'  => array('2.7', '2.8'),
     '5.4'  => array('2.7', '2.8'),
     '5.5'  => array('2.7', '2.8', '3.0', '3.1', '3.2', '3.3'),
     '5.6'  => array('2.7', '2.8', '3.0', '3.1', '3.2', '3.3'),
@@ -56,7 +55,8 @@ foreach ($matrix as $phpVersion => $symfonyVersions) {
     }
 }
 
-function compileYaml($data, $indent = 0) {
+function compileYaml($data, $indent = 0)
+{
     $contents = '';
     foreach ($data as $key => $value) {
         $isAssoc = is_string($key);

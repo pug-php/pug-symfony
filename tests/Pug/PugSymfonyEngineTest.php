@@ -5,12 +5,10 @@ namespace Pug\Tests;
 use Jade\Compiler;
 use Jade\Filter\AbstractFilter;
 use Jade\Nodes\Filter;
-use Jade\Symfony\JadeEngine as Jade;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 
@@ -108,7 +106,7 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertInstanceOf(Jade::class, $pugSymfony->getEngine());
+        self::assertInstanceOf('\\Jade\\Symfony\\JadeEngine', $pugSymfony->getEngine());
     }
 
     public function testFallbackAppDir()
@@ -242,9 +240,9 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         self::assertFalse($pugSymfony->hasFilter('upper'));
 
-        $pugSymfony->filter('upper', Upper::class);
+        $pugSymfony->filter('upper', '\\Pug\\Tests\\Upper');
         self::assertTrue($pugSymfony->hasFilter('upper'));
-        self::assertSame(Upper::class, $pugSymfony->getFilter('upper'));
+        self::assertSame('\\Pug\\Tests\\Upper', $pugSymfony->getFilter('upper'));
         self::assertSame('FOO', trim($pugSymfony->render('filter.pug')));
     }
 
