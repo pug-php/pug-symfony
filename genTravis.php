@@ -60,12 +60,12 @@ function compileYaml($data, $indent = 0)
     $contents = '';
     foreach ($data as $key => $value) {
         $isAssoc = is_string($key);
-        $contents .= str_repeat(' ', $indent * 2) . ($isAssoc ? $key . ':' : '- ');
+        $contents .= str_repeat(' ', $indent * 2) . ($isAssoc ? $key . ':' : '-');
         if (is_array($value)) {
             $value = compileYaml($value, $indent + 1);
             $contents .= $isAssoc
                 ? "\n$value"
-                : '' . ltrim($value);
+                : ' ' . ltrim($value);
 
             continue;
         }

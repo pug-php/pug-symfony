@@ -12,6 +12,10 @@ engines:
   phpmd:
     enabled: true
     checks:
+      CleanCode/BooleanArgumentFlag:
+        enabled: false
+      CleanCode/StaticAccess:
+        enabled: false
       UnusedFormalParameter:
         enabled: false
       Design/TooManyPublicMethods:

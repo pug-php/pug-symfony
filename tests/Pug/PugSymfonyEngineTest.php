@@ -390,30 +390,22 @@ class PugSymfonyEngineTest extends KernelTestCase
         );
         clearstatcache();
         self::assertTrue(file_exists($installedFile));
+    }
 
+    /**
+     * @group install
+     */
+    public function testInstallPartialStates()
+    {
+        include_once __DIR__ . '/CaptureIO.php';
+        $io = new CaptureIO();
+        $composer = new Composer();
+        $installedFile = __DIR__ . '/../../installed';
+        $io->setPermissive(true);
         $io->reset();
-        unlink($installedFile);
-        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    engines:',
-            '      - pug',
-            '      - php',
-            '    bar3: biz',
-            '  bar4: biz',
-            'bar: biz',
-        ]));
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Engine service added in config.yml',
-            'Automatic engine adding is only possible if framework.templating.engines is a ' .
-            'one-line setting in config.yml.',
-            'The bundle already exists in AppKernel.php',
-        ], $io->getLastOutput());
+        $dir = sys_get_temp_dir() . '/pug-temp';
+        $fs = new Filesystem();
+        $fs->remove($dir);
         clearstatcache();
         self::assertFalse(file_exists($installedFile));
 
