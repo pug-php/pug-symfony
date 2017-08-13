@@ -45,7 +45,7 @@ foreach ($matrix as $phpVersion => $symfonyVersions) {
     foreach ($symfonyVersions as $symphonyVersion) {
         $environment = [
             'php' => $phpVersion,
-            'env' => 'SYMFONY_VERSION='.$symphonyVersion.'.*',
+            'env' => 'SYMFONY_VERSION=' . $symphonyVersion . '.*',
         ];
         if ($phpVersion === 'hhvm') {
             $environment['dist'] = 'trusty';
@@ -60,17 +60,17 @@ function compileYaml($data, $indent = 0)
     $contents = '';
     foreach ($data as $key => $value) {
         $isAssoc = is_string($key);
-        $contents .= str_repeat(' ', $indent * 2).($isAssoc ? $key.':' : '- ');
+        $contents .= str_repeat(' ', $indent * 2) . ($isAssoc ? $key . ':' : '- ');
         if (is_array($value)) {
             $value = compileYaml($value, $indent + 1);
             $contents .= $isAssoc
                 ? "\n$value"
-                : ''.ltrim($value);
+                : '' . ltrim($value);
 
             continue;
         }
 
-        $contents .= ' '.$value."\n";
+        $contents .= ' ' . $value . "\n";
     }
 
     return $contents;
