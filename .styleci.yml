@@ -1,6 +1,8 @@
 enabled:
   - concat_with_spaces
+  - long_array_syntax
 
 disabled:
   - concat_without_spaces
+  - short_array_syntax
   - single_quote
