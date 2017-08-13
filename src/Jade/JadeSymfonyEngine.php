@@ -36,22 +36,22 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $environment = $kernel->getEnvironment();
         $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
-        $assetsDirectories = [$appDir . '/Resources/assets'];
-        $viewDirectories = [$appDir . '/Resources/views'];
+        $assetsDirectories = array($appDir . '/Resources/assets');
+        $viewDirectories = array($appDir . '/Resources/views');
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
-        $this->jade = new Jade([
+        $this->jade = new Jade(array(
             'assetDirectory'  => $assetsDirectories,
             'viewDirectories' => $viewDirectories,
             'baseDir'         => $baseDir,
             'cache'           => substr($environment, 0, 3) === 'dev' ? false : $cache,
             'environment'     => $environment,
-            'extension'       => ['.pug', '.jade'],
+            'extension'       => array('.pug', '.jade'),
             'outputDirectory' => $webDir,
-            'preRender'       => [$this, 'preRender'],
+            'preRender'       => array($this, 'preRender'),
             'prettyprint'     => $kernel->isDebug(),
-        ]);
+        ));
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
         $app = new AppVariable();
@@ -89,20 +89,20 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $helperPattern = $this->getOption('expressionLanguage') === 'js'
             ? 'view.%s.%s'
             : '$view[\'%s\']->%s';
-        foreach ([
+        foreach (array(
             'random' => 'mt_rand',
-            'asset' => ['assets', 'getUrl'],
-            'asset_version' => ['assets', 'getVersion'],
-            'css_url' => ['css', 'getUrl'],
-            'csrf_token' => ['form', 'csrfToken'],
-            'logout_url' => ['logout', 'url'],
-            'logout_path' => ['logout', 'path'],
-            'url' => ['router', 'url'],
-            'path' => ['router', 'path'],
-            'absolute_url' => ['http', 'generateAbsoluteUrl'],
-            'relative_path' => ['http', 'generateRelativePath'],
-            'is_granted' => ['security', 'isGranted'],
-        ] as $name => $function) {
+            'asset' => array('assets', 'getUrl'),
+            'asset_version' => array('assets', 'getVersion'),
+            'css_url' => array('css', 'getUrl'),
+            'csrf_token' => array('form', 'csrfToken'),
+            'logout_url' => array('logout', 'url'),
+            'logout_path' => array('logout', 'path'),
+            'url' => array('router', 'url'),
+            'path' => array('router', 'path'),
+            'absolute_url' => array('http', 'generateAbsoluteUrl'),
+            'relative_path' => array('http', 'generateRelativePath'),
+            'is_granted' => array('security', 'isGranted'),
+        ) as $name => $function) {
             if (is_array($function)) {
                 $function = sprintf($helperPattern, $function[0], $function[1]);
             }
@@ -143,8 +143,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
-        $this->helpers = [];
-        foreach ([
+        $this->helpers = array();
+        foreach (array(
             'actions',
             'assets',
             'code',
@@ -157,7 +157,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'slots',
             'stopwatch',
             'translator',
-        ] as $helper) {
+        ) as $helper) {
             if (
                 $services->has('templating.helper.' . $helper) &&
                 ($instance = $services->get('templating.helper.' . $helper))
@@ -242,9 +242,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             DIRECTORY_SEPARATOR . $name;
     }
 
-    public function render($name, array $parameters = [])
+    public function render($name, array $parameters = array())
     {
-        foreach (['view', 'this'] as $forbiddenKey) {
+        foreach (array('view', 'this') as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
                 throw new \ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
             }

@@ -181,6 +181,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         $message = null;
+
         try {
             $pugSymfony->getOption('foo');
         } catch (\InvalidArgumentException $e) {
@@ -188,7 +189,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         }
         self::assertSame('foo is not a valid option name.', $message);
 
-        $pugSymfony->setCustomOptions(['foo' => 'bar']);
+        $pugSymfony->setCustomOptions(array('foo' => 'bar'));
         self::assertSame('bar', $pugSymfony->getOption('foo'));
     }
 
@@ -196,7 +197,7 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertSame('<p>Hello</p>', trim($pugSymfony->render('TestBundle::bundle.pug', ['text' => 'Hello'])));
+        self::assertSame('<p>Hello</p>', trim($pugSymfony->render('TestBundle::bundle.pug', array('text' => 'Hello'))));
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
@@ -269,17 +270,17 @@ class PugSymfonyEngineTest extends KernelTestCase
     public function testCustomOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $pugSymfony->setOptions([
+        $pugSymfony->setOptions(array(
             'prettyprint' => true,
             'cache'       => null,
-        ]);
+        ));
 
         $pugSymfony->setOption('indentSize', 3);
 
         self::assertSame(3, $pugSymfony->getOption('indentSize'));
         self::assertSame("<div>\n   <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
 
-        $pugSymfony->setOptions(['indentSize' => 5]);
+        $pugSymfony->setOptions(array('indentSize' => 5));
 
         self::assertSame(5, $pugSymfony->getOption('indentSize'));
         self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
@@ -292,7 +293,7 @@ class PugSymfonyEngineTest extends KernelTestCase
      */
     public function testForbidThis()
     {
-        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['this' => 42]);
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', array('this' => 42));
     }
 
     /**
@@ -301,14 +302,14 @@ class PugSymfonyEngineTest extends KernelTestCase
      */
     public function testForbidView()
     {
-        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['view' => 42]);
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', array('view' => 42));
     }
 
     public function testIssue11BackgroundImage()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'js');
-        $html = trim($pugSymfony->render('background-image.pug', ['image' => 'foo']));
+        $html = trim($pugSymfony->render('background-image.pug', array('image' => 'foo')));
 
         self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
     }
