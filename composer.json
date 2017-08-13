@@ -10,7 +10,7 @@
         "pug/installer": "^0.1.0",
         "pug-php/pug": "^2.1.3",
         "pug-php/pug-assets": "^1.0.1",
-        "symfony/symfony": "^2.8 || ^3.0 || ^4.0"
+        "symfony/symfony": "^2.7 || ^3.0 || ^4.0"
     },
     "require-dev": {
         "phpunit/phpunit": ">=4.8 <6.0",
