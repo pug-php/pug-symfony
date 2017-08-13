@@ -2,6 +2,8 @@
 
 namespace Pug\Tests;
 
+use Composer\Composer;
+use Composer\Script\Event;
 use Jade\Compiler;
 use Jade\Filter\AbstractFilter;
 use Jade\Nodes\Filter;
@@ -309,5 +311,185 @@ class PugSymfonyEngineTest extends KernelTestCase
         $html = trim($pugSymfony->render('background-image.pug', ['image' => 'foo']));
 
         self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
+    }
+
+    /**
+     * @group install
+     */
+    public function testInstall()
+    {
+        include_once __DIR__ . '/CaptureIO.php';
+        $io = new CaptureIO();
+        $composer = new Composer();
+        $installedFile = __DIR__ . '/../../installed';
+        touch($installedFile);
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io)));
+
+        unlink($installedFile);
+        $io->setInteractive(true);
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io)));
+        self::assertTrue(file_exists($installedFile));
+
+        unlink($installedFile);
+        $io->setPermissive(true);
+        $io->reset();
+        $dir = sys_get_temp_dir() . '/pug-temp';
+        $fs = new Filesystem();
+        $fs->remove($dir);
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'framework entry not found in config.yml.',
+            'Sorry, AppKernel.php has a format we can\'t handle automatically.',
+        ], $io->getLastOutput());
+        clearstatcache();
+        self::assertFalse(file_exists($installedFile));
+
+        foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
+            $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
+        }
+        $io->reset();
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'templating.engine.pug setting in config.yml already exists.',
+            'Pug engine already exist in framework.templating.engines in config.yml.',
+            'The bundle already exists in AppKernel.php',
+        ], $io->getLastOutput());
+        clearstatcache();
+        self::assertTrue(file_exists($installedFile));
+
+        unlink($installedFile);
+        file_put_contents($dir . '/app/config/config.yml', str_replace(
+            ['pug', 'services:'],
+            ['x', 'x:'],
+            file_get_contents($dir . '/app/config/config.yml')
+        ));
+        file_put_contents($dir . '/app/AppKernel.php', str_replace(
+            'Pug',
+            'X',
+            file_get_contents($dir . '/app/AppKernel.php')
+        ));
+        $io->reset();
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'Engine service added in config.yml',
+            'Engine added to framework.templating.engines in config.yml',
+            'Bundle added to AppKernel.php',
+        ], $io->getLastOutput());
+        self::assertContains(
+            'Pug\PugSymfonyBundle\PugSymfonyBundle()',
+            file_get_contents($dir . '/app/AppKernel.php')
+        );
+        self::assertContains(
+            'templating.engine.pug',
+            file_get_contents($dir . '/app/config/config.yml')
+        );
+        clearstatcache();
+        self::assertTrue(file_exists($installedFile));
+
+        $io->reset();
+        unlink($installedFile);
+        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
+            'foo:',
+            '  bar: biz',
+            'framework:',
+            '  bar1: biz',
+            '  templating:',
+            '    bar2: biz',
+            '    engines:',
+            '      - pug',
+            '      - php',
+            '    bar3: biz',
+            '  bar4: biz',
+            'bar: biz',
+        ]));
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'Engine service added in config.yml',
+            'Automatic engine adding is only possible if framework.templating.engines is a ' .
+            'one-line setting in config.yml.',
+            'The bundle already exists in AppKernel.php',
+        ], $io->getLastOutput());
+        clearstatcache();
+        self::assertFalse(file_exists($installedFile));
+
+        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
+            'foo:',
+            '  bar: biz',
+            'framework:',
+            '  bar1: biz',
+            '  templating:',
+            '    bar2: biz',
+            '  templating:',
+            '    bar2: biz',
+            '    engines: ["twig","php"]',
+            '    bar3: biz',
+            '  engines: ["twig","php"]',
+            '  bar4: biz',
+            'bar: biz',
+        ]));
+        PugSymfonyEngine::install(new Event('install', $composer, $io), $dir);
+        self::assertSame(implode("\n", [
+            'foo:',
+            '  bar: biz',
+            'services:',
+            '    templating.engine.pug:',
+            '        class: Pug\PugSymfonyEngine',
+            '        arguments: ["@kernel"]',
+            '',
+            'framework:',
+            '  bar1: biz',
+            '  templating:',
+            '    bar2: biz',
+            '  templating:',
+            '    bar2: biz',
+            '    engines: ["pug","twig","php"]',
+            '    bar3: biz',
+            '  engines: ["twig","php"]',
+            '  bar4: biz',
+            'bar: biz',
+        ]), file_get_contents($dir . '/app/config/config.yml'));
+        self::assertTrue(file_exists($installedFile));
+        unlink($installedFile);
+
+        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
+            'foo:',
+            '  bar: biz',
+            'framework:',
+            '  bar1: biz',
+            '  templating:',
+            '    bar2: biz',
+            '  templating:',
+            '    bar2: biz',
+            '    bar3: biz',
+            'bar:',
+            '  engines: ["twig","php"]',
+            '  bar4: biz',
+        ]));
+        PugSymfonyEngine::install(new Event('install', $composer, $io), $dir);
+        self::assertSame(implode("\n", [
+            'foo:',
+            '  bar: biz',
+            'services:',
+            '    templating.engine.pug:',
+            '        class: Pug\PugSymfonyEngine',
+            '        arguments: ["@kernel"]',
+            '',
+            'framework:',
+            '  bar1: biz',
+            '  templating:',
+            '    bar2: biz',
+            '  templating:',
+            '    bar2: biz',
+            '    bar3: biz',
+            'bar:',
+            '  engines: ["twig","php"]',
+            '  bar4: biz',
+        ]), file_get_contents($dir . '/app/config/config.yml'));
+        self::assertFalse(file_exists($installedFile));
     }
 }
