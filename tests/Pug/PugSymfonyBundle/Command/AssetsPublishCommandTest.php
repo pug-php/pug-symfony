@@ -21,10 +21,10 @@ class AssetsPublishCommandTest extends KernelTestCase
 
         $command = $application->find('assets:publish');
         $commandTester = new CommandTester($command);
-        $commandTester->execute([
+        $commandTester->execute(array(
             'command'  => $command->getName(),
             '--env'    => 'prod',
-        ]);
+        ));
 
         $output = $commandTester->getDisplay();
 
