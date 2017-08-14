@@ -325,12 +325,12 @@ class PugSymfonyEngineTest extends KernelTestCase
         $installedFile = __DIR__ . '/../../installed';
         touch($installedFile);
 
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io)));
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
 
         unlink($installedFile);
         $io->setInteractive(true);
 
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io)));
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
         self::assertTrue(file_exists($installedFile));
 
         unlink($installedFile);
@@ -339,6 +339,15 @@ class PugSymfonyEngineTest extends KernelTestCase
         $dir = sys_get_temp_dir() . '/pug-temp';
         $fs = new Filesystem();
         $fs->remove($dir);
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'Not inside a composer vendor directory, skipped.',
+        ], $io->getLastOutput());
+
+        $io->reset();
+        $fs->mkdir($dir);
+        touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
@@ -403,11 +412,13 @@ class PugSymfonyEngineTest extends KernelTestCase
         $composer = new Composer();
         $installedFile = __DIR__ . '/../../installed';
         $io->setPermissive(true);
+        $io->setInteractive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
         $fs = new Filesystem();
-        $fs->remove($dir);
-        unlink($installedFile);
+        $fs->mkdir($dir);
+        touch($dir . '/composer.json');
+        file_exists($installedFile) && unlink($installedFile);
         clearstatcache();
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [

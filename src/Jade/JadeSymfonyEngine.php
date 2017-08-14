@@ -301,10 +301,20 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $baseDirectory = __DIR__ . '/../..';
 
         if (!$io->isInteractive() || file_exists($baseDirectory . '/installed')) {
+            $io->write('Pug yet installed, setup skipped.');
+
             return true;
         }
 
-        $dir = $dir ?: $baseDirectory . '/../../..';
+        $dir = is_string($dir) && is_dir($dir)
+            ? $dir
+            : $baseDirectory . '/../../..';
+
+        if (!file_exists($dir . '/composer.json')) {
+            $io->write('Not inside a composer vendor directory, setup skipped.');
+
+            return true;
+        }
 
         $service = "\n    templating.engine.pug:\n" .
             "        class: Pug\PugSymfonyEngine\n" .
