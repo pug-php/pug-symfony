@@ -301,8 +301,6 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $baseDirectory = __DIR__ . '/../..';
 
         if (!$io->isInteractive() || file_exists($baseDirectory . '/installed')) {
-            $io->write('Pug yet installed, setup skipped.');
-
             return true;
         }
 

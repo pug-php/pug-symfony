@@ -342,7 +342,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
-            'Not inside a composer vendor directory, skipped.',
+            'Not inside a composer vendor directory, setup skipped.',
         ], $io->getLastOutput());
 
         $io->reset();
@@ -420,6 +420,9 @@ class PugSymfonyEngineTest extends KernelTestCase
         touch($dir . '/composer.json');
         file_exists($installedFile) && unlink($installedFile);
         clearstatcache();
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        unlink($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
