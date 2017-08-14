@@ -407,8 +407,8 @@ class PugSymfonyEngineTest extends KernelTestCase
         $dir = sys_get_temp_dir() . '/pug-temp';
         $fs = new Filesystem();
         $fs->remove($dir);
+        unlink($installedFile);
         clearstatcache();
-        self::assertFalse(file_exists($installedFile));
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
