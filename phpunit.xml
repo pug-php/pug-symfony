@@ -1,5 +1,5 @@
 <phpunit
-    bootstrap="vendor/autoload.php"
+    bootstrap="tests/bootstrap.php"
     processIsolation="true"
     colors="true"
     convertErrorsToExceptions="true"
@@ -20,6 +20,7 @@
     </filter>
     <php>
         <server name="KERNEL_DIR" value="tests/project/app/" />
+        <server name="KERNEL_CLASS" value="AppKernel" />
     </php>
     <logging>
         <log type="coverage-clover" target="coverage/result.xml" />

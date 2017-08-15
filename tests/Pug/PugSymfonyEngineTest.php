@@ -7,7 +7,6 @@ use Composer\Script\Event;
 use Jade\Compiler;
 use Jade\Filter\AbstractFilter;
 use Jade\Nodes\Filter;
-use Jade\Symfony\JadeEngine as Jade;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
@@ -109,7 +108,7 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertInstanceOf(Jade::class, $pugSymfony->getEngine());
+        self::assertInstanceOf('\\Jade\\Symfony\\JadeEngine', $pugSymfony->getEngine());
     }
 
     public function testFallbackAppDir()
@@ -133,6 +132,12 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testSecurityToken()
     {
+        if (version_compare(getenv('SYMFONY_VERSION'), '3.2') < 0) {
+            self::markTestSkipped('security.token_storage compatible since 3.3.');
+
+            return;
+        }
+
         $tokenStorage = new TokenStorage();
         self::$kernel->getContainer()->set('security.token_storage', $tokenStorage);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -176,6 +181,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         $message = null;
+
         try {
             $pugSymfony->getOption('foo');
         } catch (\InvalidArgumentException $e) {
@@ -237,9 +243,9 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         self::assertFalse($pugSymfony->hasFilter('upper'));
 
-        $pugSymfony->filter('upper', Upper::class);
+        $pugSymfony->filter('upper', '\\Pug\\Tests\\Upper');
         self::assertTrue($pugSymfony->hasFilter('upper'));
-        self::assertSame(Upper::class, $pugSymfony->getFilter('upper'));
+        self::assertSame('\\Pug\\Tests\\Upper', $pugSymfony->getFilter('upper'));
         self::assertSame('FOO', trim($pugSymfony->render('filter.pug')));
     }
 
@@ -319,12 +325,12 @@ class PugSymfonyEngineTest extends KernelTestCase
         $installedFile = __DIR__ . '/../../installed';
         touch($installedFile);
 
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io)));
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
 
         unlink($installedFile);
         $io->setInteractive(true);
 
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io)));
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
         self::assertTrue(file_exists($installedFile));
 
         unlink($installedFile);
@@ -333,6 +339,15 @@ class PugSymfonyEngineTest extends KernelTestCase
         $dir = sys_get_temp_dir() . '/pug-temp';
         $fs = new Filesystem();
         $fs->remove($dir);
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'Not inside a composer vendor directory, setup skipped.',
+        ], $io->getLastOutput());
+
+        $io->reset();
+        $fs->mkdir($dir);
+        touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
@@ -385,32 +400,29 @@ class PugSymfonyEngineTest extends KernelTestCase
         );
         clearstatcache();
         self::assertTrue(file_exists($installedFile));
+    }
 
+    /**
+     * @group install
+     */
+    public function testInstallPartialStates()
+    {
+        include_once __DIR__ . '/CaptureIO.php';
+        $io = new CaptureIO();
+        $composer = new Composer();
+        $installedFile = __DIR__ . '/../../installed';
+        $io->setPermissive(true);
+        $io->setInteractive(true);
         $io->reset();
-        unlink($installedFile);
-        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    engines:',
-            '      - pug',
-            '      - php',
-            '    bar3: biz',
-            '  bar4: biz',
-            'bar: biz',
-        ]));
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Engine service added in config.yml',
-            'Automatic engine adding is only possible if framework.templating.engines is a ' .
-            'one-line setting in config.yml.',
-            'The bundle already exists in AppKernel.php',
-        ], $io->getLastOutput());
+        $dir = sys_get_temp_dir() . '/pug-temp';
+        $fs = new Filesystem();
+        $fs->mkdir($dir);
+        touch($dir . '/composer.json');
+        file_exists($installedFile) && unlink($installedFile);
         clearstatcache();
-        self::assertFalse(file_exists($installedFile));
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        unlink($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
