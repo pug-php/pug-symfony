@@ -173,7 +173,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $this->helpers['logout'] = new Logout($helper);
         }
         $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
-        $this->helpers['http'] = new HttpFoundationExtension($services->get('request_stack'), $services->get('router.request_context'));
+        /* @var \Symfony\Component\HttpFoundation\RequestStack $stack */
+        $stack = $services->get('request_stack');
+        /* @var \Symfony\Component\Routing\RequestContext $context */
+        $context = $services->has('router.request_context')
+            ? $services->get('router.request_context')
+            : $services->get('router')->getContext();
+        $this->helpers['http'] = new HttpFoundationExtension($stack, $context);
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
