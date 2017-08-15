@@ -10,29 +10,14 @@
     "pug/installer": "^0.1.0",
     "pug-php/pug": "^2.1.3",
     "pug-php/pug-assets": "^1.0.1",
-    "symfony/symfony": "4.0.x-dev"
+    "symfony/symfony": "^2.7 || ^3.0 || 4.0.x-dev as 3.99"
   },
   "require-dev": {
     "phpunit/phpunit": "^4.8 || ^5.7 || ~6.3.0",
-    "kylekatarnls-codeclimate/php-test-reporter": "dev-symfony-4",
-    "satooshi/php-coveralls": "dev-symfony-4",
-    "composer/composer": "dev-symfony-4"
+    "codeclimate/php-test-reporter": "^0.4.0",
+    "composer/composer": ">= 1.0.0"
   },
   "minimum-stability": "dev",
-  "repositories": [
-    {
-      "type": "git",
-      "url": "https://github.com/kylekatarnls/composer.git"
-    },
-    {
-      "type": "git",
-      "url": "https://github.com/kylekatarnls/php-test-reporter.git"
-    },
-    {
-      "type": "git",
-      "url": "https://github.com/kylekatarnls/php-coveralls.git"
-    }
-  ],
   "license": "MIT",
   "authors": [
     {
@@ -56,10 +41,5 @@
   },
   "extra": {
     "installer": "Pug\\PugSymfonyEngine::install"
-  },
-  "config": {
-    "platform": {
-      "php": "7.1.3"
-    }
   }
 }
