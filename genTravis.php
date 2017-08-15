@@ -45,7 +45,7 @@ foreach ($matrix as $phpVersion => $symfonyVersions) {
     foreach ($symfonyVersions as $symphonyVersion) {
         $environment = [
             'php' => $phpVersion,
-            'env' => 'SYMFONY_VERSION=' . $symphonyVersion,
+            'env' => "SYMFONY_VERSION='$symphonyVersion'",
         ];
         if ($phpVersion === 'hhvm') {
             $environment['dist'] = 'trusty';
