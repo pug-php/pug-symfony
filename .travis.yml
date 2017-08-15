@@ -54,7 +54,7 @@ matrix:
     - php: 7.1
       env: SYMFONY_VERSION=3.3.*
     - php: 7.1
-      env: SYMFONY_VERSION=4.0.*
+      env: SYMFONY_VERSION=4.0.x-dev as 3.99
     - php: 7.2
       env: SYMFONY_VERSION=2.7.*
     - php: 7.2
@@ -68,7 +68,7 @@ matrix:
     - php: 7.2
       env: SYMFONY_VERSION=3.3.*
     - php: 7.2
-      env: SYMFONY_VERSION=4.0.*
+      env: SYMFONY_VERSION=4.0.x-dev as 3.99
     - php: hhvm
       env: SYMFONY_VERSION=2.7.*
       dist: trusty
@@ -94,16 +94,16 @@ matrix:
       dist: trusty
       sudo: required
 before_script:
-  -  travis_retry composer self-update
-  -  if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require "symfony/symfony:${SYMFONY_VERSION}" --no-update; fi;
-  -  travis_retry composer update --no-interaction
-  -  chmod -R 0777 tests/project
+  - travis_retry composer self-update
+  - if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require "symfony/symfony:${SYMFONY_VERSION}" --no-update; fi;
+  - travis_retry composer update --no-interaction
+  - chmod -R 0777 tests/project
 script:
-  -  vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
+  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
 after_script:
-  -  vendor/bin/test-reporter --coverage-report coverage.xml
+  - vendor/bin/test-reporter --coverage-report coverage.xml
 after_success:
-  -  bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
 addons:
   code_climate:
     repo_token: ae72d604c76bbd8cd0d0b8318930e3a28afd007ab8381d2a8c49ce296ca2b292
