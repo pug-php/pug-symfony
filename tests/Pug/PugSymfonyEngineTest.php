@@ -215,7 +215,7 @@ class PugSymfonyEngineTest extends KernelTestCase
                 'background-position:50% -402px;' .
                 'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
-            trim($pugSymfony->render('style-php.pug'))
+            str_replace('\'assets/', '\'/assets/', trim($pugSymfony->render('style-php.pug')))
         );
     }
 
@@ -233,7 +233,7 @@ class PugSymfonyEngineTest extends KernelTestCase
                 'background-position:50% -402px;' .
                 'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
-            trim($pugSymfony->render('style-js.pug'))
+            str_replace('\'assets/', '\'/assets/', trim($pugSymfony->render('style-js.pug')))
         );
     }
 
