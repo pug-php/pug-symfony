@@ -116,7 +116,6 @@ script:
   - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
 after_script:
   - php tests/sendCoverage.php
-after_success:
   - bash <(curl -s https://codecov.io/bash)
 addons:
   code_climate:
