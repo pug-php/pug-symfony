@@ -445,6 +445,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             '  bar: biz',
             'services:',
             '    templating.engine.pug:',
+            '        public: true',
             '        class: Pug\PugSymfonyEngine',
             '        arguments: ["@kernel"]',
             '',
