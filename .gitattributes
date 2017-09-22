@@ -7,4 +7,3 @@
 /*.md                   export-ignore
 /phpunit.xml            export-ignore
 /getTravis.php          export-ignore
-/setSymfonyVersion.php  export-ignore
