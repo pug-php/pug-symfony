@@ -5,6 +5,10 @@ $composerFile = __DIR__ . '/../composer.json';
 $composer = file_get_contents($composerFile);
 $newContent = preg_replace('/"symfony\/symfony"\s*:\s*"[^"]+"/', '"symfony/symfony": "' . $version . '"', $composer);
 
+if (version_compare(PHP_VERSION, '7.2') >= 0) {
+    // https://github.com/symfony/symfony/pull/23952
+    $newContent = preg_replace('/"symfony\/phpunit-bridge"\s*:\s*"[^"]+",/', '', $composer);
+}
 if ($newContent === $composer) {
     echo 'symfony/symfony not found in ./composer.json';
 
