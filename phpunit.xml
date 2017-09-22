@@ -8,7 +8,7 @@
     >
     <testsuites>
         <testsuite name="Adapter">
-            <directory suffix=".php">tests/</directory>
+            <directory suffix="Test.php">tests/</directory>
             <exclude>tests/project/app/cache</exclude>
             <exclude>tests/project/app/logs</exclude>
         </testsuite>
