@@ -19,7 +19,11 @@ $travisData = [
         'vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml',
     ],
     'after_script'  => [
-        'vendor/bin/test-reporter --coverage-report coverage.xml',
+        implode(' ', [
+            'if [ $(phpenv version-name) = \'5.6\' ];',
+            'then vendor/bin/test-reporter --coverage-report coverage.xml;',
+            'fi;',
+        ]),
     ],
     'after_success' => [
         'bash <(curl -s https://codecov.io/bash)',
