@@ -115,7 +115,9 @@ before_script:
 script:
   - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
 after_script:
-  - tests/sendCoverage.php
+  - if [ $(phpenv version-name) = '5.6' ]; then
+    vendor/bin/test-reporter --coverage-report coverage.xml
+    ; fi
   - bash <(curl -s https://codecov.io/bash)
 addons:
   code_climate:
