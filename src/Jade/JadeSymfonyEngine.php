@@ -321,6 +321,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
 
         $service = "\n    templating.engine.pug:\n" .
+            "        public: true\n" .
             "        class: Pug\PugSymfonyEngine\n" .
             "        arguments: [\"@kernel\"]\n";
 

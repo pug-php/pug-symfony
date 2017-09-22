@@ -17,6 +17,8 @@ matrix:
       env: SYMFONY_VERSION='3.2.*'
     - php: 5.5
       env: SYMFONY_VERSION='3.3.*'
+    - php: 5.5
+      env: SYMFONY_VERSION='3.4.x-dev as 3.4'
     - php: 5.6
       env: SYMFONY_VERSION='2.7.*'
     - php: 5.6
@@ -29,6 +31,8 @@ matrix:
       env: SYMFONY_VERSION='3.2.*'
     - php: 5.6
       env: SYMFONY_VERSION='3.3.*'
+    - php: 5.6
+      env: SYMFONY_VERSION='3.4.x-dev as 3.4'
     - php: 7.0
       env: SYMFONY_VERSION='2.7.*'
     - php: 7.0
@@ -41,6 +45,8 @@ matrix:
       env: SYMFONY_VERSION='3.2.*'
     - php: 7.0
       env: SYMFONY_VERSION='3.3.*'
+    - php: 7.0
+      env: SYMFONY_VERSION='3.4.x-dev as 3.4'
     - php: 7.1
       env: SYMFONY_VERSION='2.7.*'
     - php: 7.1
@@ -53,6 +59,8 @@ matrix:
       env: SYMFONY_VERSION='3.2.*'
     - php: 7.1
       env: SYMFONY_VERSION='3.3.*'
+    - php: 7.1
+      env: SYMFONY_VERSION='3.4.x-dev as 3.4'
     - php: 7.1
       env: SYMFONY_VERSION='4.0.x-dev as 3.99'
     - php: 7.2
@@ -68,6 +76,8 @@ matrix:
     - php: 7.2
       env: SYMFONY_VERSION='3.3.*'
     - php: 7.2
+      env: SYMFONY_VERSION='3.4.x-dev as 3.4'
+    - php: 7.2
       env: SYMFONY_VERSION='4.0.x-dev as 3.99'
     - php: hhvm
       env: SYMFONY_VERSION='2.7.*'
@@ -91,6 +101,10 @@ matrix:
       sudo: required
     - php: hhvm
       env: SYMFONY_VERSION='3.3.*'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env: SYMFONY_VERSION='3.4.x-dev as 3.4'
       dist: trusty
       sudo: required
 before_script:
