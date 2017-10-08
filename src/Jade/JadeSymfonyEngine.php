@@ -3,7 +3,6 @@
 namespace Jade;
 
 use Jade\Symfony\Css;
-use Jade\Symfony\JadeEngine as Jade;
 use Jade\Symfony\Logout;
 use Pug\Assets;
 use Symfony\Bridge\Twig\AppVariable;
@@ -45,11 +44,14 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
-        $this->jade = new Jade([
+        $pugClassName = $this->getEngineClassName();
+        $debug = substr($environment, 0, 3) === 'dev';
+        $this->jade = new $pugClassName([
+            'debug'           => $debug,
             'assetDirectory'  => $assetsDirectories,
             'viewDirectories' => $viewDirectories,
             'baseDir'         => $baseDir,
-            'cache'           => substr($environment, 0, 3) === 'dev' ? false : $cache,
+            'cache'           => $debug ? false : $cache,
             'environment'     => $environment,
             'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
@@ -66,6 +68,14 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $app->setTokenStorage($container->get('security.token_storage'));
         }
         $this->jade->share('app', $app);
+    }
+
+    protected function getEngineClassName()
+    {
+        $engineName = class_exists('\\Pug\\Pug') ? 'Pug' : 'Jade';
+        include_once __DIR__ . '/Symfony/' . $engineName . 'Engine.php';
+
+        return '\\Jade\\Symfony\\' . $engineName . 'Engine';
     }
 
     protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories, &$viewDirectories)
@@ -189,7 +199,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function getOption($name)
     {
-        return $this->jade->getOption($name);
+        return method_exists($this->jade, 'hasOption') && !$this->jade->hasOption($name)
+            ? null
+            : $this->jade->getOption($name);
     }
 
     public function setOption($name, $value)
@@ -261,6 +273,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
         $parameters['view'] = $this;
 
+        file_put_contents('temp.php', $this->jade->compileFile($this->getFileFromName($name)));
+
         return $this->jade->render($this->getFileFromName($name), $parameters);
     }
 
@@ -271,7 +285,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function supports($name)
     {
-        foreach ($this->jade->getExtensions() as $extension) {
+        $extensions = method_exists($this->jade, 'getExtensions')
+            ? $this->jade->getExtensions()
+            : $this->jade->getOption('extensions');
+        foreach ($extensions as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
             }

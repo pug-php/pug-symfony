@@ -16,8 +16,14 @@ class AssetsPublishCommand extends ContainerAwareCommand
             ->setDescription('Export your assets in the web directory.');
     }
 
-    protected function cacheTemplates(Jade $pug)
+    protected function cacheTemplates($pug)
     {
+        if (!($pug instanceof \Jade\Jade) && !($pug instanceof \Pug\Pug) && !($pug instanceof \Phug\Renderer)) {
+            throw new \InvalidArgumentException(
+                'Allowed pug engine are Jade\\Jade, Pug\\Pug or Phug\\Renderer, ' . get_class($pug) . ' given.'
+            );
+        }
+
         $success = 0;
         $errors = 0;
         $directories = [];

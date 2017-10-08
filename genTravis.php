@@ -9,7 +9,7 @@ $travisData = [
         'travis_retry composer self-update',
         implode(' ', [
             'if [ "$SYMFONY_VERSION" != "" ];',
-            'then travis_retry composer require "symfony/symfony:${SYMFONY_VERSION}" --no-update;',
+            'then travis_retry php tests/setSymfonyVersion.php $SYMFONY_VERSION $PUG_VERSION;',
             'fi;',
         ]),
         'travis_retry composer update --no-interaction',
@@ -36,26 +36,46 @@ $travisData = [
 ];
 
 $matrix = [
-    '5.4'  => ['2.7.*', '2.8.*'],
-    '5.5'  => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
-    '5.6'  => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
-    '7.0'  => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
-    '7.1'  => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4', '4.0.x-dev as 3.99'],
-    '7.2'  => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4', '4.0.x-dev as 3.99'],
-    'hhvm' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
+    '5.4'  => [
+        '^2.7.1'      => ['2.7.*', '2.8.*'],
+    ],
+    '5.5'  => [
+        '^3.0.0@beta' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
+    ],
+    '5.6'  => [
+        '^3.0.0@beta' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
+    ],
+    '7.0'  => [
+        '^3.0.0@beta' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
+    ],
+    '7.1'  => [
+        '^3.0.0@beta' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4', '4.0.x-dev as 3.99'],
+    ],
+    '7.2'  => [
+        '^2.7.1'      => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4', '4.0.x-dev as 3.99'],
+        '^3.0.0@beta' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4', '4.0.x-dev as 3.99'],
+    ],
+    'hhvm' => [
+        '^2.7.1'      => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.x-dev as 3.4'],
+    ],
 ];
 
-foreach ($matrix as $phpVersion => $symfonyVersions) {
-    foreach ($symfonyVersions as $symphonyVersion) {
-        $environment = [
-            'php' => $phpVersion,
-            'env' => "SYMFONY_VERSION='$symphonyVersion'",
-        ];
-        if ($phpVersion === 'hhvm') {
-            $environment['dist'] = 'trusty';
-            $environment['sudo'] = 'required';
+foreach ($matrix as $phpVersion => $pugVersions) {
+    foreach ($pugVersions as $pugVersion => $symfonyVersions) {
+        foreach ($symfonyVersions as $symphonyVersion) {
+            $environment = [
+                'php' => $phpVersion,
+                'env' => [
+                    "SYMFONY_VERSION='$symphonyVersion'",
+                    "PUG_VERSION='$pugVersion'",
+                ],
+            ];
+            if ($phpVersion === 'hhvm') {
+                $environment['dist'] = 'trusty';
+                $environment['sudo'] = 'required';
+            }
+            $travisData['matrix']['include'][] = $environment;
         }
-        $travisData['matrix']['include'][] = $environment;
     }
 }
 

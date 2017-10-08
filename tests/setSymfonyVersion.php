@@ -1,9 +1,10 @@
 <?php
 
-$version = implode(' ', array_slice($argv, 1));
+list($symfonyVersion, $pugVersion) = array_slice($argv, 1);
 $composerFile = __DIR__ . '/../composer.json';
 $composer = file_get_contents($composerFile);
-$newContent = preg_replace('/"symfony\/symfony"\s*:\s*"[^"]+"/', '"symfony/symfony": "' . $version . '"', $composer);
+$newContent = preg_replace('/"symfony\/symfony"\s*:\s*"[^"]+"/', '"symfony/symfony": "' . $symfonyVersion . '"', $composer);
+$newContent = preg_replace('/"pug-php\/pug"\s*:\s*"[^"]+"/', '"pug-php/pug": "' . $pugVersion . '"', $composer);
 
 if (version_compare(PHP_VERSION, '7.2') >= 0) {
     // https://github.com/symfony/symfony/pull/23952
