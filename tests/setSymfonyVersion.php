@@ -1,6 +1,8 @@
 <?php
 
-list($symfonyVersion, $pugVersion) = array_slice($argv, 1);
+$argString = implode("' '", array_slice($argv, 1));
+$pieces = array_values(array_filter(array_map('trim', explode("'", $argString)), 'strlen'));
+list($symfonyVersion, $pugVersion) = $pieces;
 $composerFile = __DIR__ . '/../composer.json';
 $composer = file_get_contents($composerFile);
 $newContent = preg_replace('/"symfony\/symfony"\s*:\s*"[^"]+"/', '"symfony/symfony": "' . $symfonyVersion . '"', $composer);

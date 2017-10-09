@@ -52,6 +52,13 @@ $pug->getEngine()->addKeyword('customKeyword', $bar);
 See the options in the pug-php README: https://github.com/pug-php/pug
 And methods directly available on the service: https://github.com/pug-php/pug-symfony/blob/master/src/Jade/JadeSymfonyEngine.php
 
+Initial options can also be passed in parameters in your **config.yml**:
+```yaml
+parameters:
+    pug:
+        expressionLanguage: php
+```
+
 ## Usage
 Create jade views by creating files with .pug extension
 in **app/Resources/views** such as contact.pug with

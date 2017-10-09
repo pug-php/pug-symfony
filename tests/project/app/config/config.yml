@@ -10,6 +10,10 @@ framework:
     session:
         storage_id: session.storage.filesystem
 
+parameters:
+    pug:
+        expressionLanguage: js
+
 services:
     templating.engine.pug:
         public: true

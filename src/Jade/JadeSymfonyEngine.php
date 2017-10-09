@@ -47,7 +47,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
         $pug3 = is_a($pugClassName, '\\Phug\\Renderer', true);
-        $this->jade = new $pugClassName([
+        $this->jade = new $pugClassName(array_merge([
             'debug'           => $debug,
             'assetDirectory'  => $assetsDirectories,
             'viewDirectories' => $viewDirectories,
@@ -58,7 +58,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'outputDirectory' => $webDir,
             'preRender'       => $pug3 ? null : [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
-        ]);
+        ], $container->getParameter('pug') ?: []));
         if ($pug3) {
             $format = $this->jade->getCompiler()->getFormatter()->getFormatInstance();
             $transform = $format->getOption('patterns.transform_expression');
