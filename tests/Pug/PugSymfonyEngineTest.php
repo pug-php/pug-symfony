@@ -8,6 +8,8 @@ use Pug\Filter\AbstractFilter;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
+use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
@@ -58,6 +60,41 @@ class LogoutUrlHelper extends BaseLogoutUrlHelper
     public function __construct()
     {
         parent::__construct(new LogoutUrlGenerator());
+    }
+}
+
+class TestKernel extends \AppKernel
+{
+    /**
+     * @var \Closure
+     */
+    private $containerConfigurator;
+
+    public function __construct(\Closure $containerConfigurator, $environment = 'test', $debug = false)
+    {
+        $this->containerConfigurator = $containerConfigurator;
+
+        parent::__construct($environment, $debug);
+
+        $this->rootDir = realpath(__DIR__ . '/../project/app');
+    }
+
+    public function registerContainerConfiguration(LoaderInterface $loader)
+    {
+        parent::registerContainerConfiguration($loader);
+        $loader->load(__DIR__ . '/../project/app/config/config.yml');
+        $loader->load($this->containerConfigurator);
+    }
+
+    /**
+     * Override the parent method to force recompiling the container.
+     * For performance reasons the container is also not dumped to disk.
+     */
+    protected function initializeContainer()
+    {
+        $this->container = $this->buildContainer();
+        $this->container->compile();
+        $this->container->set('kernel', $this);
     }
 }
 
@@ -155,7 +192,13 @@ class PugSymfonyEngineTest extends KernelTestCase
     public function testCustomHelper()
     {
         $helper = new CustomHelper();
-        $pugSymfony = new PugSymfonyEngine(self::$kernel, $helper);
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'php',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel, $helper);
 
         self::assertTrue(isset($pugSymfony['custom']));
         self::assertSame($helper, $pugSymfony['custom']);

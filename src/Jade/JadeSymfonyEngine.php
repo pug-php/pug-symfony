@@ -89,18 +89,20 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories, &$viewDirectories)
     {
         $baseDir = null;
-        foreach (scandir($srcDir) as $directory) {
-            if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
-                continue;
-            }
-            $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
-            if (is_dir($viewDirectory)) {
-                if (is_null($baseDir)) {
-                    $baseDir = $viewDirectory;
+        if (file_exists($srcDir)) {
+            foreach (scandir($srcDir) as $directory) {
+                if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
+                    continue;
                 }
-                $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
+                $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
+                if (is_dir($viewDirectory)) {
+                    if (is_null($baseDir)) {
+                        $baseDir = $viewDirectory;
+                    }
+                    $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
+                }
+                $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
             }
-            $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
         }
 
         return $baseDir ?: $appDir . '/Resources/views';
@@ -295,8 +297,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             }
         }
         $parameters['view'] = $this;
+        $method = method_exists($this->jade, 'renderFile')
+            ? [$this->jade, 'renderFile']
+            : [$this->jade, 'render'];
 
-        return $this->jade->render($this->getFileFromName($name), $parameters);
+        return call_user_func($method, $this->getFileFromName($name), $parameters);
     }
 
     public function exists($name)
