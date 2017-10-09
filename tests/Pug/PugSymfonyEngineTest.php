@@ -124,7 +124,13 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testPreRender()
     {
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'php',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
         $code = $pugSymfony->preRender('p=asset("foo")');
 
         self::assertSame('p=$view[\'assets\']->getUrl("foo")', $code);
