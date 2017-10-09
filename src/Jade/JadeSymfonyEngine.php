@@ -46,6 +46,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
         $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
+        $pug3 = is_a($pugClassName, '\\Phug\\Renderer', true);
         $this->jade = new $pugClassName([
             'debug'           => $debug,
             'assetDirectory'  => $assetsDirectories,
@@ -55,9 +56,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'environment'     => $environment,
             'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            'preRender'       => [$this, 'preRender'],
+            'preRender'       => $pug3 ? null : [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
         ]);
+        if ($pug3) {
+            $format = $this->jade->getCompiler()->getFormatter()->getFormatInstance();
+            $transform = $format->getOption('patterns.transform_expression');
+            $format->setPattern('transform_expression', function ($code) use ($format, $transform) {
+                return call_user_func($format->getOption('pattern'), $transform, $this->replaceCode($code));
+            });
+        }
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
         $app = new AppVariable();
@@ -98,6 +106,15 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $baseDir ?: $appDir . '/Resources/views';
     }
 
+    protected function replaceFunction($name, $function, $code)
+    {
+        return mb_substr(preg_replace(
+            '/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/',
+            $function . '(',
+            '=' . $code
+        ), 1);
+    }
+
     protected function replaceCode($pugCode)
     {
         $helperPattern = $this->getOption('expressionLanguage') === 'js'
@@ -120,7 +137,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             if (is_array($function)) {
                 $function = sprintf($helperPattern, $function[0], $function[1]);
             }
-            $pugCode = preg_replace('/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
+            $output = '';
+            $input = $pugCode;
+            while (preg_match('/^([^\'"]*)("(?:\\\\[\\S\\s]|[^"\\\\])*"|\'(?:\\\\[\\S\\s]|[^\'\\\\])*\')/', $input, $match)) {
+                $input = mb_substr($input, mb_strlen($match[0]));
+                $output .= $this->replaceFunction($name, $function, $match[1]) . $match[2];
+            }
+            $pugCode = $output . $this->replaceFunction($name, $function, $input);
         }
 
         return $pugCode;
@@ -272,8 +295,6 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             }
         }
         $parameters['view'] = $this;
-
-        file_put_contents('temp.php', $this->jade->compileFile($this->getFileFromName($name)));
 
         return $this->jade->render($this->getFileFromName($name), $parameters);
     }

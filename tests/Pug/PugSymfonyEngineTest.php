@@ -203,9 +203,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
-    /**
-     * @group i
-     */
     public function testAssetHelperPhp()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -221,8 +218,8 @@ class PugSymfonyEngineTest extends KernelTestCase
                 'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
             preg_replace(
-                '/<div([^>]+)( class="[^"]+")>/',
-                '<div$2$1>',
+                '/<div( class="[^"]+")(.+?)></',
+                '<div$2$1><',
                 str_replace(['\'assets/', "\r"], ['\'/assets/', ''], trim($pugSymfony->render('style-php.pug')))
             )
         );
@@ -243,8 +240,8 @@ class PugSymfonyEngineTest extends KernelTestCase
                 'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
             preg_replace(
-                '/<div( class="[^"]+")([^>]+)>/',
-                '<div$2$1>',
+                '/<div( class="[^"]+")(.+?)></',
+                '<div$2$1><',
                 str_replace(['\'assets/', "\r"], ['\'/assets/', ''], trim($pugSymfony->render('style-js.pug')))
             )
         );
@@ -293,15 +290,22 @@ class PugSymfonyEngineTest extends KernelTestCase
         ]);
 
         $pugSymfony->setOption('indentSize', 3);
+        $pugSymfony->setOption('prettyprint', '   ');
 
         self::assertSame(3, $pugSymfony->getOption('indentSize'));
-        self::assertSame("<div>\n   <p></p>\n</div>", str_replace("\r", '', trim($pugSymfony->render('p.pug'))));
+        self::assertSame(
+            "<div>\n   <p></p>\n</div>",
+            str_replace("\r", '', trim($pugSymfony->render('p.pug')))
+        );
 
-        $pugSymfony->setOptions(['indentSize' => 5]);
+        $pugSymfony->setOptions(['indentSize' => 5, 'prettyprint' => '     ']);
 
         self::assertSame(5, $pugSymfony->getOption('indentSize'));
         self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
-        self::assertSame("<div>\n     <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
+        self::assertSame(
+            "<div>\n     <p></p>\n</div>",
+            str_replace("\r", '', trim($pugSymfony->render('p.pug')))
+        );
     }
 
     /**

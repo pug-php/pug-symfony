@@ -11,17 +11,17 @@ if (version_compare(PHP_VERSION, '7.2') >= 0) {
     $newContent = preg_replace('/"symfony\/phpunit-bridge"\s*:\s*"[^"]+",/', '', $composer);
 }
 if ($newContent === $composer) {
-    echo 'symfony/symfony not found in ./composer.json';
+    echo 'symfony/symfony and pug-php/pug not found in composer.json';
 
     exit(1);
 }
 
 if (empty($newContent) || !file_put_contents($composerFile, $newContent)) {
-    echo './composer.json cannot be updated';
+    echo 'composer.json cannot be updated';
 
     exit(1);
 }
 
-echo './composer.json has been updated';
+echo 'composer.json has been updated';
 
 exit(0);

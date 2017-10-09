@@ -8,7 +8,7 @@
   "require": {
     "php": ">=5.4.0",
     "pug/installer": "^0.1.0",
-    "pug-php/pug": "^3.0.0@beta",
+    "pug-php/pug": "^2.7.1 || ^3.0.0@beta",
     "pug-php/pug-assets": "^1.0.1",
     "symfony/symfony": "^2.7 || ^3.0 || ^4.0"
   },
