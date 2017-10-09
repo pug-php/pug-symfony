@@ -9,7 +9,7 @@ $travisData = [
         'travis_retry composer self-update',
         implode(' ', [
             'if [ "$SYMFONY_VERSION" != "" ];',
-            'then travis_retry php tests/setSymfonyVersion.php $SYMFONY_VERSION $PUG_VERSION;',
+            'then travis_retry php tests/setSymfonyVersion.php $PUG_VERSION $SYMFONY_VERSION;',
             'fi;',
         ]),
         'travis_retry composer update --no-interaction',
