@@ -12,7 +12,7 @@ class BadEngine extends JadeSymfonyEngine
 {
     public function getEngine()
     {
-        return (object) array();
+        return (object) [];
     }
 }
 
