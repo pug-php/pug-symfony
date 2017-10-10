@@ -6,9 +6,15 @@ framework:
     csrf_protection: true
     validation: { enable_annotations: true }
     templating:
-      engines: ['pug', 'php']
+        engines: ['pug', 'php']
     session:
         storage_id: session.storage.filesystem
+
+parameters:
+    pug:
+        expressionLanguage: js
+        execution_max_time: 300000
+        memory_limit: -1
 
 services:
     templating.engine.pug:

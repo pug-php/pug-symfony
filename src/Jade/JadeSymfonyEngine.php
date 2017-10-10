@@ -3,7 +3,6 @@
 namespace Jade;
 
 use Jade\Symfony\Css;
-use Jade\Symfony\JadeEngine as Jade;
 use Jade\Symfony\Logout;
 use Pug\Assets;
 use Symfony\Bridge\Twig\AppVariable;
@@ -45,17 +44,28 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
-        $this->jade = new Jade([
+        $pugClassName = $this->getEngineClassName();
+        $debug = substr($environment, 0, 3) === 'dev';
+        $pug3 = is_a($pugClassName, '\\Phug\\Renderer', true);
+        $this->jade = new $pugClassName(array_merge([
+            'debug'           => $debug,
             'assetDirectory'  => $assetsDirectories,
             'viewDirectories' => $viewDirectories,
             'baseDir'         => $baseDir,
-            'cache'           => substr($environment, 0, 3) === 'dev' ? false : $cache,
+            'cache'           => $debug ? false : $cache,
             'environment'     => $environment,
             'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            'preRender'       => [$this, 'preRender'],
+            'preRender'       => $pug3 ? null : [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
-        ]);
+        ], $container->getParameter('pug') ?: []));
+        if ($pug3) {
+            $format = $this->jade->getCompiler()->getFormatter()->getFormatInstance();
+            $transform = $format->getOption('patterns.transform_expression');
+            $format->setPattern('transform_expression', function ($code) use ($format, $transform) {
+                return call_user_func($format->getOption('pattern'), $transform, $this->replaceCode($code));
+            });
+        }
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
         $app = new AppVariable();
@@ -68,24 +78,43 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $this->jade->share('app', $app);
     }
 
+    protected function getEngineClassName()
+    {
+        $engineName = class_exists('\\Pug\\Pug') ? 'Pug' : 'Jade';
+        include_once __DIR__ . '/Symfony/' . $engineName . 'Engine.php';
+
+        return '\\Jade\\Symfony\\' . $engineName . 'Engine';
+    }
+
     protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories, &$viewDirectories)
     {
         $baseDir = null;
-        foreach (scandir($srcDir) as $directory) {
-            if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
-                continue;
-            }
-            $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
-            if (is_dir($viewDirectory)) {
-                if (is_null($baseDir)) {
-                    $baseDir = $viewDirectory;
+        if (file_exists($srcDir)) {
+            foreach (scandir($srcDir) as $directory) {
+                if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
+                    continue;
                 }
-                $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
+                $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
+                if (is_dir($viewDirectory)) {
+                    if (is_null($baseDir)) {
+                        $baseDir = $viewDirectory;
+                    }
+                    $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
+                }
+                $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
             }
-            $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
         }
 
         return $baseDir ?: $appDir . '/Resources/views';
+    }
+
+    protected function replaceFunction($name, $function, $code)
+    {
+        return mb_substr(preg_replace(
+            '/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/',
+            $function . '(',
+            '=' . $code
+        ), 1);
     }
 
     protected function replaceCode($pugCode)
@@ -99,10 +128,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'asset_version' => ['assets', 'getVersion'],
             'css_url' => ['css', 'getUrl'],
             'csrf_token' => ['form', 'csrfToken'],
-            'logout_url' => ['logout', 'url'],
-            'logout_path' => ['logout', 'path'],
             'url' => ['router', 'url'],
             'path' => ['router', 'path'],
+            'logout_url' => ['logout', 'url'],
+            'logout_path' => ['logout', 'path'],
             'absolute_url' => ['http', 'generateAbsoluteUrl'],
             'relative_path' => ['http', 'generateRelativePath'],
             'is_granted' => ['security', 'isGranted'],
@@ -110,7 +139,13 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             if (is_array($function)) {
                 $function = sprintf($helperPattern, $function[0], $function[1]);
             }
-            $pugCode = preg_replace('/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/', $function . '(', $pugCode);
+            $output = '';
+            $input = $pugCode;
+            while (preg_match('/^([^\'"]*)("(?:\\\\[\\S\\s]|[^"\\\\])*"|\'(?:\\\\[\\S\\s]|[^\'\\\\])*\')/', $input, $match)) {
+                $input = mb_substr($input, mb_strlen($match[0]));
+                $output .= $this->replaceFunction($name, $function, $match[1]) . $match[2];
+            }
+            $pugCode = $output . $this->replaceFunction($name, $function, $input);
         }
 
         return $pugCode;
@@ -187,9 +222,20 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
     }
 
-    public function getOption($name)
+    public function getOptionDefault($name, $default = null)
     {
-        return $this->jade->getOption($name);
+        try {
+            return $this->getOption($name, $default);
+        } catch (\InvalidArgumentException $exception) {
+            return $default;
+        }
+    }
+
+    public function getOption($name, $default = null)
+    {
+        return method_exists($this->jade, 'hasOption') && !$this->jade->hasOption($name)
+            ? $default
+            : $this->jade->getOption($name);
     }
 
     public function setOption($name, $value)
@@ -259,9 +305,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 throw new \ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
             }
         }
+        $sharedVariables = $this->getOptionDefault('shared_variables');
+        if ($sharedVariables) {
+            $parameters = array_merge($sharedVariables, $parameters);
+        }
         $parameters['view'] = $this;
+        $method = method_exists($this->jade, 'renderFile')
+            ? [$this->jade, 'renderFile']
+            : [$this->jade, 'render'];
 
-        return $this->jade->render($this->getFileFromName($name), $parameters);
+        return call_user_func($method, $this->getFileFromName($name), $parameters);
     }
 
     public function exists($name)
@@ -271,7 +324,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function supports($name)
     {
-        foreach ($this->jade->getExtensions() as $extension) {
+        $extensions = method_exists($this->jade, 'getExtensions')
+            ? $this->jade->getExtensions()
+            : $this->jade->getOption('extensions');
+        foreach ($extensions as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
             }

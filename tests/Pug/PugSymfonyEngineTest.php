@@ -4,12 +4,12 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
-use Jade\Compiler;
-use Jade\Filter\AbstractFilter;
-use Jade\Nodes\Filter;
+use Pug\Filter\AbstractFilter;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
+use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
@@ -22,7 +22,7 @@ class TokenStorage extends BaseTokenStorage
 
     public function getToken()
     {
-        return 'token';
+        return 'the token';
     }
 }
 
@@ -36,9 +36,9 @@ class CustomHelper
 
 class Upper extends AbstractFilter
 {
-    public function __invoke(Filter $node, Compiler $compiler)
+    public function parse($code)
     {
-        return strtoupper($this->getNodeString($node, $compiler));
+        return strtoupper($code);
     }
 }
 
@@ -60,6 +60,41 @@ class LogoutUrlHelper extends BaseLogoutUrlHelper
     public function __construct()
     {
         parent::__construct(new LogoutUrlGenerator());
+    }
+}
+
+class TestKernel extends \AppKernel
+{
+    /**
+     * @var \Closure
+     */
+    private $containerConfigurator;
+
+    public function __construct(\Closure $containerConfigurator, $environment = 'test', $debug = false)
+    {
+        $this->containerConfigurator = $containerConfigurator;
+
+        parent::__construct($environment, $debug);
+
+        $this->rootDir = realpath(__DIR__ . '/../project/app');
+    }
+
+    public function registerContainerConfiguration(LoaderInterface $loader)
+    {
+        parent::registerContainerConfiguration($loader);
+        $loader->load(__DIR__ . '/../project/app/config/config.yml');
+        $loader->load($this->containerConfigurator);
+    }
+
+    /**
+     * Override the parent method to force recompiling the container.
+     * For performance reasons the container is also not dumped to disk.
+     */
+    protected function initializeContainer()
+    {
+        $this->container = $this->buildContainer();
+        $this->container->compile();
+        $this->container->set('kernel', $this);
     }
 }
 
@@ -89,7 +124,13 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testPreRender()
     {
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'php',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
         $code = $pugSymfony->preRender('p=asset("foo")');
 
         self::assertSame('p=$view[\'assets\']->getUrl("foo")', $code);
@@ -108,7 +149,7 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertInstanceOf('\\Jade\\Symfony\\JadeEngine', $pugSymfony->getEngine());
+        self::assertRegExp('/^\\\\?Jade\\\\Symfony\\\\(Jade|Pug)Engine$/', get_class($pugSymfony->getEngine()));
     }
 
     public function testFallbackAppDir()
@@ -142,7 +183,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::$kernel->getContainer()->set('security.token_storage', $tokenStorage);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertSame('<p>token</p>', trim($pugSymfony->render('token.pug')));
+        self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
 
     public function testLogoutHelper()
@@ -157,7 +198,13 @@ class PugSymfonyEngineTest extends KernelTestCase
     public function testCustomHelper()
     {
         $helper = new CustomHelper();
-        $pugSymfony = new PugSymfonyEngine(self::$kernel, $helper);
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'php',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel, $helper);
 
         self::assertTrue(isset($pugSymfony['custom']));
         self::assertSame($helper, $pugSymfony['custom']);
@@ -180,13 +227,17 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        $message = null;
-
-        try {
-            $pugSymfony->getOption('foo');
-        } catch (\InvalidArgumentException $e) {
-            $message = $e->getMessage();
+        $message = method_exists($pugSymfony->getEngine(), 'hasOption') && $pugSymfony->getOption('foo') === null
+            ? 'foo is not a valid option name.'
+            : null;
+        if ($message === null) {
+            try {
+                $pugSymfony->getOption('foo');
+            } catch (\InvalidArgumentException $e) {
+                $message = $e->getMessage();
+            }
         }
+
         self::assertSame('foo is not a valid option name.', $message);
 
         $pugSymfony->setCustomOptions(['foo' => 'bar']);
@@ -215,7 +266,11 @@ class PugSymfonyEngineTest extends KernelTestCase
                 'background-position:50% -402px;' .
                 'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
-            str_replace('\'assets/', '\'/assets/', trim($pugSymfony->render('style-php.pug')))
+            preg_replace(
+                '/<div( class="[^"]+")(.+?)></',
+                '<div$2$1><',
+                str_replace(['\'assets/', "\r"], ['\'/assets/', ''], trim($pugSymfony->render('style-php.pug')))
+            )
         );
     }
 
@@ -233,7 +288,11 @@ class PugSymfonyEngineTest extends KernelTestCase
                 'background-position:50% -402px;' .
                 'background-image:url(\'/assets/img/patterns/5.png\')' .
                 '" class="foo"></div>',
-            str_replace('\'assets/', '\'/assets/', trim($pugSymfony->render('style-js.pug')))
+            preg_replace(
+                '/<div( class="[^"]+")(.+?)></',
+                '<div$2$1><',
+                str_replace(['\'assets/', "\r"], ['\'/assets/', ''], trim($pugSymfony->render('style-js.pug')))
+            )
         );
     }
 
@@ -245,7 +304,11 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         $pugSymfony->filter('upper', '\\Pug\\Tests\\Upper');
         self::assertTrue($pugSymfony->hasFilter('upper'));
-        self::assertSame('\\Pug\\Tests\\Upper', $pugSymfony->getFilter('upper'));
+        $filter = $pugSymfony->getFilter('upper');
+        if (!is_string($filter)) {
+            $filter = get_class($filter);
+        }
+        self::assertSame('Pug\\Tests\\Upper', ltrim($filter, '\\'));
         self::assertSame('FOO', trim($pugSymfony->render('filter.pug')));
     }
 
@@ -271,20 +334,27 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOptions([
-            'prettyprint' => true,
+            'prettyprint' => '    ',
             'cache'       => null,
         ]);
 
         $pugSymfony->setOption('indentSize', 3);
+        $pugSymfony->setOption('prettyprint', '   ');
 
         self::assertSame(3, $pugSymfony->getOption('indentSize'));
-        self::assertSame("<div>\n   <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
+        self::assertSame(
+            "<div>\n   <p></p>\n</div>",
+            str_replace("\r", '', trim($pugSymfony->render('p.pug')))
+        );
 
-        $pugSymfony->setOptions(['indentSize' => 5]);
+        $pugSymfony->setOptions(['indentSize' => 5, 'prettyprint' => '     ']);
 
         self::assertSame(5, $pugSymfony->getOption('indentSize'));
         self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
-        self::assertSame("<div>\n     <p></p>\n</div>", trim($pugSymfony->render('p.pug')));
+        self::assertSame(
+            "<div>\n     <p></p>\n</div>",
+            str_replace("\r", '', trim($pugSymfony->render('p.pug')))
+        );
     }
 
     /**
@@ -310,6 +380,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'js');
         $html = trim($pugSymfony->render('background-image.pug', ['image' => 'foo']));
+        $html = preg_replace('/<div( class="[^"]+")([^>]+)>/', '<div$2$1>', $html);
 
         self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
     }
