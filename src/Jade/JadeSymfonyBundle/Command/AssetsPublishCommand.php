@@ -26,6 +26,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
 
         $success = 0;
         $errors = 0;
+        $errorDetails = [];
         $directories = [];
         foreach ($pug->getOption('viewDirectories') as $viewDirectory) {
             if (is_dir($viewDirectory)) {
@@ -33,20 +34,26 @@ class AssetsPublishCommand extends ContainerAwareCommand
                 $data = $pug->cacheDirectory($viewDirectory);
                 $success += $data[0];
                 $errors += $data[1];
+                $errorDetails = array_merge($errorDetails, isset($data[2]) && $data[2] ? $data[2] : []);
             }
         }
 
-        return [$directories, $success, $errors];
+        return [$directories, $success, $errors, $errorDetails];
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        list($directories, $success, $errors) = $this->cacheTemplates(
+        list($directories, $success, $errors, $errorDetails) = $this->cacheTemplates(
             $this->getContainer()->get('templating.engine.pug')->getEngine()
         );
         $count = count($directories);
         $output->writeln($count . ' ' . ($count === 1 ? 'directory' : 'directories') . ' scanned: ' . implode(', ', $directories) . '.');
         $output->writeln($success . ' templates cached.');
         $output->writeln($errors . ' templates failed to be cached.');
+        foreach ($errorDetails as $index => $detail) {
+            $output->writeln("\n" . ($index + 1) . ') ' . $detail['inputFile']);
+            $output->writeln($detail['error']->getMessage());
+            $output->writeln($detail['error']->getTraceAsString());
+        }
     }
 }

@@ -296,6 +296,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 throw new \ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
             }
         }
+        if ($this->jade->hasOption('shared_variables')) {
+            $parameters = array_merge(array_merge($this->jade->getOption('shared_variables'), $parameters));
+        }
         $parameters['view'] = $this;
         $method = method_exists($this->jade, 'renderFile')
             ? [$this->jade, 'renderFile']

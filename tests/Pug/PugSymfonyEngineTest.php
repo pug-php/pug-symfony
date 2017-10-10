@@ -22,7 +22,7 @@ class TokenStorage extends BaseTokenStorage
 
     public function getToken()
     {
-        return 'token';
+        return 'the token';
     }
 }
 
@@ -171,19 +171,16 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame(realpath($appView), $baseDir);
     }
 
+    /**
+     * @group i
+     */
     public function testSecurityToken()
     {
-        if (version_compare(getenv('SYMFONY_VERSION'), '3.2') < 0) {
-            self::markTestSkipped('security.token_storage compatible since 3.3.');
-
-            return;
-        }
-
         $tokenStorage = new TokenStorage();
         self::$kernel->getContainer()->set('security.token_storage', $tokenStorage);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertSame('<p>token</p>', trim($pugSymfony->render('token.pug')));
+        self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
 
     public function testLogoutHelper()

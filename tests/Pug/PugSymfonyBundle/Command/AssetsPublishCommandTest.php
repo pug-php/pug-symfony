@@ -30,5 +30,7 @@ class AssetsPublishCommandTest extends KernelTestCase
 
         $this->assertContains('9 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
         $this->assertContains('1 templates failed to be cached', $output, 'filter.pug fails as the upper filter does not exists.');
+        $this->assertContains('Unknown filter upper', $output, 'filter.pug fails as the upper filter does not exists.');
+        $this->assertContains('filter.pug', $output, 'filter.pug fails as the upper filter does not exists.');
     }
 }
