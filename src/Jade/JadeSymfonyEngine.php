@@ -222,10 +222,19 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
     }
 
-    public function getOption($name)
+    public function getOptionDefault($name, $default = null)
+    {
+        try {
+            return $this->getOption($name, $default);
+        } catch (\InvalidArgumentException $exception) {
+            return $default;
+        }
+    }
+
+    public function getOption($name, $default = null)
     {
         return method_exists($this->jade, 'hasOption') && !$this->jade->hasOption($name)
-            ? null
+            ? $default
             : $this->jade->getOption($name);
     }
 
@@ -296,7 +305,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 throw new \ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
             }
         }
-        $sharedVariables = $this->getOption('shared_variables');
+        $sharedVariables = $this->getOptionDefault('shared_variables');
         if ($sharedVariables) {
             $parameters = array_merge($sharedVariables, $parameters);
         }
