@@ -2,10 +2,19 @@
 
 namespace Pug\Tests\PugSymfonyBundle\Command;
 
+use Jade\JadeSymfonyEngine;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+
+class BadEngine extends JadeSymfonyEngine
+{
+    public function getEngine()
+    {
+        return (object) array();
+    }
+}
 
 class AssetsPublishCommandTest extends KernelTestCase
 {
@@ -47,5 +56,23 @@ else
         $this->assertContains('1 templates failed to be cached', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertRegExp('/(Unknown\sfilter\supper|upper:\sFilter\sdoes\s?n[\'o]t\sexists)/', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertContains('filter.pug', $output, 'filter.pug fails as the upper filter does not exists.');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage Allowed pug engine are Jade\Jade, Pug\Pug or Phug\Renderer, stdClass given.
+     */
+    public function testCommandException()
+    {
+        $application = new Application(self::$kernel);
+        self::$kernel->getContainer()->set('templating.engine.pug', new BadEngine(self::$kernel));
+        $application->add(new AssetsPublishCommand());
+
+        $command = $application->find('assets:publish');
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([
+            'command'  => $command->getName(),
+            '--env'    => 'prod',
+        ]);
     }
 }

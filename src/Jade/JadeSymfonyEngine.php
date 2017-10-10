@@ -356,6 +356,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         unset($this->helpers[$name]);
     }
 
+    public static function proceedTask(&$flags, $io, $taskResult, $flag, $successMessage, $message)
+    {
+        if ($taskResult) {
+            $flags |= $flag;
+            $message = $successMessage;
+        }
+
+        $io->write($message);
+    }
+
     public static function install($event, $dir = null)
     {
         /** @var \Composer\Script\Event $event */
@@ -387,6 +397,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config.yml? [Y/N] ');
         $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ');
 
+        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
+            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
+        };
+
         if ($addConfig) {
             $configFile = $dir . '/app/config/config.yml';
             $contents = @file_get_contents($configFile) ?: '';
@@ -397,12 +411,12 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                         $contents = preg_replace('/^framework\s*:/m', "services:\n\$0", $contents);
                     }
                     $contents = preg_replace('/^services\s*:/m', "\$0$service", $contents);
-                    if (file_put_contents($configFile, $contents)) {
-                        $flags |= static::CONFIG_OK;
-                        $io->write('Engine service added in config.yml');
-                    } else {
-                        $io->write('Unable to add the engine service in config.yml');
-                    }
+                    $proceedTask(
+                        file_put_contents($configFile, $contents),
+                        static::CONFIG_OK,
+                        'Engine service added in config.yml',
+                        'Unable to add the engine service in config.yml'
+                    );
                 } else {
                     $flags |= static::CONFIG_OK;
                     $io->write('templating.engine.pug setting in config.yml already exists.');
@@ -452,12 +466,12 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 }
                 if ($proceeded) {
                     $contents = implode("\n", $lines);
-                    if (file_put_contents($configFile, $contents)) {
-                        $flags |= static::ENGINE_OK;
-                        $io->write('Engine added to framework.templating.engines in config.yml');
-                    } else {
-                        $io->write('Unable to add the templating engine in framework.templating.engines in config.yml');
-                    }
+                    $proceedTask(
+                        file_put_contents($configFile, $contents),
+                        static::ENGINE_OK,
+                        'Engine added to framework.templating.engines in config.yml',
+                        'Unable to add the templating engine in framework.templating.engines in config.yml'
+                    );
                 }
             } else {
                 $io->write('framework entry not found in config.yml.');
@@ -473,12 +487,12 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             if (preg_match('/^[ \\t]*new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', $contents)) {
                 if (strpos($contents, $bundle) === false) {
                     $contents = preg_replace('/^([ \\t]*)new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', "\$0,\n\$1$bundle", $contents);
-                    if (file_put_contents($appFile, $contents)) {
-                        $flags |= static::KERNEL_OK;
-                        $io->write('Bundle added to AppKernel.php');
-                    } else {
-                        $io->write('Unable to add the bundle engine in AppKernel.php');
-                    }
+                    $proceedTask(
+                        file_put_contents($appFile, $contents),
+                        static::KERNEL_OK,
+                        'Bundle added to AppKernel.php',
+                        'Unable to add the bundle engine in AppKernel.php'
+                    );
                 } else {
                     $flags |= static::KERNEL_OK;
                     $io->write('The bundle already exists in AppKernel.php');
