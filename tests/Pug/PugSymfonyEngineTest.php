@@ -171,9 +171,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame(realpath($appView), $baseDir);
     }
 
-    /**
-     * @group i
-     */
     public function testSecurityToken()
     {
         $tokenStorage = new TokenStorage();
