@@ -402,7 +402,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io->setInteractive(true);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
-        self::assertTrue(file_exists($installedFile));
+        self::assertFileExists($installedFile);
 
         unlink($installedFile);
         $io->setPermissive(true);
@@ -426,7 +426,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             'Sorry, AppKernel.php has a format we can\'t handle automatically.',
         ], $io->getLastOutput());
         clearstatcache();
-        self::assertFalse(file_exists($installedFile));
+        self::assertFileNotExists($installedFile);
 
         foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
             $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
@@ -440,7 +440,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             'The bundle already exists in AppKernel.php',
         ], $io->getLastOutput());
         clearstatcache();
-        self::assertTrue(file_exists($installedFile));
+        self::assertFileExists($installedFile);
 
         unlink($installedFile);
         file_put_contents($dir . '/app/config/config.yml', str_replace(
@@ -470,7 +470,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             file_get_contents($dir . '/app/config/config.yml')
         );
         clearstatcache();
-        self::assertTrue(file_exists($installedFile));
+        self::assertFileExists($installedFile);
     }
 
     /**
@@ -532,7 +532,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             '  bar4: biz',
             'bar: biz',
         ]), file_get_contents($dir . '/app/config/config.yml'));
-        self::assertTrue(file_exists($installedFile));
+        self::assertFileExists($installedFile);
         unlink($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
@@ -570,6 +570,6 @@ class PugSymfonyEngineTest extends KernelTestCase
             '  engines: ["twig","php"]',
             '  bar4: biz',
         ]), file_get_contents($dir . '/app/config/config.yml'));
-        self::assertFalse(file_exists($installedFile));
+        self::assertFileNotExists($installedFile);
     }
 }
