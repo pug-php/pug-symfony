@@ -22,8 +22,7 @@ foreach ($metrics as $metric) {
 $coverage = ($checkedElements / $totalElements) * 100;
 
 if ($coverage < $requiredCoverage) {
-    echo "Fail: Code coverage is {$coverage}%. "
-        ."You need to reach {$requiredCoverage}% to validate this build.";
+    echo "Fail: Code coverage is {$coverage}%. You need to reach {$requiredCoverage}% to validate this build.";
 
     exit(1);
 }
