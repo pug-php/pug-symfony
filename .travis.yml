@@ -237,7 +237,8 @@ before_script:
   - travis_retry composer update --no-interaction --prefer-stable
   - chmod -R 0777 tests/project
 script:
-  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml | grep -q 'No tests executed' && exit 1 || exit 0
+  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
+  - php tests/checkCoverage.php
 after_script:
   - if [ $(phpenv version-name) = '5.6' ]; then
     vendor/bin/test-reporter --coverage-report coverage.xml
