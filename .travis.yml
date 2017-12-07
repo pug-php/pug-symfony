@@ -35,7 +35,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
-        - SYMFONY_VERSION='4.0.*'
+        - SYMFONY_VERSION='3.4.*'
         - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
@@ -63,7 +63,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
-        - SYMFONY_VERSION='4.0.*'
+        - SYMFONY_VERSION='3.4.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
@@ -91,7 +91,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
-        - SYMFONY_VERSION='4.0.*'
+        - SYMFONY_VERSION='3.4.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
@@ -240,9 +240,7 @@ script:
   - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
   - php tests/checkCoverage.php
 after_script:
-  - if [ $(phpenv version-name) = '5.6' ]; then
-    vendor/bin/test-reporter --coverage-report coverage.xml
-    ; fi
+  - if [ $(phpenv version-name) = '5.6' ]; then vendor/bin/test-reporter --coverage-report coverage.xml; fi
   - bash <(curl -s https://codecov.io/bash)
 addons:
   code_climate:

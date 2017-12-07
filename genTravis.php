@@ -12,11 +12,12 @@ $travisData = [
             'then travis_retry php tests/setSymfonyVersion.php $PUG_VERSION $SYMFONY_VERSION;',
             'fi;',
         ]),
-        'travis_retry composer update --no-interaction',
+        'travis_retry composer update --no-interaction --prefer-stable',
         'chmod -R 0777 tests/project',
     ],
     'script'        => [
         'vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml',
+        'php tests/checkCoverage.php',
     ],
     'after_script'  => [
         implode(' ', [
@@ -40,13 +41,13 @@ $matrix = [
         '^2.7.1' => ['2.7.*', '2.8.*'],
     ],
     '5.5'  => [
-        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '4.0.*'],
+        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*'],
     ],
     '5.6'  => [
-        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '4.0.*'],
+        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*'],
     ],
     '7.0'  => [
-        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '4.0.*'],
+        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*'],
     ],
     '7.1'  => [
         '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*'],
