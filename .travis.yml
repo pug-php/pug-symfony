@@ -12,119 +12,119 @@ matrix:
     - php: 5.5
       env:
         - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
         - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
         - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
         - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
         - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
         - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.5
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='4.0.*'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='4.0.*'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
         - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
         - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
         - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
         - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
         - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
         - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.0
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='4.0.*'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
         - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
         - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
         - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
         - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
         - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
         - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='3.4.*'
+        - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
-        - SYMFONY_VERSION='4.0.x-dev as 3.99'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='4.0.*'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='2.7.*'
@@ -151,84 +151,84 @@ matrix:
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
+        - SYMFONY_VERSION='3.4.*'
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.0.x-dev as 3.99'
+        - SYMFONY_VERSION='4.0.*'
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
         - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='3.4.*'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.0.x-dev as 3.99'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='4.0.*'
+        - PUG_VERSION='^3.0.0'
     - php: hhvm
       env:
         - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
     - php: hhvm
       env:
         - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
     - php: hhvm
       env:
         - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
     - php: hhvm
       env:
         - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
     - php: hhvm
       env:
         - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
     - php: hhvm
       env:
         - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0@beta'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
     - php: hhvm
       env:
-        - SYMFONY_VERSION='3.4.x-dev as 3.4'
-        - PUG_VERSION='^3.0.0@beta'
+        - SYMFONY_VERSION='3.4.*'
+        - PUG_VERSION='^2.7.1'
       dist: trusty
       sudo: required
 before_script:
