@@ -199,7 +199,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         ] as $helper) {
             if (
                 $services->has('templating.helper.' . $helper) &&
-                ($instance = $services->get('templating.helper.' . $helper))
+                ($instance = $services->get('templating.helper.' . $helper, ContainerInterface::NULL_ON_INVALID_REFERENCE))
             ) {
                 $this->helpers[$helper] = $instance;
             }
