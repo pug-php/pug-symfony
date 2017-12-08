@@ -7,11 +7,7 @@ $travisData = [
     ],
     'before_script' => [
         'travis_retry composer self-update',
-        implode(' ', [
-            'if [ "$SYMFONY_VERSION" != "" ];',
-            'then travis_retry php tests/setSymfonyVersion.php $PUG_VERSION $SYMFONY_VERSION;',
-            'fi;',
-        ]),
+        'php tests/setSymfonyVersion.php $PUG_VERSION $SYMFONY_VERSION',
         'travis_retry composer update --no-interaction --prefer-stable',
         'chmod -R 0777 tests/project',
     ],
