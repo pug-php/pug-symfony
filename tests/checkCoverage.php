@@ -7,7 +7,7 @@ if (defined('HHVM_VERSION')) {
 }
 
 $xmlFile = isset($argv[2]) ? $argv[2] : __DIR__ . '/../coverage.xml';
-$requiredCoverage = isset($argv[1]) ? intval($argv[1]) : 95;
+$requiredCoverage = isset($argv[1]) ? intval($argv[1]) : 90;
 
 if (!file_exists($xmlFile)) {
     echo 'Error: Code coverage files not found. Please run `unit-tests:run`.';
