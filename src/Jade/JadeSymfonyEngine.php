@@ -40,7 +40,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
-        $viewDirectories = [$appDir . '/Resources/views'];
+        $viewDirectories = [$appDir . '/Resources/views', $appDir . '/templates'];
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
