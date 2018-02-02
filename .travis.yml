@@ -235,9 +235,9 @@ before_script:
   - travis_retry composer self-update
   - if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require --no-update -n symfony/symfony=$SYMFONY_VERSION; fi;
   - if [ "$PUG_VERSION" != "" ]; then travis_retry composer require --no-update -n pug-php/pug=$PUG_VERSION; fi;
-  - [ -f /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ] && mv /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ~/xdebug.ini
+  - '[ -f /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ] && mv /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ~/xdebug.ini'
   - travis_retry composer update -o --no-interaction --prefer-stable
-  - [ -f ~/xdebug.ini ] && mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini
+  - '[ -f ~/xdebug.ini ] && mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini'
   - chmod -R 0777 tests/project
 script:
   - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
