@@ -129,6 +129,14 @@ matrix:
       env:
         - SYMFONY_VERSION='4.0.*'
         - PUG_VERSION='^3.0.0'
+    - php: 7.1
+      env:
+        - SYMFONY_VERSION='4.1.*'
+        - PUG_VERSION='^3.0.0'
+    - php: 7.1
+      env:
+        - SYMFONY_VERSION='4.2.x-dev'
+        - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
         - SYMFONY_VERSION='2.7.*'
@@ -163,6 +171,14 @@ matrix:
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
+        - SYMFONY_VERSION='4.1.*'
+        - PUG_VERSION='^2.7.1'
+    - php: 7.2
+      env:
+        - SYMFONY_VERSION='4.2.x-dev'
+        - PUG_VERSION='^2.7.1'
+    - php: 7.2
+      env:
         - SYMFONY_VERSION='2.7.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.2
@@ -193,6 +209,56 @@ matrix:
       env:
         - SYMFONY_VERSION='4.0.*'
         - PUG_VERSION='^3.0.0'
+    - php: 7.2
+      env:
+        - SYMFONY_VERSION='4.1.*'
+        - PUG_VERSION='^3.0.0'
+    - php: 7.2
+      env:
+        - SYMFONY_VERSION='4.2.x-dev'
+        - PUG_VERSION='^3.0.0'
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='2.7.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='2.8.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='3.0.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='3.1.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='3.2.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='3.3.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
+    - php: hhvm
+      env:
+        - SYMFONY_VERSION='3.4.*'
+        - PUG_VERSION='^2.7.1'
+      dist: trusty
+      sudo: required
 before_script:
   - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
   - php -r "if (hash_file('SHA384', 'composer-setup.php') === '544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
@@ -208,7 +274,7 @@ script:
   - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
   - php tests/checkCoverage.php
 after_script:
-  - if [ $(phpenv version-name) = '5.6' ]; then vendor/bin/test-reporter --coverage-report coverage.xml; fi
+  - if [ $(phpenv version-name) = '5.6' ]; then vendor/bin/test-reporter --coverage-report coverage.xml; fi;
   - bash <(curl -s https://codecov.io/bash)
 addons:
   code_climate:

@@ -2,13 +2,25 @@
 
 $travisData = [
     'language'      => 'php',
+    'cache'         => [
+        'apt' => 'true',
+        'directories' => [
+            '$HOME/.composer/cache',
+        ],
+    ],
     'matrix'        => [
         'include' => [],
     ],
     'before_script' => [
-        'travis_retry composer self-update',
-        'php tests/setSymfonyVersion.php $PUG_VERSION $SYMFONY_VERSION',
-        'travis_retry composer update --no-interaction --prefer-stable',
+        'php -r "copy(\'https://getcomposer.org/installer\', \'composer-setup.php\');"',
+        'php -r "if (hash_file(\'SHA384\', \'composer-setup.php\') === \'544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061\') { echo \'Installer verified\'; } else { echo \'Installer corrupt\'; unlink(\'composer-setup.php\'); } echo PHP_EOL;"',
+        'php composer-setup.php',
+        'php -r "unlink(\'composer-setup.php\');"',
+        'if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require --no-update -n symfony/symfony=$SYMFONY_VERSION; fi;',
+        'if [ "$PUG_VERSION" != "" ]; then travis_retry composer require --no-update -n pug-php/pug=$PUG_VERSION; fi;',
+        'if [ -f /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then mv /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ~/xdebug.ini; fi;',
+        'travis_retry php -d memory_limit=-1 composer.phar update -o --no-interaction --prefer-stable',
+        'if [ -f ~/xdebug.ini ]; then mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi;',
         'chmod -R 0777 tests/project',
     ],
     'script'        => [
@@ -21,8 +33,6 @@ $travisData = [
             'then vendor/bin/test-reporter --coverage-report coverage.xml;',
             'fi;',
         ]),
-    ],
-    'after_success' => [
         'bash <(curl -s https://codecov.io/bash)',
     ],
     'addons'        => [
@@ -46,11 +56,11 @@ $matrix = [
         '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*'],
     ],
     '7.1'  => [
-        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*'],
+        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*', '4.1.*', '4.2.x-dev'],
     ],
     '7.2'  => [
-        '^2.7.1' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*'],
-        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*'],
+        '^2.7.1' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*', '4.1.*', '4.2.x-dev'],
+        '^3.0.0' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*', '4.0.*', '4.1.*', '4.2.x-dev'],
     ],
     'hhvm' => [
         '^2.7.1' => ['2.7.*', '2.8.*', '3.0.*', '3.1.*', '3.2.*', '3.3.*', '3.4.*'],
