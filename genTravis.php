@@ -3,7 +3,7 @@
 $travisData = [
     'language'      => 'php',
     'cache'         => [
-        'apt' => 'true',
+        'apt'         => 'true',
         'directories' => [
             '$HOME/.composer/cache',
         ],

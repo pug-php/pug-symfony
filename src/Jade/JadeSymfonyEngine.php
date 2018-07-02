@@ -9,7 +9,9 @@ use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
+use Twig\Loader\FilesystemLoader;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 {
@@ -18,6 +20,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected $helpers;
     protected $assets;
     protected $kernel;
+    protected $defaultTemplateDirectory;
 
     const CONFIG_OK = 1;
     const ENGINE_OK = 2;
@@ -25,7 +28,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     public function __construct($kernel)
     {
-        if (empty($kernel) || !($kernel instanceof Kernel)) {
+        if (empty($kernel) || !($kernel instanceof KernelInterface || $kernel instanceof Kernel)) {
             throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.pug service arguments, see https://github.com/pug-php/pug-symfony#readme", 1);
         }
 
@@ -40,7 +43,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $appDir = $kernel->getRootDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
-        $viewDirectories = [$appDir . '/Resources/views', $appDir . '/templates'];
+        $viewDirectories = [$appDir . '/Resources/views'];
+        if ($container->has('twig') &&
+            ($twig = $container->get('twig')) instanceof \Twig_Environment &&
+            ($loader = $twig->getLoader()) instanceof FilesystemLoader &&
+            is_array($paths = $loader->getPaths()) &&
+            isset($paths[0])
+        ) {
+            $viewDirectories[] = $paths[0];
+        }
+        $this->defaultTemplateDirectory = end($viewDirectories);
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
@@ -58,7 +70,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'outputDirectory' => $webDir,
             'preRender'       => $pug3 ? null : [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
-        ], $container->getParameter('pug') ?: []));
+        ], ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: []));
         if ($pug3) {
             $format = $this->jade->getCompiler()->getFormatter()->getFormatInstance();
             $transform = $format->getOption('patterns.transform_expression');
@@ -94,8 +106,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                     continue;
                 }
-                $viewDirectory = $srcDir . '/' . $directory . '/Resources/views';
-                if (is_dir($viewDirectory)) {
+                if (is_dir($viewDirectory = $srcDir . '/' . $directory . '/Resources/views')) {
                     if (is_null($baseDir)) {
                         $baseDir = $viewDirectory;
                     }
@@ -105,7 +116,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             }
         }
 
-        return $baseDir ?: $appDir . '/Resources/views';
+        return $baseDir ?: $this->defaultTemplateDirectory;
     }
 
     protected function replaceFunction($name, $function, $code)
@@ -281,21 +292,20 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected function getFileFromName($name)
     {
         $parts = explode(':', $name);
-        $directory = $this->kernel->getRootDir();
+        $directory = $this->defaultTemplateDirectory;
         if (count($parts) > 1) {
             $name = $parts[2];
             if (!empty($parts[1])) {
                 $name = $parts[1] . DIRECTORY_SEPARATOR . $name;
             }
             if ($bundle = $this->kernel->getBundle($parts[0])) {
-                $directory = $bundle->getPath();
+                $directory = $bundle->getPath() .
+                    DIRECTORY_SEPARATOR . 'Resources' .
+                    DIRECTORY_SEPARATOR . 'views';
             }
         }
 
-        return $directory .
-            DIRECTORY_SEPARATOR . 'Resources' .
-            DIRECTORY_SEPARATOR . 'views' .
-            DIRECTORY_SEPARATOR . $name;
+        return $directory . DIRECTORY_SEPARATOR . $name;
     }
 
     public function render($name, array $parameters = [])
@@ -366,6 +376,106 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $io->write($message);
     }
 
+    protected static function installInSymfony4($event, $dir)
+    {
+        /** @var \Composer\Script\Event $event */
+        $io = $event->getIO();
+        $baseDirectory = __DIR__ . '/../..';
+
+        $flags = 0;
+
+        $templateService = "\n    templating:\n" .
+            "        engines: ['twig', 'pug']\n";
+        $pugService = "\n    templating.engine.pug:\n" .
+            "        public: true\n" .
+            "        autowire: false\n" .
+            "        class: Pug\PugSymfonyEngine\n" .
+            "        arguments:\n" .
+            "            - '@kernel'\n";
+        $bundle = 'Pug\PugSymfonyBundle\PugSymfonyBundle::class => [\'all\' => true],';
+        $addServicesConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/services.yml? [Y/N] ');
+        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/packages/framework.yml? [Y/N] ');
+        $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
+
+        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
+            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
+        };
+
+        if ($addConfig) {
+            $configFile = $dir . '/config/packages/framework.yml';
+            $contents = @file_get_contents($configFile) ?: '';
+
+            if (preg_match('/^framework\s*:\s*\n/', $contents)) {
+                $contents = preg_replace_callback('/^framework\s*:\s*\n/', function ($match) use ($templateService) {
+                    return $match[0] . $templateService;
+                }, $contents);
+                $proceedTask(
+                    file_put_contents($configFile, $contents),
+                    static::ENGINE_OK,
+                    'Engine service added in config/packages/framework.yml',
+                    'Unable to add the engine service in config/packages/framework.yml'
+                );
+            } else {
+                $io->write('framework entry not found in config/packages/framework.yml.');
+            }
+        } else {
+            $flags |= static::ENGINE_OK;
+        }
+
+        if ($addServicesConfig) {
+            $configFile = $dir . '/config/services.yml';
+            $contents = @file_get_contents($configFile) ?: '';
+
+            if (preg_match('/^services\s*:\s*\n/', $contents)) {
+                $contents = preg_replace_callback('/^services\s*:\s*\n/', function ($match) use ($pugService) {
+                    return $match[0] . $pugService;
+                }, $contents);
+                $proceedTask(
+                    file_put_contents($configFile, $contents),
+                    static::CONFIG_OK,
+                    'Engine service added in config/services.yml',
+                    'Unable to add the engine service in config/services.yml'
+                );
+            } else {
+                $io->write('services entry not found in config/packages/framework.yml.');
+            }
+        } else {
+            $flags |= static::CONFIG_OK;
+        }
+
+        if ($addBundle) {
+            $appFile = $dir . '/config/bundles.php';
+            $contents = @file_get_contents($appFile) ?: '';
+
+            if (preg_match('/^\[\s*\n/', $contents)) {
+                if (strpos($contents, $bundle) === false) {
+                    $contents = preg_replace_callback('/^\[\s*\n/', function ($match) use ($bundle) {
+                        return $match[0] . $bundle;
+                    }, $contents);
+                    $proceedTask(
+                        file_put_contents($appFile, $contents),
+                        static::KERNEL_OK,
+                        'Bundle added to config/bundles.php',
+                        'Unable to add the bundle engine in config/bundles.php'
+                    );
+                } else {
+                    $flags |= static::KERNEL_OK;
+                    $io->write('The bundle already exists in config/bundles.php');
+                }
+            } else {
+                $io->write('Sorry, config/bundles.php has a format we can\'t handle automatically.');
+            }
+        } else {
+            $flags |= static::KERNEL_OK;
+        }
+
+        if (($flags & static::KERNEL_OK) && ($flags & static::CONFIG_OK) && ($flags & static::ENGINE_OK)) {
+            touch($baseDirectory . '/installed');
+        }
+
+        return true;
+    }
+
     public static function install($event, $dir = null)
     {
         /** @var \Composer\Script\Event $event */
@@ -384,6 +494,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $io->write('Not inside a composer vendor directory, setup skipped.');
 
             return true;
+        }
+
+        if (file_exists($dir . '/config/packages/framework.yml')) {
+            return static::installInSymfony4($event, $dir);
         }
 
         $service = "\n    templating.engine.pug:\n" .
