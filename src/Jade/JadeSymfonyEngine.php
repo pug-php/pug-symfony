@@ -392,9 +392,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             "        class: Pug\PugSymfonyEngine\n" .
             "        arguments:\n" .
             "            - '@kernel'\n";
-        $bundle = 'Pug\PugSymfonyBundle\PugSymfonyBundle::class => [\'all\' => true],';
-        $addServicesConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/services.yml? [Y/N] ');
-        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/packages/framework.yml? [Y/N] ');
+        $bundleClass = 'Pug\PugSymfonyBundle\PugSymfonyBundle';
+        $bundle = "$bundleClass::class => ['all' => true],";
+        $addServicesConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/services.yaml? [Y/N] ');
+        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/packages/framework.yaml? [Y/N] ');
         $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
 
         $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
@@ -402,42 +403,59 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         };
 
         if ($addConfig) {
-            $configFile = $dir . '/config/packages/framework.yml';
+            $configFile = $dir . '/config/packages/framework.yaml';
             $contents = @file_get_contents($configFile) ?: '';
 
-            if (preg_match('/^framework\s*:\s*\n/', $contents)) {
-                $contents = preg_replace_callback('/^framework\s*:\s*\n/', function ($match) use ($templateService) {
-                    return $match[0] . $templateService;
-                }, $contents);
-                $proceedTask(
-                    file_put_contents($configFile, $contents),
-                    static::ENGINE_OK,
-                    'Engine service added in config/packages/framework.yml',
-                    'Unable to add the engine service in config/packages/framework.yml'
-                );
+            if (!preg_match('/[^a-zA-Z]pug[^a-zA-Z]/', $contents)) {
+                $newContents = null;
+                if (preg_match('/^\s*-\s*([\'"]?)twig[\'"]?/m', $contents)) {
+                    $newContents = preg_replace('/^(\s*-\s*)([\'"]?)twig[\'"]?(\n)/m', '$0$1$2pug$2$3', $contents);
+                } elseif (preg_match('/[[,]\s*([\'"]?)twig[\'"]?/', $contents)) {
+                    $newContents = preg_replace('/[[,]\s*([\'"]?)twig[\'"]?/', '$0, $2pug$2', $contents);
+                } elseif (preg_match('/^framework\s*:\s*\n/m', $contents)) {
+                    $newContents = preg_replace_callback('/^framework\s*:\s*\n/', function ($match) use ($templateService) {
+                        return $match[0] . $templateService;
+                    }, $contents);
+                }
+                if ($newContents) {
+                    $proceedTask(
+                        file_put_contents($configFile, $newContents),
+                        static::ENGINE_OK,
+                        'Engine service added in config/packages/framework.yaml',
+                        'Unable to add the engine service in config/packages/framework.yaml'
+                    );
+                } else {
+                    $io->write('framework entry not found in config/packages/framework.yaml.');
+                }
             } else {
-                $io->write('framework entry not found in config/packages/framework.yml.');
+                $flags |= static::ENGINE_OK;
+                $io->write('templating.engine.pug setting in config/packages/framework.yaml already exists.');
             }
         } else {
             $flags |= static::ENGINE_OK;
         }
 
         if ($addServicesConfig) {
-            $configFile = $dir . '/config/services.yml';
+            $configFile = $dir . '/config/services.yaml';
             $contents = @file_get_contents($configFile) ?: '';
 
-            if (preg_match('/^services\s*:\s*\n/', $contents)) {
-                $contents = preg_replace_callback('/^services\s*:\s*\n/', function ($match) use ($pugService) {
-                    return $match[0] . $pugService;
-                }, $contents);
-                $proceedTask(
-                    file_put_contents($configFile, $contents),
-                    static::CONFIG_OK,
-                    'Engine service added in config/services.yml',
-                    'Unable to add the engine service in config/services.yml'
-                );
+            if (strpos($contents, 'templating.engine.pug') === false) {
+                if (preg_match('/^services\s*:\s*\n/m', $contents)) {
+                    $contents = preg_replace_callback('/^services\s*:\s*\n/m', function ($match) use ($pugService) {
+                        return $match[0] . $pugService;
+                    }, $contents);
+                    $proceedTask(
+                        file_put_contents($configFile, $contents),
+                        static::CONFIG_OK,
+                        'Engine service added in config/services.yaml',
+                        'Unable to add the engine service in config/services.yaml'
+                    );
+                } else {
+                    $io->write('services entry not found in config/services.yaml.');
+                }
             } else {
-                $io->write('services entry not found in config/packages/framework.yml.');
+                $flags |= static::CONFIG_OK;
+                $io->write('templating.engine.pug setting in config/services.yaml already exists.');
             }
         } else {
             $flags |= static::CONFIG_OK;
@@ -447,10 +465,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $appFile = $dir . '/config/bundles.php';
             $contents = @file_get_contents($appFile) ?: '';
 
-            if (preg_match('/^\[\s*\n/', $contents)) {
-                if (strpos($contents, $bundle) === false) {
-                    $contents = preg_replace_callback('/^\[\s*\n/', function ($match) use ($bundle) {
-                        return $match[0] . $bundle;
+            if (preg_match('/\[\s*\n/', $contents)) {
+                if (strpos($contents, $bundleClass) === false) {
+                    $contents = preg_replace_callback('/\[\s*\n/', function ($match) use ($bundle) {
+                        return $match[0] . "$bundle\n";
                     }, $contents);
                     $proceedTask(
                         file_put_contents($appFile, $contents),
@@ -496,7 +514,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             return true;
         }
 
-        if (file_exists($dir . '/config/packages/framework.yml')) {
+        if (file_exists($dir . '/config/packages/framework.yaml')) {
             return static::installInSymfony4($event, $dir);
         }
 
