@@ -2,6 +2,7 @@
 
 namespace Jade;
 
+use Composer\IO\IOInterface;
 use Jade\Symfony\Css;
 use Jade\Symfony\Logout;
 use Pug\Assets;
@@ -376,6 +377,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $io->write($message);
     }
 
+    protected static function askConfirmation(IOInterface $io, $message)
+    {
+        return !$io->isInteractive() || $io->askConfirmation($message);
+    }
+
     protected static function installInSymfony4($event, $dir)
     {
         /** @var \Composer\Script\Event $event */
@@ -394,9 +400,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             "            - '@kernel'\n";
         $bundleClass = 'Pug\PugSymfonyBundle\PugSymfonyBundle';
         $bundle = "$bundleClass::class => ['all' => true],";
-        $addServicesConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/services.yaml? [Y/N] ');
-        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config/packages/framework.yaml? [Y/N] ');
-        $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
+        $addServicesConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config/services.yaml? [Y/N] ');
+        $addConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config/packages/framework.yaml? [Y/N] ');
+        $addBundle = static::askConfirmation($io, 'Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
 
         $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
             static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
@@ -526,8 +532,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $bundle = 'new Pug\PugSymfonyBundle\PugSymfonyBundle()';
 
         $flags = 0;
-        $addConfig = $io->askConfirmation('Would you like us to add automatically needed settings in your config.yml? [Y/N] ');
-        $addBundle = $io->askConfirmation('Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ');
+        $addConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config.yml? [Y/N] ');
+        $addBundle = static::askConfirmation($io, 'Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ');
 
         $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
             static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
