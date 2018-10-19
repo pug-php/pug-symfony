@@ -102,8 +102,10 @@ class PugSymfonyEngineTest extends KernelTestCase
 {
     private static function clearCache()
     {
-        if (is_dir(__DIR__ . '/../project/app/cache')) {
-            (new Filesystem())->remove(__DIR__ . '/../project/app/cache');
+        foreach (['app', 'var'] as $directory) {
+            if (is_dir($path = __DIR__ . "/../project/$directory/cache")) {
+                (new Filesystem())->remove($path);
+            }
         }
     }
 
@@ -188,6 +190,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testLogoutHelper()
     {
+        self::clearCache();
         $logoutUrlHelper = new LogoutUrlHelper(new LogoutUrlGenerator());
         self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -197,6 +200,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testCustomHelper()
     {
+        self::clearCache();
         $helper = new CustomHelper();
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
@@ -252,8 +256,12 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
+    /**
+     * @group i
+     */
     public function testAssetHelperPhp()
     {
+        self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'php');
 
@@ -276,6 +284,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testAssetHelperJs()
     {
+        self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'js');
 

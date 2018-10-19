@@ -36,7 +36,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $this->kernel = $kernel;
         $cache = $this->getCacheDir();
         if (!file_exists($cache)) {
-            mkdir($cache);
+            mkdir($cache, 0777, true);
         }
         $container = $kernel->getContainer();
         $this->container = $container;

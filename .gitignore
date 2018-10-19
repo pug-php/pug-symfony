@@ -6,3 +6,4 @@ composer.phar
 /coverage/
 coverage.xml
 installed
+/var/
