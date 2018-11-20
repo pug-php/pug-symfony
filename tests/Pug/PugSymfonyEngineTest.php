@@ -256,9 +256,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
-    /**
-     * @group i
-     */
     public function testAssetHelperPhp()
     {
         self::clearCache();

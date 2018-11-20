@@ -194,6 +194,35 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
+        if ($services->has('twig') &&
+            ($twig = $services->get('twig')) instanceof \Twig_Environment
+        ) {
+            /* @var \Twig_Environment $twig */
+            foreach ($twig->getExtensions() as $extension) {
+                /* @var \Twig_Extension $extension */
+                foreach ($extension->getFunctions() as $function) {
+                    /* @var \Twig_Function $function */
+                    $name = $function->getName();
+                    $callable = $function->getCallable();
+                    if ($callable && is_callable($callable)) {
+                        if (!is_string($callable)) {
+                            if (is_array($callable)) {
+                                list($className, $method) = $callable;
+                                var_dump($extension, $services->has($className), $method, $name, get_class($extension));
+                                exit;
+                            }
+                        }
+                    }
+                    if (!$callable) {
+                        $twig->load();
+                        echo $twig->compileSource(new \Twig_Source('{{ ' . $name . '(arguments) }}', $name, $name));
+                        exit;
+                        var_dump($function->getName(), $function);
+                        exit;
+                    }
+                }
+            }
+        }
         $this->helpers = [];
         foreach ([
             'actions',
