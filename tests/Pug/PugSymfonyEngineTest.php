@@ -10,7 +10,14 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Form\Extension\Core\DataMapper\RadioListMapper;
+use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\FormFactory;
+use Symfony\Component\Form\FormRegistry;
+use Symfony\Component\Form\ResolvedFormType;
+use Symfony\Component\Form\ResolvedFormTypeFactory;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 
@@ -98,6 +105,14 @@ class TestKernel extends \AppKernel
     }
 }
 
+class TestFormBuilder extends FormBuilder
+{
+    public function getCompound()
+    {
+        return true;
+    }
+}
+
 class PugSymfonyEngineTest extends KernelTestCase
 {
     private static function clearCache()
@@ -133,9 +148,8 @@ class PugSymfonyEngineTest extends KernelTestCase
         });
         $kernel->boot();
         $pugSymfony = new PugSymfonyEngine($kernel);
-        $code = $pugSymfony->preRender('p=asset("foo")');
 
-        self::assertSame('p=$view[\'assets\']->getUrl("foo")', $code);
+        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
     }
 
     /**
@@ -196,6 +210,37 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<a href="logout-url"></a><a href="logout-path"></a>', trim($pugSymfony->render('logout.pug')));
+    }
+
+    /**
+     * @group i
+     * @throws \ErrorException
+     */
+    public function testFormHelpers()
+    {
+        self::markTestIncomplete('TODO');
+        self::clearCache();
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $type = new ResolvedFormTypeFactory();
+        $formBuilder = new TestFormBuilder('test', 'stdClass', new EventDispatcher(), new FormFactory(new FormRegistry([], $type), $type));
+        $formBuilder->setDataMapper(new RadioListMapper());
+        $formBuilder->setType(new ResolvedFormType(new \Symfony\Component\Form\Extension\Core\Type\TextType()));
+        $form = $formBuilder
+            ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
+            ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
+            ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', array('label' => 'Foo'))
+            ->getForm();
+
+        self::assertSame('exp', trim($pugSymfony->renderString(implode("\n", [
+            '!=form_start(form, {method: "GET"})',
+            '!=form_errors(form)',
+            '!=form_row(form.name)',
+            '!=form_row(form.dueDate)',
+            '!=form_row(form.submit, {label: "Submit me"})',
+            '!=form_end(form)',
+        ]), [
+            'form' => $form->createView(),
+        ])));
     }
 
     public function testCustomHelper()

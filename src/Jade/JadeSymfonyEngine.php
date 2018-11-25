@@ -6,6 +6,7 @@ use Composer\IO\IOInterface;
 use Jade\Symfony\Css;
 use Jade\Symfony\Logout;
 use Pug\Assets;
+use Pug\Pug;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -16,16 +17,50 @@ use Twig\Loader\FilesystemLoader;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 {
-    protected $container;
-    protected $jade;
-    protected $helpers;
-    protected $assets;
-    protected $kernel;
-    protected $defaultTemplateDirectory;
-
+    const GLOBAL_HELPER_PREFIX = '__pug_symfony_helper_';
     const CONFIG_OK = 1;
     const ENGINE_OK = 2;
     const KERNEL_OK = 4;
+
+    /**
+     * @var ContainerInterface|null
+     */
+    protected $container;
+
+    /**
+     * @var Pug
+     */
+    protected $jade;
+
+    /**
+     * @var array
+     */
+    protected $helpers;
+
+    /**
+     * @var array
+     */
+    protected $twigHelpers;
+
+    /**
+     * @var array
+     */
+    protected $replacements;
+
+    /**
+     * @var Assets
+     */
+    protected $assets;
+
+    /**
+     * @var Kernel|KernelInterface
+     */
+    protected $kernel;
+
+    /**
+     * @var string
+     */
+    protected $defaultTemplateDirectory;
 
     public function __construct($kernel)
     {
@@ -59,26 +94,18 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $baseDir = $this->crawlDirectories($srcDir, $appDir, $assetsDirectories, $viewDirectories);
         $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
-        $pug3 = is_a($pugClassName, '\\Phug\\Renderer', true);
         $this->jade = new $pugClassName(array_merge([
             'debug'           => $debug,
-            'assetDirectory'  => $assetsDirectories,
-            'viewDirectories' => $viewDirectories,
+            'assetDirectory'  => static::extractUniquePaths($assetsDirectories),
+            'viewDirectories' => static::extractUniquePaths($viewDirectories),
             'baseDir'         => $baseDir,
             'cache'           => $debug ? false : $cache,
             'environment'     => $environment,
             'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            'preRender'       => $pug3 ? null : [$this, 'preRender'],
+            'preRender'       => [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
         ], ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: []));
-        if ($pug3) {
-            $format = $this->jade->getCompiler()->getFormatter()->getFormatInstance();
-            $transform = $format->getOption('patterns.transform_expression');
-            $format->setPattern('transform_expression', function ($code) use ($format, $transform) {
-                return call_user_func($format->getOption('pattern'), $transform, $this->replaceCode($code));
-            });
-        }
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
         $app = new AppVariable();
@@ -88,7 +115,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         if ($container->has('security.token_storage')) {
             $app->setTokenStorage($container->get('security.token_storage'));
         }
-        $this->jade->share('app', $app);
+        $this->share('app', $app);
     }
 
     protected function getEngineClassName()
@@ -131,10 +158,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
     protected function replaceCode($pugCode)
     {
-        $helperPattern = $this->getOption('expressionLanguage') === 'js'
+        $jsStyleEnabled = $this->getOption('expressionLanguage') === 'js';
+        $helperPattern = $jsStyleEnabled
             ? 'view.%s.%s'
             : '$view[\'%s\']->%s';
-        foreach ([
+        $replacements = [
             'random' => 'mt_rand',
             'asset' => ['assets', 'getUrl'],
             'asset_version' => ['assets', 'getVersion'],
@@ -147,7 +175,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             'absolute_url' => ['http', 'generateAbsoluteUrl'],
             'relative_path' => ['http', 'generateRelativePath'],
             'is_granted' => ['security', 'isGranted'],
-        ] as $name => $function) {
+        ];
+        foreach ($replacements as $name => $function) {
             if (is_array($function)) {
                 $function = sprintf($helperPattern, $function[0], $function[1]);
             }
@@ -163,67 +192,59 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $pugCode;
     }
 
-    /**
-     * Pug code transformation to do before Pug render.
-     *
-     * @param string $pugCode code input
-     *
-     * @return string
-     */
-    public function preRender($pugCode)
-    {
-        $newCode = '';
-        while (mb_strlen($pugCode)) {
-            if (!preg_match('/^(.*)("(?:\\\\[\\s\\S]|[^"\\\\])*"|\'(?:\\\\[\\s\\S]|[^\'\\\\])*\')/U', $pugCode, $match)) {
-                $newCode .= $this->replaceCode($pugCode);
-
-                break;
-            }
-
-            $newCode .= $this->replaceCode($match[1]) . $match[2];
-            $pugCode = mb_substr($pugCode, mb_strlen($match[0]));
-        }
-
-        return $newCode;
-    }
-
     protected function getTemplatingHelper($name)
     {
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
     }
 
-    protected function registerHelpers(ContainerInterface $services, $helpers)
+    protected function copyTwigFunctions(ContainerInterface $services)
     {
+        $this->twigHelpers = [];
         if ($services->has('twig') &&
             ($twig = $services->get('twig')) instanceof \Twig_Environment
         ) {
             /* @var \Twig_Environment $twig */
+            $this->share('twig', $twig);
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */
                 foreach ($extension->getFunctions() as $function) {
                     /* @var \Twig_Function $function */
                     $name = $function->getName();
+                    if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
+                        // Methods like render_* not yet supported
+                        continue;
+                    }
                     $callable = $function->getCallable();
-                    if ($callable && is_callable($callable)) {
+                    if ($callable && (is_callable($callable)) || $callable instanceof \Closure) {
                         if (!is_string($callable)) {
                             if (is_array($callable)) {
-                                list($className, $method) = $callable;
-                                var_dump($extension, $services->has($className), $method, $name, get_class($extension));
-                                exit;
+                                $this->twigHelpers[$name] = $callable;
                             }
                         }
                     }
-                    if (!$callable) {
-                        $twig->load();
-                        echo $twig->compileSource(new \Twig_Source('{{ ' . $name . '(arguments) }}', $name, $name));
-                        exit;
-                        var_dump($function->getName(), $function);
-                        exit;
+                    if (!$callable && ($nodeClass = $function->getNodeClass())) {
+                        $twig->env = $twig;
+                        $callable = function () use ($twig, $name, $nodeClass) {
+                            $context = [];
+                            $localArguments = [];
+                            foreach (func_get_args() as $index => $argument) {
+                                $name = 'arg' . $index;
+                                $context[$name] = $argument;
+                                $localArguments[] = new \Twig_Node_Expression_Name($name, 0);
+                            }
+                            $node = new $nodeClass($name, new \Twig_Node_Expression_Array($localArguments, 0), 0);
+
+                            return eval('return ' . $twig->compile($node) . ';');
+                        };
+                        $this->twigHelpers[$name] = $callable->bindTo($twig);
                     }
                 }
             }
         }
-        $this->helpers = [];
+    }
+
+    protected function copyStandardHelpers(ContainerInterface $services)
+    {
         foreach ([
             'actions',
             'assets',
@@ -245,6 +266,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                 $this->helpers[$helper] = $instance;
             }
         }
+    }
+
+    protected function copySpecialHelpers(ContainerInterface $services)
+    {
         if ($helper = $this->getTemplatingHelper('logout_url')) {
             $this->helpers['logout'] = new Logout($helper);
         }
@@ -256,6 +281,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             ? $services->get('router.request_context')
             : $services->get('router')->getContext();
         $this->helpers['http'] = new HttpFoundationExtension($stack, $context);
+    }
+
+    protected function copyUserHelpers(array $helpers)
+    {
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
@@ -263,65 +292,57 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
     }
 
-    public function getOptionDefault($name, $default = null)
+    protected function storeReplacements()
     {
-        try {
-            return $this->getOption($name, $default);
-        } catch (\InvalidArgumentException $exception) {
-            return $default;
+        $this->replacements = array_merge([
+            'random' => 'mt_rand',
+            'asset' => ['assets', 'getUrl'],
+            'asset_version' => ['assets', 'getVersion'],
+            'css_url' => ['css', 'getUrl'],
+            'csrf_token' => ['form', 'csrfToken'],
+            'url' => ['router', 'url'],
+            'path' => ['router', 'path'],
+            'logout_url' => ['logout', 'url'],
+            'logout_path' => ['logout', 'path'],
+            'absolute_url' => ['http', 'generateAbsoluteUrl'],
+            'relative_path' => ['http', 'generateRelativePath'],
+            'is_granted' => ['security', 'isGranted'],
+        ], $this->twigHelpers);
+    }
+
+    protected function globalizeHelpers()
+    {
+        foreach ($this->replacements as $name => $callable) {
+            if (is_array($callable) && !is_callable($callable)) {
+                $subCallable = $callable;
+                if (!isset($this->helpers[$subCallable[0]])) {
+                    continue;
+                }
+                $subCallable[0] = $this->helpers[$subCallable[0]];
+
+                $callable = function () use ($subCallable) {
+                    return call_user_func_array($subCallable, func_get_args());
+                };
+            }
+
+            $GLOBALS[static::GLOBAL_HELPER_PREFIX . $name] = $callable;
         }
     }
 
-    public function getOption($name, $default = null)
+    protected function registerHelpers(ContainerInterface $services, $helpers)
     {
-        return method_exists($this->jade, 'hasOption') && !$this->jade->hasOption($name)
-            ? $default
-            : $this->jade->getOption($name);
-    }
-
-    public function setOption($name, $value)
-    {
-        return $this->jade->setOption($name, $value);
-    }
-
-    public function setOptions(array $options)
-    {
-        return $this->jade->setOptions($options);
-    }
-
-    public function setCustomOptions(array $options)
-    {
-        return $this->jade->setCustomOptions($options);
-    }
-
-    public function getEngine()
-    {
-        return $this->jade;
-    }
-
-    public function getCacheDir()
-    {
-        return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'pug';
-    }
-
-    public function filter($name, $filter)
-    {
-        return $this->jade->filter($name, $filter);
-    }
-
-    public function hasFilter($name)
-    {
-        return $this->jade->hasFilter($name);
-    }
-
-    public function getFilter($name)
-    {
-        return $this->jade->getFilter($name);
+        $this->helpers = [];
+        $this->copyTwigFunctions($services);
+        $this->copyStandardHelpers($services);
+        $this->copySpecialHelpers($services);
+        $this->copyUserHelpers($helpers);
+        $this->storeReplacements();
+        $this->globalizeHelpers();
     }
 
     protected function getFileFromName($name)
     {
-        $parts = explode(':', $name);
+        $parts = explode(':', strval($name));
         $directory = $this->defaultTemplateDirectory;
         if (count($parts) > 1) {
             $name = $parts[2];
@@ -338,7 +359,178 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $directory . DIRECTORY_SEPARATOR . $name;
     }
 
-    public function render($name, array $parameters = [])
+    public function share($variables, $value = null)
+    {
+        $this->jade->share($variables, $value);
+    }
+
+    /**
+     * Pug code transformation to do before Pug render.
+     *
+     * @param string $pugCode code input
+     *
+     * @return string
+     */
+    public function preRender($pugCode)
+    {
+        $preCode = '';
+        foreach ($this->replacements as $name => $callable) {
+            $preCode .= ":php\n".
+                "    if (!function_exists('$name')) {\n".
+                "        function $name() {\n".
+                "            return call_user_func_array(\$GLOBALS['" . static::GLOBAL_HELPER_PREFIX . "$name'], func_get_args());\n".
+                "        }\n".
+                "    }\n";
+        }
+
+        return $preCode . $pugCode;
+    }
+
+    /**
+     * Get a Pug engine option or the default value passed as second parameter (null if omitted).
+     *
+     * @param string $name
+     * @param mixed  $default
+     *
+     * @return mixed
+     */
+    public function getOptionDefault($name, $default = null)
+    {
+        try {
+            return $this->getOption($name, $default);
+        } catch (\InvalidArgumentException $exception) {
+            return $default;
+        }
+    }
+
+    /**
+     * Get a Pug engine option or the default value passed as second parameter (null if omitted).
+     *
+     * @deprecated This method has inconsistent behavior depending on which major version of the Pug-php engine you
+     *             use, so prefer using getOptionDefault instead that has consistent output no matter the Pug-php
+     *             version.
+     *
+     * @param string $name
+     * @param mixed  $default
+     *
+     * @throws \InvalidArgumentException when using Pug-php 2 engine and getting an option not set
+     *
+     * @return mixed
+     */
+    public function getOption($name, $default = null)
+    {
+        return method_exists($this->jade, 'hasOption') && !$this->jade->hasOption($name)
+            ? $default
+            : $this->jade->getOption($name);
+    }
+
+    /**
+     * Set a Pug engine option.
+     *
+     * @param string|array $name
+     * @param mixed        $value
+     *
+     * @return Pug
+     */
+    public function setOption($name, $value)
+    {
+        return $this->jade->setOption($name, $value);
+    }
+
+    /**
+     * Set multiple options of the Pug engine.
+     *
+     * @param array $options
+     *
+     * @return Pug
+     */
+    public function setOptions(array $options)
+    {
+        return $this->jade->setOptions($options);
+    }
+
+    /**
+     * Set custom options of the Pug engine.
+     *
+     * @deprecated Method only used with Pug-php 2, if you're using Pug-php 2, please consider using the
+     *             last major release.
+     *
+     * @param array $options
+     *
+     * @return Pug
+     */
+    public function setCustomOptions(array $options)
+    {
+        return $this->jade->setCustomOptions($options);
+    }
+
+    /**
+     * Get the Pug engine.
+     *
+     * @return Pug
+     */
+    public function getEngine()
+    {
+        return $this->jade;
+    }
+
+    /**
+     * Get the Pug cache directory path.
+     *
+     * @return string
+     */
+    public function getCacheDir()
+    {
+        return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'pug';
+    }
+
+    /**
+     * Set a Pug filter.
+     *
+     * @param string   $name
+     * @param callable $filter
+     *
+     * @return Pug
+     */
+    public function filter($name, $filter)
+    {
+        return $this->jade->filter($name, $filter);
+    }
+
+    /**
+     * Check if the Pug engine has a given filter by name.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function hasFilter($name)
+    {
+        return $this->jade->hasFilter($name);
+    }
+
+    /**
+     * Get a filter by name from the Pug engine.
+     *
+     * @param string $name
+     *
+     * @return callable
+     */
+    public function getFilter($name)
+    {
+        return $this->jade->getFilter($name);
+    }
+
+    /**
+     * Prepare and group input and global parameters.
+     *
+     * @param array $parameters
+     *
+     * @throws \ErrorException when a forbidden parameter key is used
+     *
+     * @return array input parameters with global parameters
+     */
+    public function getParameters(array $parameters = [])
     {
         foreach (['view', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
@@ -350,6 +542,23 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             $parameters = array_merge($sharedVariables, $parameters);
         }
         $parameters['view'] = $this;
+
+        return $parameters;
+    }
+
+    /**
+     * Render a template by name.
+     *
+     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
+     * @param array                                                           $parameters
+     *
+     * @throws \ErrorException when a forbidden parameter key is used
+     *
+     * @return string
+     */
+    public function render($name, array $parameters = [])
+    {
+        $parameters = $this->getParameters($parameters);
         $method = method_exists($this->jade, 'renderFile')
             ? [$this->jade, 'renderFile']
             : [$this->jade, 'render'];
@@ -357,11 +566,45 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return call_user_func($method, $this->getFileFromName($name), $parameters);
     }
 
+    /**
+     * Render a template string.
+     *
+     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
+     * @param array                                                           $parameters
+     *
+     * @throws \ErrorException when a forbidden parameter key is used
+     *
+     * @return string
+     */
+    public function renderString($code, array $parameters = [])
+    {
+        $parameters = $this->getParameters($parameters);
+        $method = method_exists($this->jade, 'renderFile')
+            ? [$this->jade, 'render']
+            : [$this->jade, 'renderString'];
+
+        return call_user_func($method, $code, $parameters);
+    }
+
+    /**
+     * Check if a template exists.
+     *
+     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
+     *
+     * @return bool
+     */
     public function exists($name)
     {
         return file_exists($this->getFileFromName($name));
     }
 
+    /**
+     * Check if a file extension is supported by Pug.
+     *
+     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
+     *
+     * @return bool
+     */
     public function supports($name)
     {
         $extensions = method_exists($this->jade, 'getExtensions')
@@ -376,34 +619,63 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return false;
     }
 
+    /**
+     * Get an helper by name.
+     *
+     * @param string $name
+     *
+     * @return mixed
+     */
     public function offsetGet($name)
     {
         return $this->helpers[$name];
     }
 
+    /**
+     * Check if an helper exists.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
     public function offsetExists($name)
     {
         return isset($this->helpers[$name]);
     }
 
+    /**
+     * Set an helper.
+     *
+     * @param string $name
+     * @param mixed  $value
+     */
     public function offsetSet($name, $value)
     {
         $this->helpers[$name] = $value;
     }
 
+    /**
+     * Remove an helper.
+     *
+     * @param string $name
+     */
     public function offsetUnset($name)
     {
         unset($this->helpers[$name]);
     }
 
-    public static function proceedTask(&$flags, $io, $taskResult, $flag, $successMessage, $message)
+    protected static function extractUniquePaths($paths)
     {
-        if ($taskResult) {
-            $flags |= $flag;
-            $message = $successMessage;
+        $result = [];
+        foreach ($paths as $path) {
+            $realPath = realpath($path) ?: $path;
+
+            if (!in_array($realPath, $result)) {
+                $result[] = $path;
+            }
         }
 
-        $io->write($message);
+        return $result;
     }
 
     protected static function askConfirmation(IOInterface $io, $message)
@@ -527,6 +799,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         }
 
         return true;
+    }
+
+    public static function proceedTask(&$flags, $io, $taskResult, $flag, $successMessage, $message)
+    {
+        if ($taskResult) {
+            $flags |= $flag;
+            $message = $successMessage;
+        }
+
+        $io->write($message);
     }
 
     public static function install($event, $dir = null)
