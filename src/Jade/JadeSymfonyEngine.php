@@ -147,51 +147,6 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $baseDir ?: $this->defaultTemplateDirectory;
     }
 
-    protected function replaceFunction($name, $function, $code)
-    {
-        return mb_substr(preg_replace(
-            '/(?<=\=\>|[=\.\+,:\?\(])\s*' . preg_quote($name, '/') . '\s*\(/',
-            $function . '(',
-            '=' . $code
-        ), 1);
-    }
-
-    protected function replaceCode($pugCode)
-    {
-        $jsStyleEnabled = $this->getOption('expressionLanguage') === 'js';
-        $helperPattern = $jsStyleEnabled
-            ? 'view.%s.%s'
-            : '$view[\'%s\']->%s';
-        $replacements = [
-            'random'        => 'mt_rand',
-            'asset'         => ['assets', 'getUrl'],
-            'asset_version' => ['assets', 'getVersion'],
-            'css_url'       => ['css', 'getUrl'],
-            'csrf_token'    => ['form', 'csrfToken'],
-            'url'           => ['router', 'url'],
-            'path'          => ['router', 'path'],
-            'logout_url'    => ['logout', 'url'],
-            'logout_path'   => ['logout', 'path'],
-            'absolute_url'  => ['http', 'generateAbsoluteUrl'],
-            'relative_path' => ['http', 'generateRelativePath'],
-            'is_granted'    => ['security', 'isGranted'],
-        ];
-        foreach ($replacements as $name => $function) {
-            if (is_array($function)) {
-                $function = sprintf($helperPattern, $function[0], $function[1]);
-            }
-            $output = '';
-            $input = $pugCode;
-            while (preg_match('/^([^\'"]*)("(?:\\\\[\\S\\s]|[^"\\\\])*"|\'(?:\\\\[\\S\\s]|[^\'\\\\])*\')/', $input, $match)) {
-                $input = mb_substr($input, mb_strlen($match[0]));
-                $output .= $this->replaceFunction($name, $function, $match[1]) . $match[2];
-            }
-            $pugCode = $output . $this->replaceFunction($name, $function, $input);
-        }
-
-        return $pugCode;
-    }
-
     protected function getTemplatingHelper($name)
     {
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
