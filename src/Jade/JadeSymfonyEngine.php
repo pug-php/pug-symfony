@@ -5,14 +5,18 @@ namespace Jade;
 use Composer\IO\IOInterface;
 use Jade\Symfony\Css;
 use Jade\Symfony\Logout;
+use Jade\Symfony\MixedLoader;
 use Pug\Assets;
 use Pug\Pug;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
+use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 use Twig\Loader\FilesystemLoader;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
@@ -161,6 +165,10 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             ($twig = $services->get('twig')) instanceof \Twig_Environment
         ) {
             /* @var \Twig_Environment $twig */
+            $twig = clone $twig;
+            $loader = new MixedLoader($twig->getLoader());
+            $twig->setLoader($loader);
+            $formLayout = $twig->load('form_div_layout.html.twig')->getSourceContext()->getCode();
             $this->share('twig', $twig);
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */
@@ -181,17 +189,19 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     }
                     if (!$callable && ($nodeClass = $function->getNodeClass())) {
                         $twig->env = $twig;
-                        $callable = function () use ($twig, $name, $nodeClass) {
-                            $context = [];
-                            $localArguments = [];
+                        $callable = function () use ($twig, $name, $nodeClass, $loader) {
+                            $variables = [];
                             foreach (func_get_args() as $index => $argument) {
-                                $name = 'arg' . $index;
-                                $context[$name] = $argument;
-                                $localArguments[] = new \Twig_Node_Expression_Name($name, 0);
+                                $variables['arg' . $index] = $argument;
                             }
-                            $node = new $nodeClass($name, new \Twig_Node_Expression_Array($localArguments, 0), 0);
 
-                            return eval('return ' . $twig->compile($node) . ';');
+                            $template = $loader->uniqueTemplate('{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}');
+
+                            try {
+                                return $twig->render($template, $variables);
+                            } catch (\Throwable $e) {
+                                return $e->getMessage()."\n";
+                            }
                         };
                         $this->twigHelpers[$name] = $callable->bindTo($twig);
                     }

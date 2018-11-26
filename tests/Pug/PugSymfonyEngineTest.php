@@ -6,18 +6,13 @@ use Composer\Composer;
 use Composer\Script\Event;
 use Pug\Filter\AbstractFilter;
 use Pug\PugSymfonyEngine;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Form\Extension\Core\DataMapper\RadioListMapper;
 use Symfony\Component\Form\FormBuilder;
-use Symfony\Component\Form\FormFactory;
-use Symfony\Component\Form\FormRegistry;
-use Symfony\Component\Form\ResolvedFormType;
-use Symfony\Component\Form\ResolvedFormTypeFactory;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 
@@ -110,6 +105,44 @@ class TestFormBuilder extends FormBuilder
     public function getCompound()
     {
         return true;
+    }
+}
+
+class Task
+{
+    protected $name;
+    protected $dueDate;
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
+
+    public function getDueDate()
+    {
+        return $this->dueDate;
+    }
+
+    public function setDueDate(\DateTime $dueDate = null)
+    {
+        $this->dueDate = $dueDate;
+    }
+}
+
+class TestController extends Controller
+{
+    public function index()
+    {
+        return $this->createFormBuilder(new Task())
+            ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
+            ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
+            ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
+            ->getForm();
     }
 }
 
@@ -217,25 +250,28 @@ class PugSymfonyEngineTest extends KernelTestCase
      */
     public function testFormHelpers()
     {
-        self::markTestIncomplete('TODO');
         self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $type = new ResolvedFormTypeFactory();
-        $formBuilder = new TestFormBuilder('test', 'stdClass', new EventDispatcher(), new FormFactory(new FormRegistry([], $type), $type));
-        $formBuilder->setDataMapper(new RadioListMapper());
-        $formBuilder->setType(new ResolvedFormType(new \Symfony\Component\Form\Extension\Core\Type\TextType()));
-        $form = $formBuilder
-            ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
-            ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
-            ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
-            ->getForm();
+        $controller = new TestController();
+        $controller->setContainer(self::$kernel->getContainer());
+        $form = $controller->index();
 
-        self::assertSame('exp', trim($pugSymfony->renderString(implode("\n", [
+        self::assertRegExp('/^'.implode('', [
+            '<form name="form" method="get">',
+            '<div><label for="form_name" class="required">Name<\/label><input type="text" id="form_name" name="form\[name\]" required="required" \/><\/div>',
+            '<div><label class="required">Due date<\/label><div id="form_dueDate"><select id="form_dueDate_day" name="form\[dueDate\]\[day\]">',
+            '(<option value="\d+">\d+<\/option>)+<\/select>',
+            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">(<option value="\d+">[^<]+<\/option>)+<\/select>',
+            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">(<option value="\d+">\d+<\/option>)+<\/select>',
+            '<\/div><\/div><div><button type="submit" id="form_save" name="form\[save\]">Submit me<\/button><\/div>',
+            '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/><\/form>',
+        ]).'$/', trim($pugSymfony->renderString(implode("\n", [
             '!=form_start(form, {method: "GET"})',
             '!=form_errors(form)',
             '!=form_row(form.name)',
+            '!=form_widget(form.name)',
             '!=form_row(form.dueDate)',
-            '!=form_row(form.submit, {label: "Submit me"})',
+            '!=form_row(form.save, {label: "Submit me"})',
             '!=form_end(form)',
         ]), [
             'form' => $form->createView(),
