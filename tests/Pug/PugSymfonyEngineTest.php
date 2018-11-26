@@ -213,7 +213,6 @@ class PugSymfonyEngineTest extends KernelTestCase
     }
 
     /**
-     * @group i
      * @throws \ErrorException
      */
     public function testFormHelpers()
@@ -228,7 +227,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $form = $formBuilder
             ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
             ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
-            ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', array('label' => 'Foo'))
+            ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
             ->getForm();
 
         self::assertSame('exp', trim($pugSymfony->renderString(implode("\n", [

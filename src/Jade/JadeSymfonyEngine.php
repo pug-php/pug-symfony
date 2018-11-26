@@ -95,16 +95,16 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
         $this->jade = new $pugClassName(array_merge([
-            'debug'           => $debug,
-            'assetDirectory'  => static::extractUniquePaths($assetsDirectories),
+            'debug' => $debug,
+            'assetDirectory' => static::extractUniquePaths($assetsDirectories),
             'viewDirectories' => static::extractUniquePaths($viewDirectories),
-            'baseDir'         => $baseDir,
-            'cache'           => $debug ? false : $cache,
-            'environment'     => $environment,
-            'extension'       => ['.pug', '.jade'],
+            'baseDir' => $baseDir,
+            'cache' => $debug ? false : $cache,
+            'environment' => $environment,
+            'extension' => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            'preRender'       => [$this, 'preRender'],
-            'prettyprint'     => $kernel->isDebug(),
+            'preRender' => [$this, 'preRender'],
+            'prettyprint' => $kernel->isDebug(),
         ], ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: []));
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
@@ -163,18 +163,18 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
             ? 'view.%s.%s'
             : '$view[\'%s\']->%s';
         $replacements = [
-            'random' => 'mt_rand',
-            'asset' => ['assets', 'getUrl'],
+            'random'        => 'mt_rand',
+            'asset'         => ['assets', 'getUrl'],
             'asset_version' => ['assets', 'getVersion'],
-            'css_url' => ['css', 'getUrl'],
-            'csrf_token' => ['form', 'csrfToken'],
-            'url' => ['router', 'url'],
-            'path' => ['router', 'path'],
-            'logout_url' => ['logout', 'url'],
-            'logout_path' => ['logout', 'path'],
-            'absolute_url' => ['http', 'generateAbsoluteUrl'],
+            'css_url'       => ['css', 'getUrl'],
+            'csrf_token'    => ['form', 'csrfToken'],
+            'url'           => ['router', 'url'],
+            'path'          => ['router', 'path'],
+            'logout_url'    => ['logout', 'url'],
+            'logout_path'   => ['logout', 'path'],
+            'absolute_url'  => ['http', 'generateAbsoluteUrl'],
             'relative_path' => ['http', 'generateRelativePath'],
-            'is_granted' => ['security', 'isGranted'],
+            'is_granted'    => ['security', 'isGranted'],
         ];
         foreach ($replacements as $name => $function) {
             if (is_array($function)) {
@@ -295,18 +295,18 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected function storeReplacements()
     {
         $this->replacements = array_merge([
-            'random' => 'mt_rand',
-            'asset' => ['assets', 'getUrl'],
+            'random'        => 'mt_rand',
+            'asset'         => ['assets', 'getUrl'],
             'asset_version' => ['assets', 'getVersion'],
-            'css_url' => ['css', 'getUrl'],
-            'csrf_token' => ['form', 'csrfToken'],
-            'url' => ['router', 'url'],
-            'path' => ['router', 'path'],
-            'logout_url' => ['logout', 'url'],
-            'logout_path' => ['logout', 'path'],
-            'absolute_url' => ['http', 'generateAbsoluteUrl'],
+            'css_url'       => ['css', 'getUrl'],
+            'csrf_token'    => ['form', 'csrfToken'],
+            'url'           => ['router', 'url'],
+            'path'          => ['router', 'path'],
+            'logout_url'    => ['logout', 'url'],
+            'logout_path'   => ['logout', 'path'],
+            'absolute_url'  => ['http', 'generateAbsoluteUrl'],
             'relative_path' => ['http', 'generateRelativePath'],
-            'is_granted' => ['security', 'isGranted'],
+            'is_granted'    => ['security', 'isGranted'],
         ], $this->twigHelpers);
     }
 
@@ -375,11 +375,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     {
         $preCode = '';
         foreach ($this->replacements as $name => $callable) {
-            $preCode .= ":php\n".
-                "    if (!function_exists('$name')) {\n".
-                "        function $name() {\n".
-                "            return call_user_func_array(\$GLOBALS['" . static::GLOBAL_HELPER_PREFIX . "$name'], func_get_args());\n".
-                "        }\n".
+            $preCode .= ":php\n" .
+                "    if (!function_exists('$name')) {\n" .
+                "        function $name() {\n" .
+                "            return call_user_func_array(\$GLOBALS['" . static::GLOBAL_HELPER_PREFIX . "$name'], func_get_args());\n" .
+                "        }\n" .
                 "    }\n";
         }
 
@@ -390,7 +390,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      * Get a Pug engine option or the default value passed as second parameter (null if omitted).
      *
      * @param string $name
-     * @param mixed  $default
+     * @param mixed $default
      *
      * @return mixed
      */
@@ -411,7 +411,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      *             version.
      *
      * @param string $name
-     * @param mixed  $default
+     * @param mixed $default
      *
      * @throws \InvalidArgumentException when using Pug-php 2 engine and getting an option not set
      *
@@ -428,7 +428,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      * Set a Pug engine option.
      *
      * @param string|array $name
-     * @param mixed        $value
+     * @param mixed $value
      *
      * @return Pug
      */
@@ -487,7 +487,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     /**
      * Set a Pug filter.
      *
-     * @param string   $name
+     * @param string $name
      * @param callable $filter
      *
      * @return Pug
@@ -550,7 +550,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      * Render a template by name.
      *
      * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
-     * @param array                                                           $parameters
+     * @param array $parameters
      *
      * @throws \ErrorException when a forbidden parameter key is used
      *
@@ -579,9 +579,9 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     public function renderString($code, array $parameters = [])
     {
         $parameters = $this->getParameters($parameters);
-        $method = method_exists($this->jade, 'renderFile')
-            ? [$this->jade, 'render']
-            : [$this->jade, 'renderString'];
+        $method = method_exists($this->jade, 'renderString')
+            ? [$this->jade, 'renderString']
+            : [$this->jade, 'render'];
 
         return call_user_func($method, $code, $parameters);
     }
