@@ -268,9 +268,9 @@ class PugSymfonyEngineTest extends KernelTestCase
             '<div>\s*<label for="form_name" class="required">Name<\/label>\s*',
             '<input type="text" id="form_name" name="form\[name\]" required="required" \/>\s*<\/div>\s*',
             '<div>\s*<label class="required">Due date<\/label>\s*<div id="form_dueDate">\s*(',
-            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">\s*(<option value="\d+">\d+<\/option>\s*)+<\/select>\s*|',
-            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">\s*(<option value="\d+">[^<]+<\/option>\s*)+<\/select>\s*|',
-            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">\s*(<option value="\d+">\d+<\/option>\s*)+<\/select>\s*){3}',
+            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
             '<\/div>\s*<\/div>\s*<div>\s*<button type="submit" id="form_save" name="form\[save\]">Submit me<\/button>\s*<\/div>\s*',
             '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/>\s*<\/form>',
         ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
