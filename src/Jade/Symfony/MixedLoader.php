@@ -42,6 +42,7 @@ class MixedLoader implements Twig_LoaderInterface
     {
         return $this->getSourceContext($name);
     }
+
     // @codeCoverageIgnoreEnd
 
     public function __call($name, $arguments)
@@ -54,9 +55,9 @@ class MixedLoader implements Twig_LoaderInterface
      *
      * @param string $name The name of the template to load
      *
-     * @return string The cache key
-     *
      * @throws Twig_Error_Loader When $name is not found
+     *
+     * @return string The cache key
      */
     public function getCacheKey($name)
     {
@@ -71,12 +72,12 @@ class MixedLoader implements Twig_LoaderInterface
      * Returns true if the template is still fresh.
      *
      * @param string $name The template name
-     * @param int $time Timestamp of the last modification time of the
+     * @param int    $time Timestamp of the last modification time of the
      *                     cached template
      *
-     * @return bool true if the template is fresh, false otherwise
-     *
      * @throws Twig_Error_Loader When $name is not found
+     *
+     * @return bool true if the template is fresh, false otherwise
      */
     public function isFresh($name, $time)
     {
