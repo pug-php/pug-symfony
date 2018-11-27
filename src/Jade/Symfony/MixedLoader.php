@@ -37,6 +37,13 @@ class MixedLoader implements Twig_LoaderInterface
         return $this->base->getSourceContext($name);
     }
 
+    // @codeCoverageIgnoreStart
+    public function getSource($name)
+    {
+        return $this->getSourceContext($name);
+    }
+    // @codeCoverageIgnoreEnd
+
     public function __call($name, $arguments)
     {
         return call_user_func_array([$this->base, $name], $arguments);

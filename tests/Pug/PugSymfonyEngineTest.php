@@ -138,11 +138,19 @@ class TestController extends Controller
 {
     public function index()
     {
-        return $this->createFormBuilder(new Task())
-            ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
-            ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
-            ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
-            ->getForm();
+        try {
+            return $this->createFormBuilder(new Task())
+                ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
+                ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
+                ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
+                ->getForm();
+        } catch (\InvalidArgumentException $e) {
+            return $this->createFormBuilder(new Task())
+                ->add('name', 'text')
+                ->add('dueDate', 'date')
+                ->add('save', 'submit', ['label' => 'Foo'])
+                ->getForm();
+        }
     }
 }
 
@@ -246,6 +254,8 @@ class PugSymfonyEngineTest extends KernelTestCase
     }
 
     /**
+     * @group i
+     *
      * @throws \ErrorException
      */
     public function testFormHelpers()
