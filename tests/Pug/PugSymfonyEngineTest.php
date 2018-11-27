@@ -266,7 +266,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $controller->setContainer(self::$kernel->getContainer());
         $form = $controller->index();
 
-        self::assertRegExp('/^'.implode('', [
+        self::assertRegExp('/^' . implode('', [
             '<form name="form" method="get">',
             '<div><label for="form_name" class="required">Name<\/label><input type="text" id="form_name" name="form\[name\]" required="required" \/><\/div>',
             '<div><label class="required">Due date<\/label><div id="form_dueDate"><select id="form_dueDate_day" name="form\[dueDate\]\[day\]">',
@@ -275,7 +275,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">(<option value="\d+">\d+<\/option>)+<\/select>',
             '<\/div><\/div><div><button type="submit" id="form_save" name="form\[save\]">Submit me<\/button><\/div>',
             '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/><\/form>',
-        ]).'$/', trim($pugSymfony->renderString(implode("\n", [
+        ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
             '!=form_start(form, {method: "GET"})',
             '!=form_errors(form)',
             '!=form_row(form.name)',

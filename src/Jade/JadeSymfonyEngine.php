@@ -10,13 +10,11 @@ use Pug\Assets;
 use Pug\Pug;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
-use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
 use Twig\Environment;
-use Twig\Loader\ArrayLoader;
 use Twig\Loader\FilesystemLoader;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
@@ -200,7 +198,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                             try {
                                 return $twig->render($template, $variables);
                             } catch (\Throwable $e) {
-                                return $e->getMessage()."\n";
+                                return $e->getMessage() . "\n";
                             }
                         };
                         $this->twigHelpers[$name] = $callable->bindTo($twig);
