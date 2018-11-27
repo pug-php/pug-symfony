@@ -506,7 +506,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         ], $io->getLastOutput());
 
         $io->reset();
-        $fs->mkdir($dir);
+        mkdir($dir, 0777, true);
         touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -575,8 +575,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io->setInteractive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs = new Filesystem();
-        $fs->mkdir($dir);
+        mkdir($dir, 0777, true);
         touch($dir . '/composer.json');
         file_exists($installedFile) && unlink($installedFile);
         clearstatcache();
@@ -694,7 +693,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         ], $io->getLastOutput());
 
         $io->reset();
-        $fs->mkdir($dir);
+        mkdir($dir, 0777, true);
         touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
