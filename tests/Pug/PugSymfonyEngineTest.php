@@ -260,11 +260,10 @@ class PugSymfonyEngineTest extends KernelTestCase
      */
     public function testFormHelpers()
     {
-        self::clearCache();
+        //self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $controller = new TestController();
         $controller->setContainer(self::$kernel->getContainer());
-        $form = $controller->index();
 
         self::assertRegExp('/^' . implode('', [
             '<form name="form" method="get">',
@@ -279,12 +278,12 @@ class PugSymfonyEngineTest extends KernelTestCase
             '!=form_start(form, {method: "GET"})',
             '!=form_errors(form)',
             '!=form_row(form.name)',
-            '!=form_widget(form.name)',
+            '!=form_widget(form.name, {attr: {class: "foo"}})',
             '!=form_row(form.dueDate)',
             '!=form_row(form.save, {label: "Submit me"})',
             '!=form_end(form)',
         ]), [
-            'form' => $form->createView(),
+            'form' => $controller->index()->createView(),
         ])));
     }
 

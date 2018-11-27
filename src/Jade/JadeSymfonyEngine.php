@@ -83,7 +83,6 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         $assetsDirectories = [$appDir . '/Resources/assets'];
         $viewDirectories = [$appDir . '/Resources/views'];
         if ($container->has('twig') &&
-            $container->initialized('twig') &&
             ($twig = $container->get('twig')) instanceof \Twig_Environment &&
             ($loader = $twig->getLoader()) instanceof FilesystemLoader &&
             is_array($paths = $loader->getPaths()) &&
@@ -159,14 +158,12 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     {
         $this->twigHelpers = [];
         if ($services->has('twig') &&
-            $services->initialized('twig') &&
             ($twig = $services->get('twig')) instanceof \Twig_Environment
         ) {
             /* @var \Twig_Environment $twig */
             $twig = clone $twig;
             $loader = new MixedLoader($twig->getLoader());
             $twig->setLoader($loader);
-            $formLayout = $twig->load('form_div_layout.html.twig')->getSourceContext()->getCode();
             $this->share('twig', $twig);
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */
