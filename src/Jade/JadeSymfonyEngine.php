@@ -11,10 +11,10 @@ use Pug\Pug;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
-use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
@@ -64,6 +64,11 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      */
     protected $defaultTemplateDirectory;
 
+    /**
+     * @var Filesystem
+     */
+    protected $fs;
+
     public function __construct($kernel)
     {
         if (empty($kernel) || !($kernel instanceof KernelInterface || $kernel instanceof Kernel)) {
@@ -72,9 +77,8 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
         $this->kernel = $kernel;
         $cache = $this->getCacheDir();
-        if (!file_exists($cache)) {
-            mkdir($cache, 0777, true);
-        }
+        $this->fs = new Filesystem();
+        $this->fs->mkdir($cache);
         $container = $kernel->getContainer();
         $this->container = $container;
         $environment = $kernel->getEnvironment();
@@ -131,7 +135,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
     protected function crawlDirectories($srcDir, $appDir, &$assetsDirectories, &$viewDirectories)
     {
         $baseDir = null;
-        if (file_exists($srcDir)) {
+        if ($this->fs->exists($srcDir)) {
             foreach (scandir($srcDir) as $directory) {
                 if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                     continue;
@@ -317,6 +321,17 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
         return $directory . DIRECTORY_SEPARATOR . $name;
     }
 
+    /**
+     * Share variables (local templates parameters) with all future templates rendered.
+     *
+     * @example $pug->share('lang', 'fr')
+     * @example $pug->share(['title' => 'My blog', 'today' => new DateTime()])
+     *
+     * @param array|string $variables a variables name-value pairs or a single variable name
+     * @param mixed        $value     the variable value if the first argument given is a string
+     *
+     * @return $this
+     */
     public function share($variables, $value = null)
     {
         $this->jade->share($variables, $value);
@@ -553,7 +568,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
      */
     public function exists($name)
     {
-        return file_exists($this->getFileFromName($name));
+        return $this->fs->exists($this->getFileFromName($name));
     }
 
     /**

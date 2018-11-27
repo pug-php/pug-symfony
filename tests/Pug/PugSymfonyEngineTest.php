@@ -4,7 +4,6 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
-use Composer\Util\Filesystem;
 use Pug\Filter\AbstractFilter;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -12,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
@@ -159,9 +159,7 @@ class PugSymfonyEngineTest extends KernelTestCase
     private static function clearCache()
     {
         foreach (['app', 'var'] as $directory) {
-            if (is_dir($path = __DIR__ . "/../project/$directory/cache")) {
-                (new Filesystem())->remove($path);
-            }
+            (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
         }
     }
 
@@ -483,21 +481,21 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io = new CaptureIO();
         $composer = new Composer();
         $installedFile = __DIR__ . '/../../installed';
+        $fs = new Filesystem();
         touch($installedFile);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setInteractive(true);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setPermissive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs = new Filesystem();
         $fs->remove($dir);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -506,10 +504,8 @@ class PugSymfonyEngineTest extends KernelTestCase
         ], $io->getLastOutput());
 
         $io->reset();
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-        touch($dir . '/composer.json');
+        $fs->mkdir($dir);
+        $fs->touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
@@ -520,10 +516,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertFileNotExists($installedFile);
 
         foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
-            $path = __DIR__ . '/../project' . $file;
-            if (file_exists($path)) {
-                $fs->copy($path, $dir . $file);
-            }
+            $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
         }
         $io->reset();
 
@@ -536,7 +529,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/app/config/config.yml', str_replace(
             ['pug', 'services:'],
             ['x', 'x:'],
@@ -580,13 +573,14 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io->setInteractive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
-        mkdir($dir, 0777, true);
-        touch($dir . '/composer.json');
-        file_exists($installedFile) && unlink($installedFile);
+        $fs = new Filesystem();
+        $fs->mkdir($dir);
+        $fs->touch($dir . '/composer.json');
+        $fs->remove(($installedFile);
         clearstatcache();
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        file_exists($installedFile) && unlink($installedFile);
+        $fs->remove($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
@@ -626,7 +620,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             'bar: biz',
         ]), file_get_contents($dir . '/app/config/config.yml'));
         self::assertFileExists($installedFile);
-        unlink($installedFile);
+        $fs->remove($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
@@ -675,21 +669,21 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io = new CaptureIO();
         $composer = new Composer();
         $installedFile = __DIR__ . '/../../installed';
-        touch($installedFile);
+        $fs = new Filesystem();
+        $fs->touch($installedFile);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s4'));
 
-        file_exists($installedFile) && unlink($installedFile);
+        $fs->remove(($installedFile);
         $io->setInteractive(true);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s4'));
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setPermissive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs = new Filesystem();
         $fs->remove($dir);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -698,10 +692,8 @@ class PugSymfonyEngineTest extends KernelTestCase
         ], $io->getLastOutput());
 
         $io->reset();
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-        touch($dir . '/composer.json');
+        $fs->mkdir($dir);
+        $fs->touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
@@ -725,7 +717,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/config/services.yaml', str_replace(
             'pug',
             'x',
@@ -764,7 +756,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/config/packages/framework.yaml', str_replace(
             'pug',
             'X',
@@ -777,7 +769,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/config/packages/framework.yaml', preg_replace(
             '/^(\s+)engines\s*:\s*\[[^\]]+]/m',
             "\$1engines:\n\$1    - twig",
