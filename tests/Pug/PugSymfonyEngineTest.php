@@ -264,14 +264,14 @@ class PugSymfonyEngineTest extends KernelTestCase
         $controller->setContainer(self::$kernel->getContainer());
 
         self::assertRegExp('/^' . implode('', [
-            '<form name="form" method="get"( action="")?>',
-            '<div><label for="form_name" class="required">Name<\/label>',
-            '<input type="text" id="form_name" name="form\[name\]" required="required" \/><\/div>',
-            '<div><label class="required">Due date<\/label><div id="form_dueDate">(',
-            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">(<option value="\d+">\d+<\/option>)+<\/select>|',
-            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">(<option value="\d+">[^<]+<\/option>)+<\/select>|',
-            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">(<option value="\d+">\d+<\/option>)+<\/select>){3}',
-            '<\/div><\/div><div><button type="submit" id="form_save" name="form\[save\]">Submit me<\/button><\/div>',
+            '<form name="form" method="get"( action="")?>\s*',
+            '<div>\s*<label for="form_name" class="required">Name<\/label>\s*',
+            '<input type="text" id="form_name" name="form\[name\]" required="required" \/>\s*<\/div>\s*',
+            '<div>\s*<label class="required">Due date<\/label>\s*<div id="form_dueDate">\s*(',
+            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">\s*(<option value="\d+">\d+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">\s*(<option value="\d+">[^<]+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">\s*(<option value="\d+">\d+<\/option>\s*)+<\/select>\s*){3}',
+            '<\/div>\s*<\/div>\s*<div>\s*<button type="submit" id="form_save" name="form\[save\]">Submit me<\/button>\s*<\/div>\s*',
             '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/>\s*<\/form>',
         ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
             '!=form_start(form, {method: "GET"})',
