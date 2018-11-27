@@ -576,7 +576,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         $fs = new Filesystem();
         $fs->mkdir($dir);
         $fs->touch($dir . '/composer.json');
-        $fs->remove(($installedFile);
+        $fs->remove($installedFile);
         clearstatcache();
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -674,7 +674,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s4'));
 
-        $fs->remove(($installedFile);
+        $fs->remove($installedFile);
         $io->setInteractive(true);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s4'));
