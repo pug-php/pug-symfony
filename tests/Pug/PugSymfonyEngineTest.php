@@ -260,8 +260,9 @@ class PugSymfonyEngineTest extends KernelTestCase
         $controller->setContainer(self::$kernel->getContainer());
 
         self::assertRegExp('/^' . implode('', [
-            '<form name="form" method="get">',
-            '<div><label for="form_name" class="required">Name<\/label><input type="text" id="form_name" name="form\[name\]" required="required" \/><\/div>',
+            '<form name="form" method="get"( action="")?>',
+            '<div><label for="form_name" class="required">Name<\/label>',
+            '<input type="text" id="form_name" name="form\[name\]" required="required" \/><\/div>',
             '<div><label class="required">Due date<\/label><div id="form_dueDate">(',
             '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">(<option value="\d+">\d+<\/option>)+<\/select>|',
             '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">(<option value="\d+">[^<]+<\/option>)+<\/select>|',
