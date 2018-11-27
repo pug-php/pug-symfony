@@ -135,7 +135,7 @@ class Task
 }
 
 if (!class_exists('Symfony\Bundle\FrameworkBundle\Controller\AbstractController')) {
-    include __DIR__ . '/FakeController.php';
+    include __DIR__ . '/AbstractController.php';
 }
 
 class TestController extends AbstractController
