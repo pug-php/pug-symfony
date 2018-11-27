@@ -506,7 +506,9 @@ class PugSymfonyEngineTest extends KernelTestCase
         ], $io->getLastOutput());
 
         $io->reset();
-        mkdir($dir, 0777, true);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
         touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -518,7 +520,10 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertFileNotExists($installedFile);
 
         foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
-            $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
+            $path = __DIR__ . '/../project' . $file;
+            if (file_exists($path)) {
+                $fs->copy($path, $dir . $file);
+            }
         }
         $io->reset();
 
@@ -693,7 +698,9 @@ class PugSymfonyEngineTest extends KernelTestCase
         ], $io->getLastOutput());
 
         $io->reset();
-        mkdir($dir, 0777, true);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
         touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
