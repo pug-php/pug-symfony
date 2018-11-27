@@ -6,7 +6,7 @@ use Composer\Composer;
 use Composer\Script\Event;
 use Pug\Filter\AbstractFilter;
 use Pug\PugSymfonyEngine;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
@@ -134,7 +134,11 @@ class Task
     }
 }
 
-class TestController extends Controller
+if (!class_exists('Symfony\Bundle\FrameworkBundle\Controller\AbstractController')) {
+    include __DIR__ . '/FakeController.php';
+}
+
+class TestController extends AbstractController
 {
     public function index()
     {

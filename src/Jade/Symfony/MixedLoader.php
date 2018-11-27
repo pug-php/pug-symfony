@@ -31,7 +31,7 @@ class MixedLoader implements Twig_LoaderInterface
     public function getSourceContext($name)
     {
         if (isset($this->extraTemplates[$name])) {
-            return  new \Twig_Source($this->extraTemplates[$name], $name);
+            return new \Twig_Source($this->extraTemplates[$name], $name);
         }
 
         return $this->base->getSourceContext($name);
@@ -40,7 +40,7 @@ class MixedLoader implements Twig_LoaderInterface
     // @codeCoverageIgnoreStart
     public function getSource($name)
     {
-        return $this->getSourceContext($name);
+        return $this->getSourceContext($name)->getCode();
     }
 
     // @codeCoverageIgnoreEnd
