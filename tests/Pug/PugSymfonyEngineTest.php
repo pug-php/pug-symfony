@@ -4,6 +4,7 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
+use Composer\Util\Filesystem;
 use Pug\Filter\AbstractFilter;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -11,7 +12,6 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
@@ -264,12 +264,12 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertRegExp('/^' . implode('', [
             '<form name="form" method="get">',
             '<div><label for="form_name" class="required">Name<\/label><input type="text" id="form_name" name="form\[name\]" required="required" \/><\/div>',
-            '<div><label class="required">Due date<\/label><div id="form_dueDate"><select id="form_dueDate_day" name="form\[dueDate\]\[day\]">',
-            '(<option value="\d+">\d+<\/option>)+<\/select>',
-            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">(<option value="\d+">[^<]+<\/option>)+<\/select>',
-            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">(<option value="\d+">\d+<\/option>)+<\/select>',
+            '<div><label class="required">Due date<\/label><div id="form_dueDate">(',
+            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">(<option value="\d+">\d+<\/option>)+<\/select>|',
+            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">(<option value="\d+">[^<]+<\/option>)+<\/select>|',
+            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">(<option value="\d+">\d+<\/option>)+<\/select>){3}',
             '<\/div><\/div><div><button type="submit" id="form_save" name="form\[save\]">Submit me<\/button><\/div>',
-            '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/><\/form>',
+            '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/>\s*<\/form>',
         ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
             '!=form_start(form, {method: "GET"})',
             '!=form_errors(form)',
