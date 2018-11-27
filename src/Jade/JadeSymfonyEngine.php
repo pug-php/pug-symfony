@@ -192,11 +192,7 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
 
                             $template = $loader->uniqueTemplate('{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}');
 
-                            try {
-                                return $twig->render($template, $variables);
-                            } catch (\Throwable $e) {
-                                return $e->getMessage() . "\n";
-                            }
+                            return $twig->render($template, $variables);
                         };
                         $this->twigHelpers[$name] = $callable->bindTo($twig);
                     }

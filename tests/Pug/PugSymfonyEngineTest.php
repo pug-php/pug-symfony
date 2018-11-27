@@ -245,7 +245,6 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testLogoutHelper()
     {
-        self::clearCache();
         $logoutUrlHelper = new LogoutUrlHelper(new LogoutUrlGenerator());
         self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -254,13 +253,10 @@ class PugSymfonyEngineTest extends KernelTestCase
     }
 
     /**
-     * @group i
-     *
      * @throws \ErrorException
      */
     public function testFormHelpers()
     {
-        //self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $controller = new TestController();
         $controller->setContainer(self::$kernel->getContainer());
@@ -347,7 +343,6 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testAssetHelperPhp()
     {
-        self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'php');
 
@@ -370,7 +365,6 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testAssetHelperJs()
     {
-        self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'js');
 
