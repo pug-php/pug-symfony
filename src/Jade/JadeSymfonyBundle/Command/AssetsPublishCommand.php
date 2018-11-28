@@ -29,7 +29,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
         $errorDetails = [];
         $directories = [];
         foreach ($pug->getOption('viewDirectories') as $viewDirectory) {
-            if (is_dir($viewDirectory)) {
+            if (is_dir($viewDirectory) && !in_array($viewDirectory, $directories)) {
                 $directories[] = $viewDirectory;
                 $data = $pug->cacheDirectory($viewDirectory);
                 $success += $data[0];

@@ -4,15 +4,21 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
+use Jade\JadeSymfonyEngine;
+use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
+use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
+use Twig\Loader\ArrayLoader;
 
 class TokenStorage extends BaseTokenStorage
 {
@@ -98,14 +104,90 @@ class TestKernel extends \AppKernel
     }
 }
 
+class TestFormBuilder extends FormBuilder
+{
+    public function getCompound()
+    {
+        return true;
+    }
+}
+
+class Task
+{
+    protected $name;
+    protected $dueDate;
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
+
+    public function getDueDate()
+    {
+        return $this->dueDate;
+    }
+
+    public function setDueDate(\DateTime $dueDate = null)
+    {
+        $this->dueDate = $dueDate;
+    }
+}
+
+if (!class_exists('Symfony\Bundle\FrameworkBundle\Controller\AbstractController')) {
+    include __DIR__ . '/AbstractController.php';
+}
+
+class TestController extends AbstractController
+{
+    public function index()
+    {
+        try {
+            return $this->createFormBuilder(new Task())
+                ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
+                ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
+                ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
+                ->getForm();
+        } catch (\InvalidArgumentException $e) {
+            return $this->createFormBuilder(new Task())
+                ->add('name', 'text')
+                ->add('dueDate', 'date')
+                ->add('save', 'submit', ['label' => 'Foo'])
+                ->getForm();
+        }
+    }
+}
+
+class InvalidExceptionOptionsPug extends Pug
+{
+    public function getOption($name)
+    {
+        if ($name === 'foobar') {
+            throw new \InvalidArgumentException('foobar not found');
+        }
+
+        return parent::getOption($name);
+    }
+}
+
+class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
+{
+    public function getEngineClassName()
+    {
+        return '\Pug\Tests\InvalidExceptionOptionsPug';
+    }
+}
+
 class PugSymfonyEngineTest extends KernelTestCase
 {
     private static function clearCache()
     {
         foreach (['app', 'var'] as $directory) {
-            if (is_dir($path = __DIR__ . "/../project/$directory/cache")) {
-                (new Filesystem())->remove($path);
-            }
+            (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
         }
     }
 
@@ -133,9 +215,8 @@ class PugSymfonyEngineTest extends KernelTestCase
         });
         $kernel->boot();
         $pugSymfony = new PugSymfonyEngine($kernel);
-        $code = $pugSymfony->preRender('p=asset("foo")');
 
-        self::assertSame('p=$view[\'assets\']->getUrl("foo")', $code);
+        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
     }
 
     /**
@@ -190,12 +271,43 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testLogoutHelper()
     {
-        self::clearCache();
         $logoutUrlHelper = new LogoutUrlHelper(new LogoutUrlGenerator());
         self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<a href="logout-url"></a><a href="logout-path"></a>', trim($pugSymfony->render('logout.pug')));
+    }
+
+    /**
+     * @throws \ErrorException
+     */
+    public function testFormHelpers()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $controller = new TestController();
+        $controller->setContainer(self::$kernel->getContainer());
+
+        self::assertRegExp('/^' . implode('', [
+            '<form name="form" method="get"( action="")?>\s*',
+            '<div>\s*<label for="form_name" class="required">Name<\/label>\s*',
+            '<input type="text" id="form_name" name="form\[name\]" required="required" \/>\s*<\/div>\s*',
+            '<div>\s*<label class="required">Due date<\/label>\s*<div id="form_dueDate">\s*(',
+            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
+            '<\/div>\s*<\/div>\s*<div>\s*<button type="submit" id="form_save" name="form\[save\]">Submit me<\/button>\s*<\/div>\s*',
+            '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/>\s*<\/form>',
+        ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
+            '!=form_start(form, {method: "GET"})',
+            '!=form_errors(form)',
+            '!=form_row(form.name)',
+            '!=form_widget(form.name, {attr: {class: "foo"}})',
+            '!=form_row(form.dueDate)',
+            '!=form_row(form.save, {label: "Submit me"})',
+            '!=form_end(form)',
+        ]), [
+            'form' => $controller->index()->createView(),
+        ])));
     }
 
     public function testCustomHelper()
@@ -256,12 +368,8 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
-    /**
-     * @group i
-     */
     public function testAssetHelperPhp()
     {
-        self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'php');
 
@@ -284,7 +392,6 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testAssetHelperJs()
     {
-        self::clearCache();
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'js');
 
@@ -403,21 +510,21 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io = new CaptureIO();
         $composer = new Composer();
         $installedFile = __DIR__ . '/../../installed';
+        $fs = new Filesystem();
         touch($installedFile);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setInteractive(true);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setPermissive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs = new Filesystem();
         $fs->remove($dir);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -427,7 +534,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         $io->reset();
         $fs->mkdir($dir);
-        touch($dir . '/composer.json');
+        $fs->touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
@@ -451,7 +558,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/app/config/config.yml', str_replace(
             ['pug', 'services:'],
             ['x', 'x:'],
@@ -497,12 +604,12 @@ class PugSymfonyEngineTest extends KernelTestCase
         $dir = sys_get_temp_dir() . '/pug-temp';
         $fs = new Filesystem();
         $fs->mkdir($dir);
-        touch($dir . '/composer.json');
-        file_exists($installedFile) && unlink($installedFile);
+        $fs->touch($dir . '/composer.json');
+        $fs->remove($installedFile);
         clearstatcache();
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        file_exists($installedFile) && unlink($installedFile);
+        $fs->remove($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
@@ -542,7 +649,7 @@ class PugSymfonyEngineTest extends KernelTestCase
             'bar: biz',
         ]), file_get_contents($dir . '/app/config/config.yml'));
         self::assertFileExists($installedFile);
-        unlink($installedFile);
+        $fs->remove($installedFile);
 
         file_put_contents($dir . '/app/config/config.yml', implode("\n", [
             'foo:',
@@ -591,21 +698,21 @@ class PugSymfonyEngineTest extends KernelTestCase
         $io = new CaptureIO();
         $composer = new Composer();
         $installedFile = __DIR__ . '/../../installed';
-        touch($installedFile);
+        $fs = new Filesystem();
+        $fs->touch($installedFile);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s4'));
 
-        file_exists($installedFile) && unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setInteractive(true);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s4'));
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         $io->setPermissive(true);
         $io->reset();
         $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs = new Filesystem();
         $fs->remove($dir);
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
@@ -615,7 +722,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
         $io->reset();
         $fs->mkdir($dir);
-        touch($dir . '/composer.json');
+        $fs->touch($dir . '/composer.json');
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
         self::assertSame([
@@ -639,7 +746,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/config/services.yaml', str_replace(
             'pug',
             'x',
@@ -678,7 +785,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/config/packages/framework.yaml', str_replace(
             'pug',
             'X',
@@ -691,7 +798,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         clearstatcache();
         self::assertFileExists($installedFile);
 
-        unlink($installedFile);
+        $fs->remove($installedFile);
         file_put_contents($dir . '/config/packages/framework.yaml', preg_replace(
             '/^(\s+)engines\s*:\s*\[[^\]]+]/m',
             "\$1engines:\n\$1    - twig",
@@ -703,5 +810,26 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
         clearstatcache();
         self::assertFileExists($installedFile);
+    }
+
+    public function testOptionDefaultingOnException()
+    {
+        $engine = new InvalidExceptionOptionsPugSymfony(self::$kernel);
+
+        self::assertSame('my default', $engine->getOptionDefault('foobar', 'my default'));
+    }
+
+    public function testMixedLoader()
+    {
+        $loader = new MixedLoader(new ArrayLoader());
+
+        $loader->setTemplate('foo', 'bar');
+        $loader->setTemplateSource('bar', 'biz');
+
+        self::assertTrue($loader->exists('foo'));
+        self::assertTrue($loader->isFresh('foo', 1));
+        self::assertTrue($loader->exists('bar'));
+        self::assertTrue($loader->isFresh('bar', 1));
+        self::assertFalse($loader->exists('biz'));
     }
 }

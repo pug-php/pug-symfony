@@ -6,6 +6,12 @@ if (defined('HHVM_VERSION')) {
     exit(0);
 }
 
+if (version_compare(PHP_VERSION, '7.3.0-dev', '>=')) {
+    echo 'Code coverage check disabled on PHP 7.3+.';
+
+    exit(0);
+}
+
 $xmlFile = isset($argv[2]) ? $argv[2] : __DIR__ . '/../coverage.xml';
 $requiredCoverage = isset($argv[1]) ? intval($argv[1]) : 90;
 
