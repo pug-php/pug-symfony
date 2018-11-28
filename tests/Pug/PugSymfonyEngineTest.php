@@ -4,7 +4,10 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
+use Jade\JadeSymfonyEngine;
+use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
+use Pug\Pug;
 use Pug\PugSymfonyEngine;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -15,6 +18,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
+use Twig\Loader\ArrayLoader;
 
 class TokenStorage extends BaseTokenStorage
 {
@@ -155,6 +159,26 @@ class TestController extends AbstractController
                 ->add('save', 'submit', ['label' => 'Foo'])
                 ->getForm();
         }
+    }
+}
+
+class InvalidExceptionOptionsPug extends Pug
+{
+    public function getOption($name)
+    {
+        if ($name === 'foobar') {
+            throw new \InvalidArgumentException('foobar not found');
+        }
+
+        return parent::getOption($name);
+    }
+}
+
+class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
+{
+    public function getEngineClassName()
+    {
+        return '\Pug\Tests\InvalidExceptionOptionsPug';
     }
 }
 
@@ -786,5 +810,26 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
         clearstatcache();
         self::assertFileExists($installedFile);
+    }
+
+    public function testOptionDefaultingOnException()
+    {
+        $engine = new InvalidExceptionOptionsPugSymfony(self::$kernel);
+
+        self::assertSame('my default', $engine->getOptionDefault('foobar', 'my default'));
+    }
+
+    public function testMixedLoader()
+    {
+        $loader = new MixedLoader(new ArrayLoader());
+
+        $loader->setTemplate('foo', 'bar');
+        $loader->setTemplateSource('bar', 'biz');
+
+        self::assertTrue($loader->exists('foo'));
+        self::assertTrue($loader->isFresh('foo', 1));
+        self::assertTrue($loader->exists('bar'));
+        self::assertTrue($loader->isFresh('bar', 1));
+        self::assertFalse($loader->exists('biz'));
     }
 }

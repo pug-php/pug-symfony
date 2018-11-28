@@ -868,12 +868,14 @@ class JadeSymfonyEngine implements EngineInterface, \ArrayAccess
                     }
                     if ($inTemplating && preg_match('/^engines\s*:(.*)$/', $trimmedLine, $match)) {
                         $engines = @json_decode(str_replace("'", '"', trim($match[1])));
+                        // @codeCoverageIgnoreStart
                         if (!is_array($engines)) {
                             $io->write('Automatic engine adding is only possible if framework.templating.engines is a ' .
                                 'one-line setting in config.yml.');
 
                             break;
                         }
+                        // @codeCoverageIgnoreEnd
                         if (in_array('pug', $engines)) {
                             $flags |= static::ENGINE_OK;
                             $io->write('Pug engine already exist in framework.templating.engines in config.yml.');
