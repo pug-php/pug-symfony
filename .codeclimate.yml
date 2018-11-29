@@ -5,6 +5,7 @@ plugins:
     enabled: true
     exclude_patterns:
     - "tests/"
+    - "genTravis.php"
     config:
       languages:
       - php
