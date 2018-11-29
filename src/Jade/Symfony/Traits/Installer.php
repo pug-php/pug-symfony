@@ -5,6 +5,11 @@ namespace Jade\Symfony\Traits;
 use Composer\IO\IOInterface;
 use Jade\Symfony\Contracts\InstallerInterface;
 
+/**
+ * @internal
+ *
+ * Trait Installer.
+ */
 trait Installer
 {
     protected static function askConfirmation(IOInterface $io, $message)

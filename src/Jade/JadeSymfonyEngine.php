@@ -2,7 +2,6 @@
 
 namespace Jade;
 
-use ArrayAccess;
 use Jade\Symfony\Contracts\HelpersHandlerInterface;
 use Jade\Symfony\Contracts\InstallerInterface;
 use Jade\Symfony\Traits\Filters;
@@ -19,7 +18,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
 use Twig\Loader\FilesystemLoader;
 
-class JadeSymfonyEngine implements EngineInterface, ArrayAccess, InstallerInterface, HelpersHandlerInterface
+class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHandlerInterface
 {
     use Installer, HelpersHandler, Filters, Options;
 
@@ -184,11 +183,12 @@ class JadeSymfonyEngine implements EngineInterface, ArrayAccess, InstallerInterf
     public function preRender($pugCode)
     {
         $preCode = '';
+        $className = get_class($this);
         foreach ($this->replacements as $name => $callable) {
             $preCode .= ":php\n" .
                 "    if (!function_exists('$name')) {\n" .
                 "        function $name() {\n" .
-                "            return call_user_func_array(\$GLOBALS['" . static::GLOBAL_HELPER_PREFIX . "$name'], func_get_args());\n" .
+                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n" .
                 "        }\n" .
                 "    }\n";
         }

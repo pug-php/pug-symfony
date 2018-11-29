@@ -2,7 +2,9 @@
 
 namespace Jade\Symfony\Contracts;
 
-interface HelpersHandlerInterface
+use ArrayAccess;
+
+interface HelpersHandlerInterface extends ArrayAccess
 {
-    const GLOBAL_HELPER_PREFIX = '__pug_symfony_helper_';
+    public static function getGlobalHelper($name);
 }

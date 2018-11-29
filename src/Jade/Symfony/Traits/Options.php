@@ -4,6 +4,11 @@ namespace Jade\Symfony\Traits;
 
 use Pug\Pug;
 
+/**
+ * @internal
+ *
+ * Trait Options.
+ */
 trait Options
 {
     /**

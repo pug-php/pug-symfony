@@ -2,6 +2,11 @@
 
 namespace Jade\Symfony\Traits;
 
+/**
+ * @internal
+ *
+ * Trait Filters.
+ */
 trait Filters
 {
     /**

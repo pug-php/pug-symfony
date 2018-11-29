@@ -2,13 +2,17 @@
 
 namespace Jade\Symfony\Traits;
 
-use Jade\Symfony\Contracts\HelpersHandlerInterface;
 use Jade\Symfony\Css;
 use Jade\Symfony\Logout;
 use Jade\Symfony\MixedLoader;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * @internal
+ *
+ * Trait HelpersHandler.
+ */
 trait HelpersHandler
 {
     /**
@@ -44,9 +48,42 @@ trait HelpersHandler
         'translator',
     ];
 
+    protected static $globalHelpers = [];
+
     protected function getTemplatingHelper($name)
     {
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
+    }
+
+    protected function copyTwigFunction(\Twig_Environment $twig, $function)
+    {
+        /* @var \Twig_Function $function */
+        $name = $function->getName();
+
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
+            // Methods like render_* not yet supported
+            return;
+        }
+
+        $callable = $function->getCallable();
+
+        if (!$callable) {
+            $callable = function () use ($twig, $name) {
+                $variables = [];
+                foreach (func_get_args() as $index => $argument) {
+                    $variables['arg' . $index] = $argument;
+                }
+
+                $template = $twig->getLoader()->uniqueTemplate('{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}');
+
+                return $twig->render($template, $variables);
+            };
+            $callable = $callable->bindTo($twig);
+        }
+
+        if (is_callable($callable) && !is_string($callable)) {
+            $this->twigHelpers[$name] = $callable;
+        }
     }
 
     protected function copyTwigFunctions(ContainerInterface $services)
@@ -57,40 +94,14 @@ trait HelpersHandler
         ) {
             /* @var \Twig_Environment $twig */
             $twig = clone $twig;
+            $twig->env = $twig;
             $loader = new MixedLoader($twig->getLoader());
             $twig->setLoader($loader);
             $this->share('twig', $twig);
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */
                 foreach ($extension->getFunctions() as $function) {
-                    /* @var \Twig_Function $function */
-                    $name = $function->getName();
-                    if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
-                        // Methods like render_* not yet supported
-                        continue;
-                    }
-                    $callable = $function->getCallable();
-                    if ($callable && (is_callable($callable)) || $callable instanceof \Closure) {
-                        if (!is_string($callable)) {
-                            if (is_array($callable)) {
-                                $this->twigHelpers[$name] = $callable;
-                            }
-                        }
-                    }
-                    if (!$callable && ($nodeClass = $function->getNodeClass())) {
-                        $twig->env = $twig;
-                        $callable = function () use ($twig, $name, $nodeClass, $loader) {
-                            $variables = [];
-                            foreach (func_get_args() as $index => $argument) {
-                                $variables['arg' . $index] = $argument;
-                            }
-
-                            $template = $loader->uniqueTemplate('{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}');
-
-                            return $twig->render($template, $variables);
-                        };
-                        $this->twigHelpers[$name] = $callable->bindTo($twig);
-                    }
+                    $this->copyTwigFunction($twig, $function);
                 }
             }
         }
@@ -153,11 +164,8 @@ trait HelpersHandler
     protected function globalizeHelpers()
     {
         foreach ($this->replacements as $name => $callable) {
-            if (is_array($callable) && !is_callable($callable)) {
+            if (is_array($callable) && !is_callable($callable) && isset($this->helpers[$callable[0]])) {
                 $subCallable = $callable;
-                if (!isset($this->helpers[$subCallable[0]])) {
-                    continue;
-                }
                 $subCallable[0] = $this->helpers[$subCallable[0]];
 
                 $callable = function () use ($subCallable) {
@@ -165,7 +173,7 @@ trait HelpersHandler
                 };
             }
 
-            $GLOBALS[HelpersHandlerInterface::GLOBAL_HELPER_PREFIX . $name] = $callable;
+            static::$globalHelpers[$name] = $callable;
         }
     }
 
@@ -178,6 +186,18 @@ trait HelpersHandler
         $this->copyUserHelpers($helpers);
         $this->storeReplacements();
         $this->globalizeHelpers();
+    }
+
+    /**
+     * Get a global helper by name.
+     *
+     * @param string $name
+     *
+     * @return callable
+     */
+    public static function getGlobalHelper($name)
+    {
+        return static::$globalHelpers[$name];
     }
 
     /**
