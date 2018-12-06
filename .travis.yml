@@ -135,7 +135,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.1
       env:
-        - SYMFONY_VERSION='4.2.x-dev'
+        - SYMFONY_VERSION='4.2.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
@@ -175,7 +175,11 @@ matrix:
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.2.x-dev'
+        - SYMFONY_VERSION='4.2.*'
+        - PUG_VERSION='^2.7.1'
+    - php: 7.2
+      env:
+        - SYMFONY_VERSION='4.3.x-dev'
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
@@ -215,7 +219,11 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.2.x-dev'
+        - SYMFONY_VERSION='4.2.*'
+        - PUG_VERSION='^3.0.0'
+    - php: 7.2
+      env:
+        - SYMFONY_VERSION='4.3.x-dev'
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
@@ -255,7 +263,11 @@ matrix:
         - PUG_VERSION='^2.7.1'
     - php: 7.3
       env:
-        - SYMFONY_VERSION='4.2.x-dev'
+        - SYMFONY_VERSION='4.2.*'
+        - PUG_VERSION='^2.7.1'
+    - php: 7.3
+      env:
+        - SYMFONY_VERSION='4.3.x-dev'
         - PUG_VERSION='^2.7.1'
     - php: 7.3
       env:
@@ -295,7 +307,11 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
-        - SYMFONY_VERSION='4.2.x-dev'
+        - SYMFONY_VERSION='4.2.*'
+        - PUG_VERSION='^3.0.0'
+    - php: 7.3
+      env:
+        - SYMFONY_VERSION='4.3.x-dev'
         - PUG_VERSION='^3.0.0'
     - php: hhvm
       env:
