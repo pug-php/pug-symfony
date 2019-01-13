@@ -217,6 +217,25 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine($kernel);
 
         self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'js',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
+
+        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+
+        self::assertSame(implode('', [
+            '<html>',
+            '<head><title>My Site</title></head>',
+            '<body><h1>Welcome Bob</h1><p>42</p><footer><p></p>Some footer text</footer></body>',
+            '</html>',
+        ]), $pugSymfony->render('layout/welcome.pug', [
+            'name' => 'Bob',
+        ]));
     }
 
     /**
