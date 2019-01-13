@@ -101,9 +101,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $app->setDebug($kernel->isDebug());
         $app->setEnvironment($environment);
         $app->setRequestStack($container->get('request_stack'));
+        // @codeCoverageIgnoreStart
         if ($container->has('security.token_storage')) {
             $app->setTokenStorage($container->get('security.token_storage'));
         }
+        // @codeCoverageIgnoreEnd
         $this->share('app', $app);
     }
 
@@ -318,9 +320,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      */
     public function supports($name)
     {
+        // @codeCoverageIgnoreStart
         $extensions = method_exists($this->jade, 'getExtensions')
             ? $this->jade->getExtensions()
             : $this->jade->getOption('extensions');
+        // @codeCoverageIgnoreEnd
         foreach ($extensions as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
