@@ -21,11 +21,13 @@ trait Options
      */
     public function getOptionDefault($name, $default = null)
     {
+        // @codeCoverageIgnoreStart
         try {
             return $this->getOption($name, $default);
         } catch (\InvalidArgumentException $exception) {
             return $default;
         }
+        // @codeCoverageIgnoreEnd
     }
 
     /**

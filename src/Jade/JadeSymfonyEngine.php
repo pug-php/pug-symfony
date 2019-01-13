@@ -101,9 +101,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $app->setDebug($kernel->isDebug());
         $app->setEnvironment($environment);
         $app->setRequestStack($container->get('request_stack'));
+        // @codeCoverageIgnoreStart
         if ($container->has('security.token_storage')) {
             $app->setTokenStorage($container->get('security.token_storage'));
         }
+        // @codeCoverageIgnoreEnd
         $this->share('app', $app);
     }
 
@@ -155,6 +157,22 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         return $directory . DIRECTORY_SEPARATOR . $name;
     }
 
+    protected function getPugCodeLayoutStructure($pugCode)
+    {
+        $parts = preg_split('/^extend(?=s?\s)/m', $pugCode, 2);
+
+        if (count($parts) === 1) {
+            return ['', $parts[0]];
+        }
+
+        $parts[1] .= "\n";
+        $parts[1] = explode("\n", $parts[1], 2);
+        $parts[0] .= 'extend' . $parts[1][0] . "\n";
+        $parts[1] = substr($parts[1][1], 0, -1);
+
+        return $parts;
+    }
+
     /**
      * Share variables (local templates parameters) with all future templates rendered.
      *
@@ -182,10 +200,10 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      */
     public function preRender($pugCode)
     {
-        $preCode = '';
+        $parts = $this->getPugCodeLayoutStructure($pugCode);
         $className = get_class($this);
         foreach ($this->replacements as $name => $callable) {
-            $preCode .= ":php\n" .
+            $parts[0] .= ":php\n" .
                 "    if (!function_exists('$name')) {\n" .
                 "        function $name() {\n" .
                 "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n" .
@@ -193,7 +211,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
                 "    }\n";
         }
 
-        return $preCode . $pugCode;
+        return implode('', $parts);
     }
 
     /**
@@ -302,9 +320,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      */
     public function supports($name)
     {
+        // @codeCoverageIgnoreStart
         $extensions = method_exists($this->jade, 'getExtensions')
             ? $this->jade->getExtensions()
             : $this->jade->getOption('extensions');
+        // @codeCoverageIgnoreEnd
         foreach ($extensions as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;

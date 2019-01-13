@@ -217,6 +217,25 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine($kernel);
 
         self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'js',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
+
+        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+
+        self::assertSame(implode('', [
+            '<html>',
+            '<head><title>My Site</title></head>',
+            '<body><h1>Welcome Bob</h1><p>42</p><footer><p></p>Some footer text</footer></body>',
+            '</html>',
+        ]), $pugSymfony->render('layout/welcome.pug', [
+            'name' => 'Bob',
+        ]));
     }
 
     /**
@@ -810,6 +829,32 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
         clearstatcache();
         self::assertFileExists($installedFile);
+
+        $fs->remove($installedFile);
+        file_put_contents($dir . '/config/services.yaml', str_replace(
+            ['services', 'pug'],
+            ['x', 'x'],
+            file_get_contents($dir . '/config/services.yaml')
+        ));
+        file_put_contents($dir . '/config/packages/framework.yaml', str_replace(
+            ['pug', 'twig', 'framework'],
+            ['x', 'x', 'x'],
+            file_get_contents($dir . '/config/packages/framework.yaml')
+        ));
+        file_put_contents($dir . '/config/bundles.php', preg_replace(
+            '/\[\s*\n\s*/',
+            '[',
+            file_get_contents($dir . '/config/bundles.php')
+        ));
+        $io->reset();
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
+        self::assertSame([
+            'framework entry not found in config/packages/framework.yaml.',
+            'services entry not found in config/services.yaml.',
+            'Sorry, config/bundles.php has a format we can\'t handle automatically.',
+        ], $io->getLastOutput());
+        $fs->remove($installedFile);
     }
 
     public function testOptionDefaultingOnException()
