@@ -12,91 +12,100 @@ use Jade\Symfony\Contracts\InstallerInterface;
  */
 trait Installer
 {
-    protected static function askConfirmation(IOInterface $io, $message)
-    {
-        return !$io->isInteractive() || $io->askConfirmation($message);
-    }
+    use IOWriter;
 
-    protected static function installSymfony4Config(IOInterface $io, $dir, $templateService, $proceedTask, &$flags)
+    protected static function installSymfony4Config(IOInterface $io, $dir, $templateService, $proceedTask)
     {
         $configFile = $dir . '/config/packages/framework.yaml';
         $contents = @file_get_contents($configFile) ?: '';
 
-        if (!preg_match('/[^a-zA-Z]pug[^a-zA-Z]/', $contents)) {
-            $newContents = null;
-            if (preg_match('/^\s*-\s*([\'"]?)twig[\'"]?/m', $contents)) {
-                $newContents = preg_replace('/^(\s*-\s*)([\'"]?)twig[\'"]?(\n)/m', '$0$1$2pug$2$3', $contents);
-            } elseif (preg_match('/[[,]\s*([\'"]?)twig[\'"]?/', $contents)) {
-                $newContents = preg_replace('/[[,]\s*([\'"]?)twig[\'"]?/', '$0, $2pug$2', $contents);
-            } elseif (preg_match('/^framework\s*:\s*\n/m', $contents)) {
-                $newContents = preg_replace_callback('/^framework\s*:\s*\n/', function ($match) use ($templateService) {
-                    return $match[0] . $templateService;
-                }, $contents);
-            }
-            if ($newContents) {
-                $proceedTask(
-                    file_put_contents($configFile, $newContents),
-                    InstallerInterface::ENGINE_OK,
-                    'Engine service added in config/packages/framework.yaml',
-                    'Unable to add the engine service in config/packages/framework.yaml'
-                );
-            } else {
-                $io->write('framework entry not found in config/packages/framework.yaml.');
-            }
-        } else {
-            $flags |= InstallerInterface::ENGINE_OK;
-            $io->write('templating.engine.pug setting in config/packages/framework.yaml already exists.');
+        if (preg_match('/[^a-zA-Z]pug[^a-zA-Z]/', $contents)) {
+            static::writeWithFlag($io, 'templating.engine.pug setting in config/packages/framework.yaml already exists.', InstallerInterface::ENGINE_OK);
+
+            return;
         }
+
+        $newContents = null;
+
+        if (preg_match('/^\s*-\s*([\'"]?)twig[\'"]?/m', $contents)) {
+            $newContents = preg_replace('/^(\s*-\s*)([\'"]?)twig[\'"]?(\n)/m', '$0$1$2pug$2$3', $contents);
+        } elseif (preg_match('/[[,]\s*([\'"]?)twig[\'"]?/', $contents)) {
+            $newContents = preg_replace('/[[,]\s*([\'"]?)twig[\'"]?/', '$0, $2pug$2', $contents);
+        } elseif (preg_match('/^framework\s*:\s*\n/m', $contents)) {
+            $newContents = preg_replace_callback('/^framework\s*:\s*\n/', function ($match) use ($templateService) {
+                return $match[0] . $templateService;
+            }, $contents);
+        }
+
+        if (!$newContents) {
+            $io->write('framework entry not found in config/packages/framework.yaml.');
+
+            return;
+        }
+
+        $proceedTask(
+            file_put_contents($configFile, $newContents),
+            InstallerInterface::ENGINE_OK,
+            'Engine service added in config/packages/framework.yaml',
+            'Unable to add the engine service in config/packages/framework.yaml'
+        );
     }
 
-    protected static function installSymfony4ServiceConfig(IOInterface $io, $dir, $pugService, $proceedTask, &$flags)
+    protected static function installSymfony4ServiceConfig(IOInterface $io, $dir, $pugService, $proceedTask)
     {
         $configFile = $dir . '/config/services.yaml';
         $contents = @file_get_contents($configFile) ?: '';
 
-        if (strpos($contents, 'templating.engine.pug') === false) {
-            if (preg_match('/^services\s*:\s*\n/m', $contents)) {
-                $contents = preg_replace_callback('/^services\s*:\s*\n/m', function ($match) use ($pugService) {
-                    return $match[0] . $pugService;
-                }, $contents);
-                $proceedTask(
-                    file_put_contents($configFile, $contents),
-                    InstallerInterface::CONFIG_OK,
-                    'Engine service added in config/services.yaml',
-                    'Unable to add the engine service in config/services.yaml'
-                );
-            } else {
-                $io->write('services entry not found in config/services.yaml.');
-            }
-        } else {
-            $flags |= InstallerInterface::CONFIG_OK;
-            $io->write('templating.engine.pug setting in config/services.yaml already exists.');
+        if (strpos($contents, 'templating.engine.pug') !== false) {
+            static::writeWithFlag($io, 'templating.engine.pug setting in config/services.yaml already exists.', InstallerInterface::CONFIG_OK);
+
+            return;
         }
+
+        if (!preg_match('/^services\s*:\s*\n/m', $contents)) {
+            $io->write('services entry not found in config/services.yaml.');
+
+            return;
+        }
+
+        $contents = preg_replace_callback('/^services\s*:\s*\n/m', function ($match) use ($pugService) {
+            return $match[0] . $pugService;
+        }, $contents);
+
+        $proceedTask(
+            file_put_contents($configFile, $contents),
+            InstallerInterface::CONFIG_OK,
+            'Engine service added in config/services.yaml',
+            'Unable to add the engine service in config/services.yaml'
+        );
     }
 
-    protected static function installSymfony4Bundle(IOInterface $io, $dir, $bundle, $bundleClass, $proceedTask, &$flags)
+    protected static function installSymfony4Bundle(IOInterface $io, $dir, $bundle, $bundleClass, $proceedTask)
     {
         $appFile = $dir . '/config/bundles.php';
         $contents = @file_get_contents($appFile) ?: '';
 
-        if (preg_match('/\[\s*\n/', $contents)) {
-            if (strpos($contents, $bundleClass) === false) {
-                $contents = preg_replace_callback('/\[\s*\n/', function ($match) use ($bundle) {
-                    return $match[0] . "$bundle\n";
-                }, $contents);
-                $proceedTask(
-                    file_put_contents($appFile, $contents),
-                    InstallerInterface::KERNEL_OK,
-                    'Bundle added to config/bundles.php',
-                    'Unable to add the bundle engine in config/bundles.php'
-                );
-            } else {
-                $flags |= InstallerInterface::KERNEL_OK;
-                $io->write('The bundle already exists in config/bundles.php');
-            }
-        } else {
+        if (!preg_match('/\[\s*\n/', $contents)) {
             $io->write('Sorry, config/bundles.php has a format we can\'t handle automatically.');
+
+            return;
         }
+
+        if (strpos($contents, $bundleClass) !== false) {
+            static::writeWithFlag($io, 'The bundle already exists in config/bundles.php', InstallerInterface::KERNEL_OK);
+
+            return;
+        }
+
+        $contents = preg_replace_callback('/\[\s*\n/', function ($match) use ($bundle) {
+            return $match[0] . "$bundle\n";
+        }, $contents);
+        $proceedTask(
+            file_put_contents($appFile, $contents),
+            InstallerInterface::KERNEL_OK,
+            'Bundle added to config/bundles.php',
+            'Unable to add the bundle engine in config/bundles.php'
+        );
     }
 
     protected static function installInSymfony4($event, $dir)
@@ -105,7 +114,7 @@ trait Installer
         $io = $event->getIO();
         $baseDirectory = __DIR__ . '/../../../..';
 
-        $flags = 0;
+        static::$flags = 0;
 
         $templateService = "\n    templating:\n" .
             "        engines: ['twig', 'pug']\n";
@@ -121,29 +130,29 @@ trait Installer
         $addConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config/packages/framework.yaml? [Y/N] ');
         $addBundle = static::askConfirmation($io, 'Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
 
-        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
-            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
+        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use ($io) {
+            static::proceedTask($io, $taskResult, $flag, $successMessage, $errorMessage);
         };
 
         if ($addConfig) {
-            static::installSymfony4Config($io, $dir, $templateService, $proceedTask, $flags);
+            static::installSymfony4Config($io, $dir, $templateService, $proceedTask);
         } else {
-            $flags |= InstallerInterface::ENGINE_OK;
+            static::$flags |= InstallerInterface::ENGINE_OK;
         }
 
         if ($addServicesConfig) {
-            static::installSymfony4ServiceConfig($io, $dir, $pugService, $proceedTask, $flags);
+            static::installSymfony4ServiceConfig($io, $dir, $pugService, $proceedTask);
         } else {
-            $flags |= InstallerInterface::CONFIG_OK;
+            static::$flags |= InstallerInterface::CONFIG_OK;
         }
 
         if ($addBundle) {
-            static::installSymfony4Bundle($io, $dir, $bundle, $bundleClass, $proceedTask, $flags);
+            static::installSymfony4Bundle($io, $dir, $bundle, $bundleClass, $proceedTask);
         } else {
-            $flags |= InstallerInterface::KERNEL_OK;
+            static::$flags |= InstallerInterface::KERNEL_OK;
         }
 
-        if (($flags & InstallerInterface::KERNEL_OK) && ($flags & InstallerInterface::CONFIG_OK) && ($flags & InstallerInterface::ENGINE_OK)) {
+        if ((static::$flags & InstallerInterface::KERNEL_OK) && (static::$flags & InstallerInterface::CONFIG_OK) && (static::$flags & InstallerInterface::ENGINE_OK)) {
             touch($baseDirectory . '/installed');
         }
 
@@ -262,7 +271,7 @@ trait Installer
 
         $bundle = 'new Pug\PugSymfonyBundle\PugSymfonyBundle()';
 
-        $flags = 0;
+        static::$flags = 0;
         $addConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config.yml? [Y/N] ');
         $addBundle = static::askConfirmation($io, 'Would you like us to add automatically the pug bundle in your AppKernel.php? [Y/N] ');
 

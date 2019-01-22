@@ -18,10 +18,6 @@ plugins:
         enabled: false
       CleanCode/StaticAccess:
         enabled: false
-      UnusedFormalParameter:
-        enabled: false
-      Design/TooManyPublicMethods:
-        enabled: false
   phpcodesniffer:
     enabled: true
   sonar-php:
