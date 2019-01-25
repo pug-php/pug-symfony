@@ -206,7 +206,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::bootKernel();
     }
 
-    public function testPreRender()
+    public function testPreRenderPhp()
     {
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
@@ -217,7 +217,10 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine($kernel);
 
         self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+    }
 
+    public function testPreRenderJs()
+    {
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
@@ -227,6 +230,17 @@ class PugSymfonyEngineTest extends KernelTestCase
         $pugSymfony = new PugSymfonyEngine($kernel);
 
         self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+    }
+
+    public function testPreRenderFile()
+    {
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'js',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
 
         self::assertSame(implode('', [
             '<html>',
@@ -236,6 +250,21 @@ class PugSymfonyEngineTest extends KernelTestCase
         ]), $pugSymfony->render('layout/welcome.pug', [
             'name' => 'Bob',
         ]));
+    }
+
+    public function testPreRenderCsrfToken()
+    {
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'expressionLanguage' => 'js',
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
+
+        self::assertSame('<p>Hello</p>', $pugSymfony->renderString('p Hello'));
+
+        self::assertRegExp('/<p>[a-zA-Z0-9_-]{10,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
     }
 
     /**

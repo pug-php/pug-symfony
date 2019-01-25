@@ -67,7 +67,14 @@ trait HelpersHandler
 
         $callable = $function->getCallable();
 
-        if (!$callable) {
+        if ($callable && is_callable($callable) && is_array($callable) && is_string($callable[0]) && is_string($callable[1])) {
+            $method = new \ReflectionMethod($callable[0], $callable[1]);
+            if ($method->isStatic()) {
+                $callable = null;
+            }
+        }
+
+        if (!$callable || $name == 'csrf_token') {
             $callable = function () use ($twig, $name) {
                 $variables = [];
                 foreach (func_get_args() as $index => $argument) {
