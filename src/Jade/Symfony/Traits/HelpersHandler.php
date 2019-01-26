@@ -63,9 +63,9 @@ trait HelpersHandler
             is_callable($callable) &&
             is_array($callable) &&
             is_string($callable[0]) && is_string($callable[1]) &&
-            (new \ReflectionMethod($callable[0], $callable[1]))->isStatic()
+            !(new \ReflectionMethod($callable[0], $callable[1]))->isStatic()
         ) {
-            return (function () use ($twig, $name) {
+            $callable = function () use ($twig, $name) {
                 $variables = [];
                 foreach (func_get_args() as $index => $argument) {
                     $variables['arg' . $index] = $argument;
@@ -76,7 +76,8 @@ trait HelpersHandler
                 );
 
                 return $twig->render($template, $variables);
-            })->bindTo($twig);
+            };
+            $callable = $callable->bindTo($twig);
         }
 
         return $callable;
