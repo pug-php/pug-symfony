@@ -225,6 +225,7 @@ matrix:
       env:
         - SYMFONY_VERSION='4.3.x-dev'
         - PUG_VERSION='^3.0.0'
+        - COVERAGE=true
     - php: 7.3
       env:
         - SYMFONY_VERSION='2.7.*'
@@ -367,11 +368,11 @@ before_script:
   - if [ -f ~/xdebug.ini ]; then mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi;
   - chmod -R 0777 tests/project
 script:
-  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
-  - php tests/checkCoverage.php
+  - if [ "$COVERAGE" = "true" ]; then vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml; else vendor/bin/phpunit --verbose --no-coverage; fi;
+  - if [ "$COVERAGE" = "true" ]; then php tests/checkCoverage.php; fi;
 after_script:
-  - if [ $(phpenv version-name) = '5.6' ]; then vendor/bin/test-reporter --coverage-report coverage.xml; fi;
-  - bash <(curl -s https://codecov.io/bash)
+  - if [ "$COVERAGE" = "true" ]; then vendor/bin/test-reporter --coverage-report coverage.xml; fi;
+  - if [ "$COVERAGE" = "true" ]; then bash <(curl -s https://codecov.io/bash); fi;
 addons:
   code_climate:
     repo_token: ae72d604c76bbd8cd0d0b8318930e3a28afd007ab8381d2a8c49ce296ca2b292

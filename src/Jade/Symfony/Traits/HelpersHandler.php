@@ -55,6 +55,34 @@ trait HelpersHandler
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
     }
 
+    protected function getTwigCallable(\Twig_Environment $twig, $function, $name)
+    {
+        $callable = $function->getCallable();
+
+        if (!$callable ||
+            is_callable($callable) &&
+            is_array($callable) &&
+            is_string($callable[0]) && is_string($callable[1]) &&
+            !(new \ReflectionMethod($callable[0], $callable[1]))->isStatic()
+        ) {
+            $callable = function () use ($twig, $name) {
+                $variables = [];
+                foreach (func_get_args() as $index => $argument) {
+                    $variables['arg' . $index] = $argument;
+                }
+
+                $template = $twig->getLoader()->uniqueTemplate(
+                    '{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}'
+                );
+
+                return $twig->render($template, $variables);
+            };
+            $callable = $callable->bindTo($twig);
+        }
+
+        return $callable;
+    }
+
     protected function copyTwigFunction(\Twig_Environment $twig, $function)
     {
         /* @var \Twig_Function $function */
@@ -65,21 +93,7 @@ trait HelpersHandler
             return;
         }
 
-        $callable = $function->getCallable();
-
-        if (!$callable) {
-            $callable = function () use ($twig, $name) {
-                $variables = [];
-                foreach (func_get_args() as $index => $argument) {
-                    $variables['arg' . $index] = $argument;
-                }
-
-                $template = $twig->getLoader()->uniqueTemplate('{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}');
-
-                return $twig->render($template, $variables);
-            };
-            $callable = $callable->bindTo($twig);
-        }
+        $callable = $this->getTwigCallable($twig, $function, $name);
 
         if (is_callable($callable) && !is_string($callable)) {
             $this->twigHelpers[$name] = $callable;
