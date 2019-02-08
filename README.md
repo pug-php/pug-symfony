@@ -8,7 +8,7 @@ Pug template engine for Symfony
 
 ## Install
 
-In the root directory of your Symfony project, open a terminal and enter:
+In the root directory of your Symfony project, open a terminal and enter.
 ```shell
 composer require pug-php/pug-symfony
 ```
@@ -22,6 +22,14 @@ a manual installation:
 
 - [Symfony 4 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
 - [Symfony 2 and 3 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation)
+
+If you installed Symfony in a custom way, you might be warned about
+missing "templating.engine.twig" service. We highly recommend you to
+install it (`composer require twig/twig`) to get Twig functions such
+as `css_url`, `form_start` and so on available from Pug templates.
+
+If you're sure you don't need Twig utils, you can simply remove
+"templating.engine.twig" from your "templating" services settings.
 
 ## Configure
 
