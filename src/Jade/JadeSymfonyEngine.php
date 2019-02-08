@@ -65,7 +65,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $container = $kernel->getContainer();
         $this->container = $container;
         $environment = $kernel->getEnvironment();
-        $appDir = $kernel->getRootDir();
+        $appDir = $kernel->getProjectDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
         $viewDirectories = [$appDir . '/Resources/views'];
