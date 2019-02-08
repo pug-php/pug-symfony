@@ -98,7 +98,18 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->jade);
 
-        foreach ($container->get('twig')->getGlobals() as $globalKey => $globalValue){
+        foreach ($container->get('twig')->getGlobals() as $globalKey => $globalValue) {
+            if ($globalValue instanceof AppVariable) {
+                $globalValue->setDebug($kernel->isDebug());
+                $globalValue->setEnvironment($environment);
+                $globalValue->setRequestStack($container->get('request_stack'));
+                // @codeCoverageIgnoreStart
+                if ($container->has('security.token_storage')) {
+                    $globalValue->setTokenStorage($container->get('security.token_storage'));
+                }
+                // @codeCoverageIgnoreEnd
+            }
+
             $this->share($globalKey, $globalValue);
         }
     }
