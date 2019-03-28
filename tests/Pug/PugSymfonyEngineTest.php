@@ -9,6 +9,7 @@ use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
@@ -319,8 +320,25 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testLogoutHelper()
     {
-        $logoutUrlHelper = new LogoutUrlHelper(new LogoutUrlGenerator());
-        self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
+        $generator = new LogoutUrlGenerator();
+        /* @var \Twig_Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+
+        foreach ($twig->getExtensions() as $extension) {
+            if ($extension instanceof LogoutUrlExtension) {
+                $reflectionClass = new \ReflectionClass('Symfony\Bridge\Twig\Extension\LogoutUrlExtension');
+                $reflectionProperty = $reflectionClass->getProperty('generator');
+                $reflectionProperty->setAccessible(true);
+                $reflectionProperty->setValue($extension, $generator);
+                $generator = null;
+            }
+        }
+
+        if ($generator) {
+            $logoutUrlHelper = new LogoutUrlHelper($generator);
+            self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
+        }
+
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<a href="logout-url"></a><a href="logout-path"></a>', trim($pugSymfony->render('logout.pug')));

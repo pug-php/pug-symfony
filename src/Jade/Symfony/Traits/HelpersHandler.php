@@ -3,7 +3,6 @@
 namespace Jade\Symfony\Traits;
 
 use Jade\Symfony\Css;
-use Jade\Symfony\Logout;
 use Jade\Symfony\MixedLoader;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -38,7 +37,6 @@ trait HelpersHandler
         'assets',
         'code',
         'form',
-        'logout_url',
         'request',
         'router',
         'security',
@@ -55,8 +53,30 @@ trait HelpersHandler
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
     }
 
+    protected function compileTwigCallable(\Twig_Environment $twig, $name)
+    {
+        $callable = function () use ($twig, $name) {
+            $variables = [];
+            foreach (func_get_args() as $index => $argument) {
+                $variables['arg' . $index] = $argument;
+            }
+
+            /* @var MixedLoader $loader */
+            $loader = $twig->getLoader();
+
+            $template = $loader->uniqueTemplate(
+                '{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}'
+            );
+
+            return $twig->render($template, $variables);
+        };
+
+        return $callable->bindTo($twig);
+    }
+
     protected function getTwigCallable(\Twig_Environment $twig, $function, $name)
     {
+        /* @var \Twig_Function $function */
         $callable = $function->getCallable();
 
         if (!$callable ||
@@ -65,19 +85,7 @@ trait HelpersHandler
             is_string($callable[0]) && is_string($callable[1]) &&
             !(new \ReflectionMethod($callable[0], $callable[1]))->isStatic()
         ) {
-            $callable = function () use ($twig, $name) {
-                $variables = [];
-                foreach (func_get_args() as $index => $argument) {
-                    $variables['arg' . $index] = $argument;
-                }
-
-                $template = $twig->getLoader()->uniqueTemplate(
-                    '{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}'
-                );
-
-                return $twig->render($template, $variables);
-            };
-            $callable = $callable->bindTo($twig);
+            $callable = $this->compileTwigCallable($twig, $name);
         }
 
         return $callable;
@@ -103,6 +111,7 @@ trait HelpersHandler
     protected function copyTwigFunctions(ContainerInterface $services)
     {
         $this->twigHelpers = [];
+
         if ($services->has('twig') &&
             ($twig = $services->get('twig')) instanceof \Twig_Environment
         ) {
@@ -112,6 +121,7 @@ trait HelpersHandler
             $loader = new MixedLoader($twig->getLoader());
             $twig->setLoader($loader);
             $this->share('twig', $twig);
+
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */
                 foreach ($extension->getFunctions() as $function) {
@@ -135,9 +145,6 @@ trait HelpersHandler
 
     protected function copySpecialHelpers(ContainerInterface $services)
     {
-        if ($helper = $this->getTemplatingHelper('logout_url')) {
-            $this->helpers['logout'] = new Logout($helper);
-        }
         $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
         /* @var \Symfony\Component\HttpFoundation\RequestStack $stack */
         $stack = $services->get('request_stack');
@@ -167,8 +174,6 @@ trait HelpersHandler
             'csrf_token'    => ['form', 'csrfToken'],
             'url'           => ['router', 'url'],
             'path'          => ['router', 'path'],
-            'logout_url'    => ['logout', 'url'],
-            'logout_path'   => ['logout', 'path'],
             'absolute_url'  => ['http', 'generateAbsoluteUrl'],
             'relative_path' => ['http', 'generateRelativePath'],
             'is_granted'    => ['security', 'isGranted'],
