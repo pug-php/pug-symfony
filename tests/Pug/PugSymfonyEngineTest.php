@@ -12,7 +12,6 @@ use Pug\PugSymfonyEngine;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
@@ -59,14 +58,6 @@ class LogoutUrlGenerator extends BaseLogoutUrlGenerator
     public function getLogoutPath($key = null)
     {
         return 'logout-path';
-    }
-}
-
-class LogoutUrlHelper extends BaseLogoutUrlHelper
-{
-    public function __construct()
-    {
-        parent::__construct(new LogoutUrlGenerator());
     }
 }
 
@@ -335,6 +326,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         }
 
         if ($generator) {
+            include_once __DIR__ . '/LogoutUrlHelper.php';
             $logoutUrlHelper = new LogoutUrlHelper($generator);
             self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
         }
