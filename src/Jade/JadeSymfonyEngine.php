@@ -117,8 +117,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     protected function getAppDirectory($kernel)
     {
         /* @var KernelInterface $kernel */
-        if (
-            method_exists($kernel, 'getProjectDir') &&
+        if (method_exists($kernel, 'getProjectDir') &&
             ($directory = $kernel->getProjectDir()) &&
             file_exists($directory = "$directory/app")
         ) {

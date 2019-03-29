@@ -3,9 +3,9 @@
 namespace Jade\Symfony\Traits;
 
 /**
- * @internal
- *
  * Trait Filters.
+ *
+ * @property-read \Pug\Pug $jade
  */
 trait Filters
 {

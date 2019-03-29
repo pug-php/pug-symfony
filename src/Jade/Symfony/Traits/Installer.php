@@ -6,8 +6,6 @@ use Composer\IO\IOInterface;
 use Jade\Symfony\Contracts\InstallerInterface;
 
 /**
- * @internal
- *
  * Trait Installer.
  */
 trait Installer

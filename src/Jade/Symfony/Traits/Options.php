@@ -5,9 +5,9 @@ namespace Jade\Symfony\Traits;
 use Pug\Pug;
 
 /**
- * @internal
- *
  * Trait Options.
+ *
+ * @property-read \Pug\Pug $jade
  */
 trait Options
 {

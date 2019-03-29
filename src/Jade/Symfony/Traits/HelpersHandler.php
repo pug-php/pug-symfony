@@ -8,9 +8,9 @@ use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * @internal
- *
  * Trait HelpersHandler.
+ *
+ * @property-read \Pug\Pug $jade
  */
 trait HelpersHandler
 {

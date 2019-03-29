@@ -907,10 +907,10 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testMixedLoader()
     {
-        $loader = new MixedLoader(new ArrayLoader(array(
+        $loader = new MixedLoader(new ArrayLoader([
             'fozz' => 'fozz template',
             'bazz' => 'bazz template',
-        )));
+        ]));
 
         $loader->setTemplate('foo', 'bar');
         $loader->setTemplateSource('bar', 'biz');
@@ -927,7 +927,7 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testCssWithCustomAssetsHelper()
     {
-        include_once __DIR__.'/AssetsHelper.php';
+        include_once __DIR__ . '/AssetsHelper.php';
         $helper = new AssetsHelper();
         $css = new Css($helper);
 
