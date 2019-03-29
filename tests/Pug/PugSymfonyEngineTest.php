@@ -5,12 +5,14 @@ namespace Pug\Tests;
 use Composer\Composer;
 use Composer\Script\Event;
 use Jade\JadeSymfonyEngine;
+use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\FrameworkBundle\Templating\Helper\AssetsHelper;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
@@ -905,7 +907,10 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testMixedLoader()
     {
-        $loader = new MixedLoader(new ArrayLoader());
+        $loader = new MixedLoader(new ArrayLoader(array(
+            'fozz' => 'fozz template',
+            'bazz' => 'bazz template',
+        )));
 
         $loader->setTemplate('foo', 'bar');
         $loader->setTemplateSource('bar', 'biz');
@@ -915,5 +920,17 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertTrue($loader->exists('bar'));
         self::assertTrue($loader->isFresh('bar', 1));
         self::assertFalse($loader->exists('biz'));
+
+        self::assertSame('fozz template', $loader->getSourceContext('fozz')->getCode());
+        self::assertSame('bazz:bazz template', $loader->getCacheKey('bazz'));
+    }
+
+    public function testCssWithCustomAssetsHelper()
+    {
+        include_once __DIR__.'/AssetsHelper.php';
+        $helper = new AssetsHelper();
+        $css = new Css($helper);
+
+        self::assertSame("url('fake:foo')", $css->getUrl('foo'));
     }
 }
