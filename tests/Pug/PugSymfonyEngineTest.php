@@ -5,13 +5,15 @@ namespace Pug\Tests;
 use Composer\Composer;
 use Composer\Script\Event;
 use Jade\JadeSymfonyEngine;
+use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\FrameworkBundle\Templating\Helper\AssetsHelper;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Bundle\SecurityBundle\Templating\Helper\LogoutUrlHelper as BaseLogoutUrlHelper;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
@@ -58,14 +60,6 @@ class LogoutUrlGenerator extends BaseLogoutUrlGenerator
     public function getLogoutPath($key = null)
     {
         return 'logout-path';
-    }
-}
-
-class LogoutUrlHelper extends BaseLogoutUrlHelper
-{
-    public function __construct()
-    {
-        parent::__construct(new LogoutUrlGenerator());
     }
 }
 
@@ -319,8 +313,26 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testLogoutHelper()
     {
-        $logoutUrlHelper = new LogoutUrlHelper(new LogoutUrlGenerator());
-        self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
+        $generator = new LogoutUrlGenerator();
+        /* @var \Twig_Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+
+        foreach ($twig->getExtensions() as $extension) {
+            if ($extension instanceof LogoutUrlExtension) {
+                $reflectionClass = new \ReflectionClass('Symfony\Bridge\Twig\Extension\LogoutUrlExtension');
+                $reflectionProperty = $reflectionClass->getProperty('generator');
+                $reflectionProperty->setAccessible(true);
+                $reflectionProperty->setValue($extension, $generator);
+                $generator = null;
+            }
+        }
+
+        if ($generator) {
+            include_once __DIR__ . '/LogoutUrlHelper.php';
+            $logoutUrlHelper = new LogoutUrlHelper($generator);
+            self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
+        }
+
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<a href="logout-url"></a><a href="logout-path"></a>', trim($pugSymfony->render('logout.pug')));
@@ -895,7 +907,10 @@ class PugSymfonyEngineTest extends KernelTestCase
 
     public function testMixedLoader()
     {
-        $loader = new MixedLoader(new ArrayLoader());
+        $loader = new MixedLoader(new ArrayLoader([
+            'fozz' => 'fozz template',
+            'bazz' => 'bazz template',
+        ]));
 
         $loader->setTemplate('foo', 'bar');
         $loader->setTemplateSource('bar', 'biz');
@@ -905,5 +920,17 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertTrue($loader->exists('bar'));
         self::assertTrue($loader->isFresh('bar', 1));
         self::assertFalse($loader->exists('biz'));
+
+        self::assertSame('fozz template', $loader->getSourceContext('fozz')->getCode());
+        self::assertSame('bazz:bazz template', $loader->getCacheKey('bazz'));
+    }
+
+    public function testCssWithCustomAssetsHelper()
+    {
+        include_once __DIR__ . '/AssetsHelper.php';
+        $helper = new AssetsHelper();
+        $css = new Css($helper);
+
+        self::assertSame("url('fake:foo')", $css->getUrl('foo'));
     }
 }

@@ -7,7 +7,14 @@ use Twig_LoaderInterface;
 
 class MixedLoader implements Twig_LoaderInterface
 {
+    /**
+     * @var Twig_LoaderInterface
+     */
     protected $base;
+
+    /**
+     * @var array
+     */
     protected $extraTemplates = [];
 
     public function __construct(Twig_LoaderInterface $base)

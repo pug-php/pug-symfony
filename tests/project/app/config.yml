@@ -20,3 +20,13 @@ services:
         public: true
         class: Pug\PugSymfonyEngine
         arguments: ["@kernel"]
+
+security:
+    providers:
+        in_memory: { memory: ~ }
+    firewalls:
+        main:
+            anonymous: ~
+            logout:
+                path:   /logout
+                target: /
