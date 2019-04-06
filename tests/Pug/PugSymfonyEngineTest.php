@@ -348,15 +348,15 @@ class PugSymfonyEngineTest extends KernelTestCase
         $controller->setContainer(self::$kernel->getContainer());
 
         self::assertRegExp('/^' . implode('', [
-            '<form name="form" method="get"( action="")?>\s*',
-            '<div>\s*<label for="form_name" class="required">Name<\/label>\s*',
-            '<input type="text" id="form_name" name="form\[name\]" required="required" \/>\s*<\/div>\s*',
-            '<div>\s*<label class="required">Due date<\/label>\s*<div id="form_dueDate">\s*(',
-            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]">\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
-            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]">\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
-            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]">\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
-            '<\/div>\s*<\/div>\s*<div>\s*<button type="submit" id="form_save" name="form\[save\]">Submit me<\/button>\s*<\/div>\s*',
-            '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+" \/>\s*<\/form>',
+            '<form name="form" method="get"( action="")?\s*>\s*',
+            '<div\s*>\s*<label for="form_name" class="required"\s*>Name<\/label>\s*',
+            '<input type="text" id="form_name" name="form\[name\]" required="required"\s*\/>\s*<\/div>\s*',
+            '<div\s*>\s*<label class="required"\s*>Due date<\/label>\s*<div id="form_dueDate"\s*>\s*(',
+            '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]"\s*>\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
+            '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
+            '<\/div>\s*<\/div>\s*<div\s*>\s*<button type="submit" id="form_save" name="form\[save\]"\s*>Submit me<\/button>\s*<\/div>\s*',
+            '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+"\s*\/>\s*<\/form>',
         ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
             '!=form_start(form, {method: "GET"})',
             '!=form_errors(form)',
