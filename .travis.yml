@@ -6,41 +6,10 @@ cache:
 matrix:
   include:
     - php: 5.4
+      dist: trusty
       env:
         - SYMFONY_VERSION='2.7.*'
         - PUG_VERSION='^2.7.1'
-    - php: 5.4
-      env:
-        - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^2.7.1'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='2.8.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='3.0.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='3.1.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='3.2.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='3.3.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.5
-      env:
-        - SYMFONY_VERSION='3.4.*'
-        - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
         - SYMFONY_VERSION='2.7.*'
