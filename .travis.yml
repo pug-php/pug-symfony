@@ -8,6 +8,7 @@ matrix:
     - php: 5.4
       dist: trusty
       env:
+        - PREFER_SOURCE="--prefer-source"
         - SYMFONY_VERSION='2.7.*'
         - PUG_VERSION='^2.7.1'
     - php: 5.6
@@ -16,6 +17,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
+        - PREFER_SOURCE="--prefer-source"
         - SYMFONY_VERSION='2.8.*'
         - PUG_VERSION='^3.0.0'
     - php: 5.6
@@ -291,7 +293,7 @@ before_script:
   - if [ "$SYMFONY_VERSION" = "3.0.*" ]; then travis_retry composer require --no-update -n twig/twig=^1; fi;
   - if [ "$PUG_VERSION" != "" ]; then travis_retry composer require --no-update -n pug-php/pug=$PUG_VERSION; fi;
   - if [ -f /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then mv /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ~/xdebug.ini; fi;
-  - travis_retry php -d memory_limit=-1 composer.phar update -o --no-interaction --prefer-stable
+  - travis_retry php -d memory_limit=-1 composer.phar update -o --no-interaction --prefer-stable $PREFER_SOURCE
   - if [ -f ~/xdebug.ini ]; then mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi;
   - chmod -R 0777 tests/project
 script:
