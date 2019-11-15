@@ -1,9 +1,9 @@
 <?php
 
-namespace Jade\Symfony\Traits;
+namespace Pug\Symfony\Traits;
 
 use Composer\IO\IOInterface;
-use Jade\Symfony\Contracts\InstallerInterface;
+use Pug\Symfony\Contracts\InstallerInterface;
 
 /**
  * Trait Installer.

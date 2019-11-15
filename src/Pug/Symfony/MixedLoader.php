@@ -1,6 +1,6 @@
 <?php
 
-namespace Jade\Symfony;
+namespace Pug\Symfony;
 
 use Twig_Error_Loader;
 use Twig_LoaderInterface;

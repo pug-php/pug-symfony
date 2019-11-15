@@ -2,13 +2,13 @@
 
 namespace Pug\Tests\PugSymfonyBundle\Command;
 
-use Jade\JadeSymfonyEngine;
+use Pug\PugSymfonyEngine;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
-class BadEngine extends JadeSymfonyEngine
+class BadEngine extends PugSymfonyEngine
 {
     public function getEngine()
     {
@@ -18,7 +18,7 @@ class BadEngine extends JadeSymfonyEngine
 
 class AssetsPublishCommandTest extends KernelTestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         self::bootKernel();
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Jade\Symfony\Traits;
+namespace Pug\Symfony\Traits;
 
 /**
  * Trait Filters.

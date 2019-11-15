@@ -1,9 +1,9 @@
 <?php
 
-namespace Jade\Symfony\Traits;
+namespace Pug\Symfony\Traits;
 
-use Jade\Symfony\Css;
-use Jade\Symfony\MixedLoader;
+use Pug\Symfony\Css;
+use Pug\Symfony\MixedLoader;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 

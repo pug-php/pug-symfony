@@ -4,9 +4,8 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
-use Jade\JadeSymfonyEngine;
-use Jade\Symfony\Css;
-use Jade\Symfony\MixedLoader;
+use Pug\Symfony\Css;
+use Pug\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
@@ -168,7 +167,7 @@ class InvalidExceptionOptionsPug extends Pug
     }
 }
 
-class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
+class InvalidExceptionOptionsPugSymfony extends PugSymfonyEngine
 {
     public function getEngineClassName()
     {
@@ -185,17 +184,17 @@ class PugSymfonyEngineTest extends KernelTestCase
         }
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         self::clearCache();
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         self::clearCache();
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         self::bootKernel();
     }
