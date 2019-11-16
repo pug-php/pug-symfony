@@ -4,11 +4,11 @@ namespace Pug\Tests;
 
 use Composer\Composer;
 use Composer\Script\Event;
-use Pug\Symfony\Css;
-use Pug\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use Pug\Symfony\Css;
+use Pug\Symfony\MixedLoader;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Templating\Helper\AssetsHelper;

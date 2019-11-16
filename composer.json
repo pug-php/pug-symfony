@@ -10,17 +10,17 @@
     "pug/installer": "^0.1.0",
     "pug-php/pug": "^3.0.0",
     "pug-php/pug-assets": "^1.0.1",
-    "symfony/framework-bundle": "4.3.8",
-    "symfony/http-foundation": "4.3.8",
-    "symfony/http-kernel": "4.3.8",
-    "symfony/security-bundle": "4.3.8",
-    "symfony/templating": "4.3.8",
-    "symfony/twig-bridge": "4.3.8"
+    "symfony/framework-bundle": "^4.3.8 || ^5.0",
+    "symfony/http-foundation": "^4.3.8 || ^5.0",
+    "symfony/http-kernel": "^4.3.8 || ^5.0",
+    "symfony/security-bundle": "^4.3.8 || ^5.0",
+    "symfony/templating": "^4.3.8 || ^5.0",
+    "symfony/twig-bridge": "^4.3.8 || ^5.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^8.4.3",
     "symfony/phpunit-bridge": "^3.3.9, !=3.4.31",
-    "symfony/symfony": "^4.3.8",
+    "symfony/symfony": "^4.3.8 || ^5.0",
     "composer/composer": "^1.0.0"
   },
   "prefer-stable": true,

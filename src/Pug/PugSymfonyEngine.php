@@ -8,8 +8,6 @@ use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
-use Pug\Assets;
-use Pug\Pug;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
