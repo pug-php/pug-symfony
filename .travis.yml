@@ -11,12 +11,14 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.4.x-dev'
+        - SYMFONY_VERSION='4.4.*'
+        - REQUIRED_SYMFONY_PACKAGES='symfony/error-renderer:4.4.*'
         - PUG_VERSION='^3.0.0'
         - COVERAGE=true
     - php: 7.2
       env:
-        - SYMFONY_VERSION='5.0.x-dev'
+        - SYMFONY_VERSION='5.0.*'
+        - REQUIRED_SYMFONY_PACKAGES='symfony/error-renderer:5.0.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
@@ -24,11 +26,13 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
-        - SYMFONY_VERSION='4.4.x-dev'
+        - SYMFONY_VERSION='4.4.*'
+        - REQUIRED_SYMFONY_PACKAGES='symfony/error-renderer:4.4.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
-        - SYMFONY_VERSION='5.0.x-dev'
+        - SYMFONY_VERSION='5.0.*'
+        - REQUIRED_SYMFONY_PACKAGES='symfony/error-renderer:5.0.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.4snapshot
       env:
@@ -36,16 +40,19 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.4snapshot
       env:
-        - SYMFONY_VERSION='4.4.x-dev'
+        - SYMFONY_VERSION='4.4.*'
+        - REQUIRED_SYMFONY_PACKAGES='symfony/error-renderer:4.4.*'
         - PUG_VERSION='^3.0.0'
     - php: 7.4snapshot
       env:
-        - SYMFONY_VERSION='5.0.x-dev'
+        - SYMFONY_VERSION='5.0.*'
+        - REQUIRED_SYMFONY_PACKAGES='symfony/error-renderer:5.0.*'
         - PUG_VERSION='^3.0.0'
 before_script:
   - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
   - php composer-setup.php
   - php -r "unlink('composer-setup.php');"
+  - if [ "REQUIRED_SYMFONY_PACKAGES" != "" ]; then travis_retry composer require --no-update ${REQUIRED_SYMFONY_PACKAGES}; fi;
   - if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require --no-update -n symfony/symfony=$SYMFONY_VERSION; fi;
   - if [ "$SYMFONY_VERSION" = "3.0.*" ]; then travis_retry composer require --no-update -n twig/twig=^1; fi;
   - if [ "$PUG_VERSION" != "" ]; then travis_retry composer require --no-update -n pug-php/pug=$PUG_VERSION; fi;

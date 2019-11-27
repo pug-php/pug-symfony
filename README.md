@@ -20,7 +20,7 @@ option will install all settings automatically if possible.
 It for any reason, you do not can or want to use it, here is how to do
 a manual installation:
 
-- [Symfony 4 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
+- [Symfony 4+ manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
 - [Symfony 2 and 3 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation)
 
 If you installed Symfony in a custom way, you might be warned about

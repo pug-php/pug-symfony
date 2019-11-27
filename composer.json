@@ -23,6 +23,9 @@
     "symfony/symfony": "^4.3.8 || ^5.0",
     "composer/composer": "^1.0.0"
   },
+  "suggest": {
+    "symfony/error-renderer":  "Required for Symfony >= 4.4"
+  },
   "prefer-stable": true,
   "minimum-stability": "dev",
   "license": "MIT",
