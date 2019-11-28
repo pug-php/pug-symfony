@@ -10,18 +10,6 @@ if (!class_exists('Twig\\Environment')) {
     return;
 }
 
-if (!class_exists('Twig_Environment')) {
-    class_alias('Twig\\Environment', 'Twig_Environment');
-}
-
-if (!class_exists('Twig_Error_Loader')) {
-    class_alias('Twig\\Error\\LoaderError', 'Twig_Error_Loader');
-}
-
-if (!class_exists('Twig_LoaderInterface')) {
-    class_alias('Twig\\Loader\\LoaderInterface', 'Twig_LoaderInterface');
-}
-
 class MixedLoaderTwig3 implements \Twig_LoaderInterface
 {
     /**

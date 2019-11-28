@@ -2,12 +2,19 @@
 
 namespace Jade\Symfony;
 
-use Twig_Error_Loader;
-use Twig_LoaderInterface;
+if (!class_exists('Twig_LoaderInterface') && version_compare(PHP_VERSION, '7.2.0-dev', '>=')) {
+    class_alias('Twig\\Loader\\LoaderInterface', 'Twig_LoaderInterface');
 
-if (!class_exists('Twig_LoaderInterface') && version_compare(PHP_VERSION, '7.2.9-dev', '>=')) {
-    require __DIR__ . '/MixedLoaderTwig3.php';
-    class_alias('Jade\\Symfony\\MixedLoaderTwig3', 'Jade\\\Symfony\\MixedLoader');
+    if (!class_exists('Twig_Environment')) {
+        class_alias('Twig\\Environment', 'Twig_Environment');
+    }
+
+    if (!class_exists('Twig_Error_Loader')) {
+        class_alias('Twig\\Error\\LoaderError', 'Twig_Error_Loader');
+    }
+
+    require __DIR__ . '/../../../polyfill/Jade/Symfony/MixedLoaderTwig3.php';
+    class_alias('Jade\\Symfony\\MixedLoaderTwig3', 'Jade\\Symfony\\MixedLoader');
 
     return;
 }
@@ -15,7 +22,7 @@ if (!class_exists('Twig_LoaderInterface') && version_compare(PHP_VERSION, '7.2.9
 class MixedLoader implements \Twig_LoaderInterface
 {
     /**
-     * @var Twig_LoaderInterface
+     * @var \Twig_LoaderInterface
      */
     protected $base;
 
@@ -24,7 +31,7 @@ class MixedLoader implements \Twig_LoaderInterface
      */
     protected $extraTemplates = [];
 
-    public function __construct(Twig_LoaderInterface $base)
+    public function __construct(\Twig_LoaderInterface $base)
     {
         $this->base = $base;
     }
@@ -69,7 +76,7 @@ class MixedLoader implements \Twig_LoaderInterface
      *
      * @param string $name The name of the template to load
      *
-     * @throws Twig_Error_Loader When $name is not found
+     * @throws \Twig_Error_Loader When $name is not found
      *
      * @return string The cache key
      */
@@ -89,7 +96,7 @@ class MixedLoader implements \Twig_LoaderInterface
      * @param int    $time Timestamp of the last modification time of the
      *                     cached template
      *
-     * @throws Twig_Error_Loader When $name is not found
+     * @throws \Twig_Error_Loader When $name is not found
      *
      * @return bool true if the template is fresh, false otherwise
      */

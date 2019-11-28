@@ -182,7 +182,7 @@ class PugSymfonyEngineTest extends KernelTestCase
     {
         foreach (['app', 'var'] as $directory) {
             try {
-                (new Filesystem())->remove(__DIR__."/../project/$directory/cache");
+                (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
             } catch (\Exception $e) {
                 // noop
             }

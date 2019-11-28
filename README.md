@@ -20,7 +20,7 @@ option will install all settings automatically if possible.
 It for any reason, you do not can or want to use it, here is how to do
 a manual installation:
 
-- [Symfony 4 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
+- [Symfony 4+ manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
 - [Symfony 2 and 3 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation)
 
 If you installed Symfony in a custom way, you might be warned about
@@ -84,7 +84,7 @@ public function contactAction()
 
 In production, you better have to pre-render all your templates to improve performances. To do that, you have
 `Pug\PugSymfonyBundle\PugSymfonyBundle` in your registered bundles. It should be already done if you
-followed the automated install with success. Else check installation instructions ([add bundle in Symfony 4](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation#configbundlesphp),
+followed the automated install with success. Else check installation instructions ([add bundle in Symfony 4+](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation#configbundlesphp),
 [add bundle in Symfony 2 and 3](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation#appappkenelphp))
 
 This will make the `assets:publish` command available, now each time you deploy your app, enter the command below:
