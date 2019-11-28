@@ -8,28 +8,39 @@ matrix:
     - php: 5.4
       dist: trusty
       env:
+        - REMOVE_PACKAGE="pug/installer"
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
+        - SYMFONY_VERSION='2.7.*'
+        - PUG_VERSION='^2.7.1'
+    - php: 5.6
+      env:
+        - REMOVE_PACKAGE="pug/installer"
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
+        - SYMFONY_VERSION='2.7.*'
+        - PUG_VERSION='^3.0.0'
+    - php: 5.6
+      env:
+        - REMOVE_PACKAGE="pug/installer"
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
         - PREFER_SOURCE="--prefer-source"
-        - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^2.7.1'
-    - php: 5.6
-      env:
-        - SYMFONY_VERSION='2.7.*'
-        - PUG_VERSION='^3.0.0'
-    - php: 5.6
-      env:
-        - PREFER_SOURCE="--prefer-source"
         - SYMFONY_VERSION='2.8.*'
         - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
+        - REMOVE_PACKAGE="pug/installer"
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
         - SYMFONY_VERSION='3.0.*'
         - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
+        - REMOVE_PACKAGE="pug/installer"
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
         - SYMFONY_VERSION='3.1.*'
         - PUG_VERSION='^3.0.0'
     - php: 5.6
       env:
+        - REMOVE_PACKAGE="pug/installer"
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
         - SYMFONY_VERSION='3.2.*'
         - PUG_VERSION='^3.0.0'
     - php: 5.6
@@ -150,7 +161,7 @@ matrix:
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.3.x-dev'
+        - SYMFONY_VERSION='4.3.*'
         - PUG_VERSION='^2.7.1'
     - php: 7.2
       env:
@@ -194,7 +205,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.2
       env:
-        - SYMFONY_VERSION='4.3.x-dev'
+        - SYMFONY_VERSION='4.3.*'
         - PUG_VERSION='^3.0.0'
         - COVERAGE=true
     - php: 7.3
@@ -239,7 +250,7 @@ matrix:
         - PUG_VERSION='^2.7.1'
     - php: 7.3
       env:
-        - SYMFONY_VERSION='4.3.x-dev'
+        - SYMFONY_VERSION='4.3.*'
         - PUG_VERSION='^2.7.1'
     - php: 7.3
       env:
@@ -283,17 +294,17 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
-        - SYMFONY_VERSION='4.3.x-dev'
+        - SYMFONY_VERSION='4.3.*'
         - PUG_VERSION='^3.0.0'
 before_script:
-  - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-  - php composer-setup.php
-  - php -r "unlink('composer-setup.php');"
+  - if [ "$REMOVE_PACKAGE" != "" ]; then travis_retry composer remove --no-update -n ${REMOVE_PACKAGE}; fi;
+  - if [ "$REMOVE_DEV_PACKAGE" != "" ]; then travis_retry composer remove --dev --no-update -n ${REMOVE_DEV_PACKAGE}; fi;
   - if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require --no-update -n symfony/symfony=$SYMFONY_VERSION; fi;
   - if [ "$SYMFONY_VERSION" = "3.0.*" ]; then travis_retry composer require --no-update -n twig/twig=^1; fi;
   - if [ "$PUG_VERSION" != "" ]; then travis_retry composer require --no-update -n pug-php/pug=$PUG_VERSION; fi;
+  - if [ "$STABILITY" != "" ]; then travis_retry composer config minimum-stability ${STABILITY}; fi;
   - if [ -f /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then mv /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ~/xdebug.ini; fi;
-  - travis_retry php -d memory_limit=-1 composer.phar update -o --no-interaction --prefer-stable ${PREFER_SOURCE}
+  - COMPOSER_MEMORY_LIMIT=-1 travis_retry composer update -o --no-interaction
   - if [ -f ~/xdebug.ini ]; then mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi;
   - chmod -R 0777 tests/project
 script:

@@ -24,7 +24,7 @@
     "codeclimate/php-test-reporter": "dev-master",
     "composer/composer": ">=1.0.0"
   },
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "license": "MIT",
   "authors": [
     {
