@@ -2,12 +2,13 @@
 
 namespace Jade\Symfony;
 
+use Twig\Source;
 use Twig_Error_Loader;
 use Twig_LoaderInterface;
 
-if (!class_exists('Twig_LoaderInterface')) {
-    return require __DIR__.'/MixedLoaderTwig3.php';
-}
+class_alias('Twig\\Environment', 'Twig_Environment,');
+class_alias('Twig\\Error\\LoaderError', 'Twig_Error_Loader');
+class_alias('Twig\\Loader\\LoaderInterface', 'Twig_LoaderInterface');
 
 class MixedLoader implements \Twig_LoaderInterface
 {
@@ -39,10 +40,10 @@ class MixedLoader implements \Twig_LoaderInterface
         $this->extraTemplates[$name] = $template;
     }
 
-    public function getSourceContext($name)
+    public function getSourceContext(string $name): Source
     {
         if (isset($this->extraTemplates[$name])) {
-            return new \Twig_Source($this->extraTemplates[$name], $name);
+            return new Source($this->extraTemplates[$name], $name);
         }
 
         return $this->base->getSourceContext($name);
@@ -70,7 +71,7 @@ class MixedLoader implements \Twig_LoaderInterface
      *
      * @return string The cache key
      */
-    public function getCacheKey($name)
+    public function getCacheKey(string $name): string
     {
         if (isset($this->extraTemplates[$name])) {
             return $name;
@@ -90,7 +91,7 @@ class MixedLoader implements \Twig_LoaderInterface
      *
      * @return bool true if the template is fresh, false otherwise
      */
-    public function isFresh($name, $time)
+    public function isFresh(string $name, $time): bool
     {
         if (isset($this->extraTemplates[$name])) {
             return true;
@@ -106,7 +107,7 @@ class MixedLoader implements \Twig_LoaderInterface
      *
      * @return bool If the template source code is handled by this loader or not
      */
-    public function exists($name)
+    public function exists(string $name)
     {
         if (isset($this->extraTemplates[$name])) {
             return true;

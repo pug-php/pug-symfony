@@ -181,7 +181,9 @@ class PugSymfonyEngineTest extends KernelTestCase
     private static function clearCache()
     {
         foreach (['app', 'var'] as $directory) {
-            (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
+            try {
+                (new Filesystem())->remove(__DIR__."/../project/$directory/cache");
+            } catch (\Exception $e) {}
         }
     }
 
@@ -311,6 +313,10 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
 
+    /**
+     * @throws \ErrorException
+     * @throws \ReflectionException
+     */
     public function testLogoutHelper()
     {
         $generator = new LogoutUrlGenerator();

@@ -69,14 +69,15 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
         $viewDirectories = [$appDir . '/Resources/views'];
-        if ($container->has('twig') &&
-            ($twig = $container->get('twig')) instanceof \Twig_Environment &&
+
+        if (($twig = $this->getTwig($container)) &&
             ($loader = $twig->getLoader()) instanceof FilesystemLoader &&
             is_array($paths = $loader->getPaths()) &&
             isset($paths[0])
         ) {
             $viewDirectories[] = $paths[0];
         }
+
         $this->defaultTemplateDirectory = end($viewDirectories);
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
