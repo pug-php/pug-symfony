@@ -5,7 +5,7 @@ namespace Jade\Symfony;
 use Twig_Error_Loader;
 use Twig_LoaderInterface;
 
-if (!class_exists('Twig_LoaderInterface')) {
+if (!class_exists('Twig_LoaderInterface') && version_compare(PHP_VERSION, '7.2.9-dev', '>=')) {
     require __DIR__ . '/MixedLoaderTwig3.php';
     class_alias('Jade\\Symfony\\MixedLoaderTwig3', 'Jade\\\Symfony\\MixedLoader');
 
