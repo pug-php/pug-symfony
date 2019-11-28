@@ -6,7 +6,10 @@ use Twig_Error_Loader;
 use Twig_LoaderInterface;
 
 if (!class_exists('Twig_LoaderInterface')) {
-    return require __DIR__.'/MixedLoaderTwig3.php';
+    require __DIR__ . '/MixedLoaderTwig3.php';
+    class_alias('Jade\\Symfony\\MixedLoaderTwig3', 'Jade\\\Symfony\\MixedLoader');
+
+    return;
 }
 
 class MixedLoader implements \Twig_LoaderInterface

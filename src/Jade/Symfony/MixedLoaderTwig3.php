@@ -6,11 +6,15 @@ use Twig\Source;
 use Twig_Error_Loader;
 use Twig_LoaderInterface;
 
+if (!class_exists('Twig\\Environment')) {
+    return;
+}
+
 class_alias('Twig\\Environment', 'Twig_Environment,');
 class_alias('Twig\\Error\\LoaderError', 'Twig_Error_Loader');
 class_alias('Twig\\Loader\\LoaderInterface', 'Twig_LoaderInterface');
 
-class MixedLoader implements \Twig_LoaderInterface
+class MixedLoaderTwig3 implements \Twig_LoaderInterface
 {
     /**
      * @var Twig_LoaderInterface

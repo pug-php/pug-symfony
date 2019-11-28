@@ -129,17 +129,9 @@ trait HelpersHandler
 
     protected function getTwig(ContainerInterface $container)
     {
-        if (!$container->has('twig')) {
-            return null;
-        }
+        $twig = $container->has('twig') ? $container->get('twig') : null;
 
-        $twig = $container->get('twig');
-
-        if ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) {
-            return $twig;
-        }
-
-        return null;
+        return ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) ? $twig : null;
     }
 
     protected function copyTwigFunctions(ContainerInterface $services)
