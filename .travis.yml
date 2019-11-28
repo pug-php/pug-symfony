@@ -306,6 +306,7 @@ matrix:
         - PUG_VERSION='^3.0.0'
     - php: 7.3
       env:
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
         - SYMFONY_VERSION='5.0.*'
         - PUG_VERSION='^3.0.0'
 before_script:
