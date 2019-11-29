@@ -2,9 +2,9 @@
 
 namespace Jade\Symfony;
 
-use Twig_Source;
 use Twig_Error_Loader;
 use Twig_LoaderInterface;
+use Twig_Source;
 
 class MixedLoaderTwig2 implements Twig_LoaderInterface
 {
