@@ -18,6 +18,7 @@ use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Twig\Loader\ArrayLoader;
@@ -178,21 +179,49 @@ class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
 
 class PugSymfonyEngineTest extends KernelTestCase
 {
+    private static function handleKernelRootDir($configFiles)
+    {
+        foreach ((array) $configFiles as $configFile) {
+            if (defined('Symfony\Component\HttpKernel\Kernel::VERSION') &&
+                version_compare(Kernel::VERSION, '5.0.0-dev', '>=')
+            ) {
+                file_put_contents($configFile, str_replace('%kernel.root_dir%', '%kernel.project_dir%', file_get_contents($configFile)));
+            }
+        }
+    }
+
     private static function clearCache()
     {
         foreach (['app', 'var'] as $directory) {
-            (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
+            try {
+                (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
+            } catch (\Exception $e) {
+                // noop
+            }
         }
+    }
+
+    private static function getConfigFiles()
+    {
+        return [
+            __DIR__ . '/../project-s4/config/packages/framework.yaml',
+            __DIR__ . '/../project/app/config.yml',
+            __DIR__ . '/../project/app/config/config.yml',
+        ];
     }
 
     public static function setUpBeforeClass()
     {
+        self::handleKernelRootDir(self::getConfigFiles());
         self::clearCache();
     }
 
     public static function tearDownAfterClass()
     {
         self::clearCache();
+        foreach (self::getConfigFiles() as $file) {
+            file_put_contents($file, str_replace('%kernel.project_dir%', '%kernel.root_dir%', file_get_contents($file)));
+        }
     }
 
     public function setUp()
@@ -311,6 +340,10 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
 
+    /**
+     * @throws \ErrorException
+     * @throws \ReflectionException
+     */
     public function testLogoutHelper()
     {
         $generator = new LogoutUrlGenerator();
@@ -607,6 +640,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
             $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
         }
+        self::handleKernelRootDir($dir . '/app/config/config.yml');
         $io->reset();
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));

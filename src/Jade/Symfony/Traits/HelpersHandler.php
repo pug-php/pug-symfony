@@ -53,7 +53,13 @@ trait HelpersHandler
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
     }
 
-    protected function compileTwigCallable(\Twig_Environment $twig, $name)
+    /**
+     * @param \Twig_Environment $twig
+     * @param string            $name
+     *
+     * @return \Closure
+     */
+    protected function compileTwigCallable($twig, $name)
     {
         $callable = function () use ($twig, $name) {
             $variables = [];
@@ -74,7 +80,16 @@ trait HelpersHandler
         return $callable->bindTo($twig);
     }
 
-    protected function getTwigCallable(\Twig_Environment $twig, $function, $name)
+    /**
+     * @param \Twig_Environment $twig
+     * @param callable          $function
+     * @param string            $name
+     *
+     * @throws \ReflectionException
+     *
+     * @return \Closure
+     */
+    protected function getTwigCallable($twig, $function, $name)
     {
         /* @var \Twig_Function $function */
         $callable = $function->getCallable();
@@ -91,7 +106,11 @@ trait HelpersHandler
         return $callable;
     }
 
-    protected function copyTwigFunction(\Twig_Environment $twig, $function)
+    /**
+     * @param \Twig_Environment $twig
+     * @param callable          $function
+     */
+    protected function copyTwigFunction($twig, $function)
     {
         /* @var \Twig_Function $function */
         $name = $function->getName();
@@ -108,13 +127,19 @@ trait HelpersHandler
         }
     }
 
+    protected function getTwig(ContainerInterface $container)
+    {
+        $twig = $container->has('twig') ? $container->get('twig') : null;
+
+        return ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) ? $twig : null;
+    }
+
     protected function copyTwigFunctions(ContainerInterface $services)
     {
         $this->twigHelpers = [];
+        $twig = $this->getTwig($services);
 
-        if ($services->has('twig') &&
-            ($twig = $services->get('twig')) instanceof \Twig_Environment
-        ) {
+        if ($twig) {
             /* @var \Twig_Environment $twig */
             $twig = clone $twig;
             $twig->env = $twig;
