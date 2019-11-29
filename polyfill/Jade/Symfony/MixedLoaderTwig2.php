@@ -2,15 +2,11 @@
 
 namespace Jade\Symfony;
 
-use Twig\Source;
 use Twig_Error_Loader;
 use Twig_LoaderInterface;
+use Twig_Source;
 
-if (!class_exists('Twig\\Environment')) {
-    return;
-}
-
-class MixedLoaderTwig3 implements Twig_LoaderInterface
+class MixedLoaderTwig2 implements Twig_LoaderInterface
 {
     /**
      * @var Twig_LoaderInterface
@@ -40,10 +36,10 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
         $this->extraTemplates[$name] = $template;
     }
 
-    public function getSourceContext(string $name): Source
+    public function getSourceContext($name)
     {
         if (isset($this->extraTemplates[$name])) {
-            return new Source($this->extraTemplates[$name], $name);
+            return new Twig_Source($this->extraTemplates[$name], $name);
         }
 
         return $this->base->getSourceContext($name);
@@ -71,7 +67,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      *
      * @return string The cache key
      */
-    public function getCacheKey(string $name): string
+    public function getCacheKey($name)
     {
         if (isset($this->extraTemplates[$name])) {
             return $name;
@@ -91,7 +87,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      *
      * @return bool true if the template is fresh, false otherwise
      */
-    public function isFresh(string $name, $time): bool
+    public function isFresh($name, $time)
     {
         if (isset($this->extraTemplates[$name])) {
             return true;
@@ -107,7 +103,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      *
      * @return bool If the template source code is handled by this loader or not
      */
-    public function exists(string $name)
+    public function exists($name)
     {
         if (isset($this->extraTemplates[$name])) {
             return true;
