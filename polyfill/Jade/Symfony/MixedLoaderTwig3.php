@@ -10,7 +10,7 @@ if (!class_exists('Twig\\Environment')) {
     return;
 }
 
-class MixedLoaderTwig3 implements \Twig_LoaderInterface
+class MixedLoaderTwig3 implements Twig_LoaderInterface
 {
     /**
      * @var Twig_LoaderInterface

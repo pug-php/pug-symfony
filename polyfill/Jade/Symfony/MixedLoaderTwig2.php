@@ -2,14 +2,14 @@
 
 namespace Jade\Symfony;
 
-use Twig\Source;
+use Twig_Source;
 use Twig_Error_Loader;
 use Twig_LoaderInterface;
 
-class MixedLoaderTwig2 implements \Twig_LoaderInterface
+class MixedLoaderTwig2 implements Twig_LoaderInterface
 {
     /**
-     * @var \Twig_LoaderInterface
+     * @var Twig_LoaderInterface
      */
     protected $base;
 
@@ -18,7 +18,7 @@ class MixedLoaderTwig2 implements \Twig_LoaderInterface
      */
     protected $extraTemplates = [];
 
-    public function __construct(\Twig_LoaderInterface $base)
+    public function __construct(Twig_LoaderInterface $base)
     {
         $this->base = $base;
     }
@@ -39,7 +39,7 @@ class MixedLoaderTwig2 implements \Twig_LoaderInterface
     public function getSourceContext($name)
     {
         if (isset($this->extraTemplates[$name])) {
-            return new \Twig_Source($this->extraTemplates[$name], $name);
+            return new Twig_Source($this->extraTemplates[$name], $name);
         }
 
         return $this->base->getSourceContext($name);
@@ -63,7 +63,7 @@ class MixedLoaderTwig2 implements \Twig_LoaderInterface
      *
      * @param string $name The name of the template to load
      *
-     * @throws \Twig_Error_Loader When $name is not found
+     * @throws Twig_Error_Loader When $name is not found
      *
      * @return string The cache key
      */
@@ -83,7 +83,7 @@ class MixedLoaderTwig2 implements \Twig_LoaderInterface
      * @param int    $time Timestamp of the last modification time of the
      *                     cached template
      *
-     * @throws \Twig_Error_Loader When $name is not found
+     * @throws Twig_Error_Loader When $name is not found
      *
      * @return bool true if the template is fresh, false otherwise
      */
