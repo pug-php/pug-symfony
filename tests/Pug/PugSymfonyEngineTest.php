@@ -206,7 +206,7 @@ class PugSymfonyEngineTest extends KernelTestCase
         return [
             __DIR__ . '/../project-s4/config/packages/framework.yaml',
             __DIR__ . '/../project/app/config.yml',
-            __DIR__ . '/../project/app/config/config.yml'
+            __DIR__ . '/../project/app/config/config.yml',
         ];
     }
 
