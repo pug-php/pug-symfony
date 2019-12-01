@@ -8,6 +8,10 @@ use Jade\Symfony\Traits\Filters;
 use Jade\Symfony\Traits\HelpersHandler;
 use Jade\Symfony\Traits\Installer;
 use Jade\Symfony\Traits\Options;
+use Phug\Compiler\Event\NodeEvent;
+use Phug\Parser\Node\FilterNode;
+use Phug\Parser\Node\ImportNode;
+use Phug\Parser\Node\TextNode;
 use Pug\Assets;
 use Pug\Pug;
 use Symfony\Bridge\Twig\AppVariable;
@@ -26,11 +30,6 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      * @var ContainerInterface|null
      */
     protected $container;
-
-    /**
-     * @var Pug
-     */
-    protected $jade;
 
     /**
      * @var Assets
@@ -52,7 +51,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      */
     protected $fs;
 
-    public function __construct($kernel)
+    public function __construct(KernelInterface $kernel)
     {
         if (empty($kernel) || !($kernel instanceof KernelInterface || $kernel instanceof Kernel)) {
             throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.pug service arguments, see https://github.com/pug-php/pug-symfony#readme", 1);
@@ -70,7 +69,8 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $assetsDirectories = [$appDir . '/Resources/assets'];
         $viewDirectories = [$appDir . '/Resources/views'];
 
-        if (($twig = $this->getTwig($container)) &&
+        if ($container->has('twig') &&
+            ($twig = $container->get('twig')) &&
             ($loader = $twig->getLoader()) instanceof FilesystemLoader &&
             is_array($paths = $loader->getPaths()) &&
             isset($paths[0])
@@ -84,7 +84,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $baseDir = $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
         $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
-        $this->jade = new $pugClassName(array_merge([
+        $options = array_merge([
             'debug'           => $debug,
             'assetDirectory'  => static::extractUniquePaths($assetsDirectories),
             'viewDirectories' => static::extractUniquePaths($viewDirectories),
@@ -95,9 +95,15 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
             'outputDirectory' => $webDir,
             'preRender'       => [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
-        ], ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: []));
+        ], ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: []);
+
+        if ($this->isAtLeastSymfony5()) {
+            $options['on_node'] = [$this, 'handleTwigInclude'];
+        }
+
+        $this->pug = new $pugClassName($options);
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
-        $this->assets = new Assets($this->jade);
+        $this->assets = new Assets($this->pug);
 
         foreach ($container->get('twig')->getGlobals() as $globalKey => $globalValue) {
             if ($globalValue instanceof AppVariable) {
@@ -115,14 +121,37 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         }
     }
 
+    public function handleTwigInclude(NodeEvent $nodeEvent)
+    {
+        $node = $nodeEvent->getNode();
+
+        if ($node instanceof ImportNode && $node->getName() === 'include') {
+            $code = new TextNode($node->getToken());
+            $path = var_export($node->getPath(), true);
+            $location = $node->getSourceLocation();
+            $line = $location->getLine() - $this->getPreRenderLinesCount();
+            $template = var_export($location->getPath(), true);
+            $code->setValue('$this->loadTemplate(' . $path . ', ' . $template . ', ' . $line . ')->display($context);');
+            $filter = new FilterNode($node->getToken());
+            $filter->setName('php');
+            $filter->appendChild($code);
+            $nodeEvent->setNode($filter);
+        }
+    }
+
     protected function getAppDirectory($kernel)
     {
         /* @var KernelInterface $kernel */
         if (method_exists($kernel, 'getProjectDir') &&
-            ($directory = $kernel->getProjectDir()) &&
-            file_exists($directory = "$directory/app")
+            ($directory = $kernel->getProjectDir())
         ) {
-            return realpath($directory);
+            if ($this->isAtLeastSymfony5()) {
+                return "$directory/src";
+            }
+
+            if (file_exists($directory = "$directory/app")) {
+                return realpath($directory);
+            }
         }
 
         /* @var Kernel $kernel */
@@ -206,7 +235,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      */
     public function share($variables, $value = null)
     {
-        $this->jade->share($variables, $value);
+        $this->pug->share($variables, $value);
 
         return $this;
     }
@@ -235,13 +264,23 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     }
 
     /**
+     * Get number of lines occupied by pre-render code.
+     *
+     * @return int
+     */
+    public function getPreRenderLinesCount()
+    {
+        return count($this->replacements) * 6;
+    }
+
+    /**
      * Get the Pug engine.
      *
      * @return Pug
      */
     public function getEngine()
     {
-        return $this->jade;
+        return $this->pug;
     }
 
     /**
@@ -292,9 +331,9 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     public function render($name, array $parameters = [])
     {
         $parameters = $this->getParameters($parameters);
-        $method = method_exists($this->jade, 'renderFile')
-            ? [$this->jade, 'renderFile']
-            : [$this->jade, 'render'];
+        $method = method_exists($this->pug, 'renderFile')
+            ? [$this->pug, 'renderFile']
+            : [$this->pug, 'render'];
 
         return call_user_func($method, $this->getFileFromName($name), $parameters);
     }
@@ -312,9 +351,9 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     public function renderString($code, array $parameters = [])
     {
         $parameters = $this->getParameters($parameters);
-        $method = method_exists($this->jade, 'renderString')
-            ? [$this->jade, 'renderString']
-            : [$this->jade, 'render'];
+        $method = method_exists($this->pug, 'renderString')
+            ? [$this->pug, 'renderString']
+            : [$this->pug, 'render'];
 
         return call_user_func($method, $code, $parameters);
     }
@@ -341,10 +380,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     public function supports($name)
     {
         // @codeCoverageIgnoreStart
-        $extensions = method_exists($this->jade, 'getExtensions')
-            ? $this->jade->getExtensions()
-            : $this->jade->getOption('extensions');
+        $extensions = method_exists($this->pug, 'getExtensions')
+            ? $this->pug->getExtensions()
+            : $this->pug->getOption('extensions');
         // @codeCoverageIgnoreEnd
+
         foreach ($extensions as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;

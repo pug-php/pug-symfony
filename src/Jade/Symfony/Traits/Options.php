@@ -7,7 +7,7 @@ use Pug\Pug;
 /**
  * Trait Options.
  *
- * @property-read \Pug\Pug $jade
+ * @property-read \Pug\Pug $pug
  */
 trait Options
 {
@@ -46,9 +46,9 @@ trait Options
      */
     public function getOption($name, $default = null)
     {
-        return method_exists($this->jade, 'hasOption') && !$this->jade->hasOption($name)
+        return method_exists($this->pug, 'hasOption') && !$this->pug->hasOption($name)
             ? $default
-            : $this->jade->getOption($name);
+            : $this->pug->getOption($name);
     }
 
     /**
@@ -61,7 +61,7 @@ trait Options
      */
     public function setOption($name, $value)
     {
-        return $this->jade->setOption($name, $value);
+        return $this->pug->setOption($name, $value);
     }
 
     /**
@@ -73,7 +73,7 @@ trait Options
      */
     public function setOptions(array $options)
     {
-        return $this->jade->setOptions($options);
+        return $this->pug->setOptions($options);
     }
 
     /**
@@ -88,6 +88,6 @@ trait Options
      */
     public function setCustomOptions(array $options)
     {
-        return $this->jade->setCustomOptions($options);
+        return $this->pug->setCustomOptions($options);
     }
 }

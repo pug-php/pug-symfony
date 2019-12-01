@@ -4,6 +4,7 @@ namespace Jade\Symfony\Traits;
 
 use Composer\IO\IOInterface;
 use Jade\Symfony\Contracts\InstallerInterface;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Trait Installer.
@@ -95,6 +96,35 @@ trait Installer
         } else {
             $io->write('Sorry, config/bundles.php has a format we can\'t handle automatically.');
         }
+    }
+
+    protected static function installInSymfony5($event, $dir)
+    {
+        /** @var \Composer\Script\Event $event */
+        $io = $event->getIO();
+        $baseDirectory = __DIR__ . '/../../../..';
+        $file = fopen($dir . '/config/services.yaml', 'a');
+        $written = fwrite($file, "\n    Pug\PugSymfonyEngine:\n        autowire: true\n");
+        fclose($file);
+
+        $flags = 0;
+        $addServicesConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config/services.yaml? [Y/N] ');
+
+        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
+            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
+        };
+
+        if ($addServicesConfig) {
+            static::installSymfony4ServiceConfig($io, $dir, $pugService, $proceedTask, $flags);
+        } else {
+            $flags |= InstallerInterface::CONFIG_OK;
+        }
+
+        if (($flags & InstallerInterface::KERNEL_OK) && ($flags & InstallerInterface::CONFIG_OK) && ($flags & InstallerInterface::ENGINE_OK)) {
+            touch($baseDirectory . '/installed');
+        }
+
+        return !!$written;
     }
 
     protected static function installInSymfony4($event, $dir)
@@ -318,6 +348,13 @@ trait Installer
 
             return true;
         }
+
+        $symfonyVersion = defined('Symfony\Component\HttpKernel\Kernel::VERSION') ? Kernel::VERSION : 0;
+
+        if (version_compare($symfonyVersion, '5.0.0-dev', '>=')) {
+            return static::installInSymfony5($event, $dir);
+        }
+
 
         return file_exists($dir . '/config/packages/framework.yaml')
             ? static::installInSymfony4($event, $dir)
