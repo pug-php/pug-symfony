@@ -103,24 +103,17 @@ trait Installer
         /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
         $baseDirectory = __DIR__ . '/../../../..';
-        $file = fopen($dir . '/config/services.yaml', 'a');
-        $written = fwrite($file, "\n    Pug\PugSymfonyEngine:\n        autowire: true\n");
-        fclose($file);
+        $written = true;
 
-        $flags = 0;
         $addServicesConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config/services.yaml? [Y/N] ');
 
-        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
-            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
-        };
-
         if ($addServicesConfig) {
-            static::installSymfony4ServiceConfig($io, $dir, $pugService, $proceedTask, $flags);
-        } else {
-            $flags |= InstallerInterface::CONFIG_OK;
+            $file = fopen($dir . '/config/services.yaml', 'a');
+            $written = fwrite($file, "\n    Pug\PugSymfonyEngine:\n        autowire: true\n");
+            fclose($file);
         }
 
-        if (($flags & InstallerInterface::KERNEL_OK) && ($flags & InstallerInterface::CONFIG_OK) && ($flags & InstallerInterface::ENGINE_OK)) {
+        if ($written) {
             touch($baseDirectory . '/installed');
         }
 
