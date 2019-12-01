@@ -103,21 +103,28 @@ trait Installer
         /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
         $baseDirectory = __DIR__ . '/../../../..';
-        $written = true;
 
-        $addServicesConfig = static::askConfirmation($io, 'Would you like us to add automatically needed settings in your config/services.yaml? [Y/N] ');
+        $flags = 0;
 
-        if ($addServicesConfig) {
-            $file = fopen($dir . '/config/services.yaml', 'a');
-            $written = fwrite($file, "\n    Pug\PugSymfonyEngine:\n        autowire: true\n");
-            fclose($file);
+        $bundleClass = 'Pug\PugSymfonyBundle\PugSymfonyBundle';
+        $bundle = "$bundleClass::class => ['all' => true],";
+        $addBundle = static::askConfirmation($io, 'Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
+
+        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
+            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
+        };
+
+        if ($addBundle) {
+            static::installSymfony4Bundle($io, $dir, $bundle, $bundleClass, $proceedTask, $flags);
+        } else {
+            $flags |= InstallerInterface::KERNEL_OK;
         }
 
-        if ($written) {
+        if (($flags & InstallerInterface::KERNEL_OK)) {
             touch($baseDirectory . '/installed');
         }
 
-        return (bool) $written;
+        return true;
     }
 
     protected static function installInSymfony4($event, $dir)
