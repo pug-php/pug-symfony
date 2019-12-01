@@ -2,6 +2,8 @@
 
 namespace Jade\Symfony;
 
+// @codeCoverageIgnoreStart
+
 if (PugEngine::getTwigVersion() > 2) {
     class_alias('Twig\\Loader\\LoaderInterface', 'Twig_LoaderInterface');
     class_alias('Twig\\Environment', 'Twig_Environment');
@@ -13,6 +15,8 @@ if (PugEngine::getTwigVersion() > 2) {
 
     return;
 }
+
+// @codeCoverageIgnoreEnd
 
 require __DIR__ . '/../../../polyfill/Jade/Symfony/MixedLoaderTwig2.php';
 
