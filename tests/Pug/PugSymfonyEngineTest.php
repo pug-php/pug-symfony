@@ -290,15 +290,6 @@ class PugSymfonyEngineTest extends KernelTestCase
         self::assertRegExp('/<p>[a-zA-Z0-9_-]{10,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
     }
 
-    /**
-     * @expectedException        \InvalidArgumentException
-     * @expectedExceptionMessage It seems you did not set the new settings in services.yml, please add "@kernel" to templating.engine.pug service arguments, see https://github.com/pug-php/pug-symfony#readme
-     */
-    public function testNeedKernel()
-    {
-        new PugSymfonyEngine('foo');
-    }
-
     public function testGetEngine()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);

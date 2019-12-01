@@ -53,10 +53,6 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
 
     public function __construct(KernelInterface $kernel)
     {
-        if (empty($kernel) || !($kernel instanceof KernelInterface || $kernel instanceof Kernel)) {
-            throw new \InvalidArgumentException("It seems you did not set the new settings in services.yml, please add \"@kernel\" to templating.engine.pug service arguments, see https://github.com/pug-php/pug-symfony#readme", 1);
-        }
-
         $this->kernel = $kernel;
         $cache = $this->getCacheDir();
         $this->fs = new Filesystem();
