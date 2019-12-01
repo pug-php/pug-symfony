@@ -8,6 +8,8 @@ use Symfony\Component\HttpKernel\Kernel;
 
 abstract class AbstractTestCase extends KernelTestCase
 {
+    protected static $originalFiles = [];
+
     private static function getConfigFiles()
     {
         return [
@@ -23,17 +25,6 @@ abstract class AbstractTestCase extends KernelTestCase
             version_compare(Kernel::VERSION, '5.0.0-dev', '>=');
     }
 
-    protected static function handleKernelRootDir($configFiles)
-    {
-        foreach ((array) $configFiles as $configFile) {
-            if (defined('Symfony\Component\HttpKernel\Kernel::VERSION') &&
-                version_compare(Kernel::VERSION, '5.0.0-dev', '>=')
-            ) {
-                file_put_contents($configFile, str_replace('%kernel.root_dir%', '%kernel.project_dir%', file_get_contents($configFile)));
-            }
-        }
-    }
-
     protected static function clearCache()
     {
         foreach (['app', 'var'] as $directory) {
@@ -47,7 +38,21 @@ abstract class AbstractTestCase extends KernelTestCase
 
     public static function setUpBeforeClass()
     {
-        self::handleKernelRootDir(self::getConfigFiles());
+        if (static::isAtLeastSymfony5()) {
+            foreach (self::getConfigFiles() as $file) {
+                $contents = file_get_contents($file);
+
+                if (!isset(static::$originalFiles[$file])) {
+                    static::$originalFiles[$file] = $contents;
+                }
+
+                file_put_contents($file, strtr($contents, [
+                    '%kernel.root_dir%' => '%kernel.project_dir%',
+                    "templating: { engines: ['pug', 'php'] }" => '',
+                    "templating:\n        engines: ['pug', 'php']" => '',
+                ]));
+            }
+        }
         self::clearCache();
     }
 
@@ -55,7 +60,7 @@ abstract class AbstractTestCase extends KernelTestCase
     {
         self::clearCache();
         foreach (self::getConfigFiles() as $file) {
-            file_put_contents($file, str_replace('%kernel.project_dir%', '%kernel.root_dir%', file_get_contents($file)));
+            file_put_contents($file, static::$originalFiles[$file]);
         }
     }
 

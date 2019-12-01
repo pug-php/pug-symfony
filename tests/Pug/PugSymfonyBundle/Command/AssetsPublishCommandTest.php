@@ -4,6 +4,7 @@ namespace Pug\Tests\PugSymfonyBundle\Command;
 
 use Jade\JadeSymfonyEngine;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
+use Pug\PugSymfonyEngine;
 use Pug\Tests\AbstractTestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -21,7 +22,7 @@ class AssetsPublishCommandTest extends AbstractTestCase
     public function testCommand()
     {
         $application = new Application(self::$kernel);
-        $application->add(new AssetsPublishCommand());
+        $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
 
         // Convert PHP style files to JS style
         $customHelperFile = __DIR__ . '/../../../project/app/Resources/views/custom-helper.pug';
@@ -61,7 +62,7 @@ else
     {
         $application = new Application(self::$kernel);
         self::$kernel->getContainer()->set('templating.engine.pug', new BadEngine(self::$kernel));
-        $application->add(new AssetsPublishCommand());
+        $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
 
         $command = $application->find('assets:publish');
         $commandTester = new CommandTester($command);

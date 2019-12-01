@@ -579,7 +579,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
             $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
         }
-        self::handleKernelRootDir($dir . '/app/config/config.yml');
         $io->reset();
 
         self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
