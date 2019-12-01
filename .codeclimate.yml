@@ -1,14 +1,15 @@
 ---
 version: "2"
+exclude_patterns:
+  - "tests/"
+  - "templates/"
+  - "genTravis.php"
 plugins:
   duplication:
     enabled: true
-    exclude_patterns:
-    - "tests/"
-    - "genTravis.php"
     config:
       languages:
-      - php
+        - php
   fixme:
     enabled: true
   phpmd:
