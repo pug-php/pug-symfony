@@ -32,16 +32,16 @@ class Environment extends TwigEnvironment
     public static function fromTwigEnvironment(TwigEnvironment $baseTwig, PugSymfonyEngine $pugSymfonyEngine)
     {
         $twig = new static($baseTwig->getLoader(), [
-            'debug' => $baseTwig->isDebug(),
-            'charset' => $baseTwig->getCharset(),
+            'debug'            => $baseTwig->isDebug(),
+            'charset'          => $baseTwig->getCharset(),
             'strict_variables' => $baseTwig->isStrictVariables(),
-            'autoescape' => static::getPrivateProperty(
+            'autoescape'       => static::getPrivateProperty(
                 $baseTwig->getExtension('Twig\\Extension\\EscaperExtension'),
                 'defaultStrategy'
             ),
-            'cache' => $baseTwig->getCache(true),
-            'auto_reload' => $baseTwig->isAutoReload(),
-            'optimizations' => static::getPrivateProperty(
+            'cache'            => $baseTwig->getCache(true),
+            'auto_reload'      => $baseTwig->isAutoReload(),
+            'optimizations'    => static::getPrivateProperty(
                 $baseTwig->getExtension('Twig\\Extension\\OptimizerExtension'),
                 'optimizers'
             ),
@@ -105,19 +105,20 @@ class Environment extends TwigEnvironment
             $fileName = $this->isDebug() ? 'PugDebugTemplateTemplate' : 'PugTemplateTemplate';
             $templateFile = __DIR__ . "/../../../templates/$fileName.php";
             $name = $source->getName();
+            $className = isset($this->classNames[$name]) ? $this->classNames[$name] : "__${fileName}_" . sha1($path);
             $replacements = [
-                $fileName => $this->classNames[$name] ?? "__${fileName}_" . sha1($path),
-                '"{{filename}}"' => var_export($name, true),
-                '{{filename}}' => $name,
-                '"{{path}}"' => var_export($path, true),
-                '// {{code}}' => "?>$php<?php",
+                $fileName               => $className,
+                '"{{filename}}"'        => var_export($name, true),
+                '{{filename}}'          => $name,
+                '"{{path}}"'            => var_export($path, true),
+                '// {{code}}'           => "?>$php<?php",
                 '[/* {{debugInfo}} */]' => var_export($debugInfo, true),
             ];
 
             if ($this->isDebug()) {
                 $replacements['"{{source}}"'] = var_export($code, true);
-                $replacements['__internal_1'] = '__internal_'.sha1('1'.$path);
-                $replacements['__internal_2'] = '__internal_'.sha1('2'.$path);
+                $replacements['__internal_1'] = '__internal_' . sha1('1' . $path);
+                $replacements['__internal_2'] = '__internal_' . sha1('2' . $path);
             }
 
             return strtr(file_get_contents($templateFile), $replacements);
@@ -131,7 +132,7 @@ class Environment extends TwigEnvironment
     public function loadTemplate(string $cls, string $name, int $index = null): Template
     {
         if ($index !== null) {
-            $cls .= '___'.$index;
+            $cls .= '___' . $index;
         }
 
         $this->classNames[$name] = $cls;

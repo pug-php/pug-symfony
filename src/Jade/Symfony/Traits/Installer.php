@@ -124,7 +124,7 @@ trait Installer
             touch($baseDirectory . '/installed');
         }
 
-        return !!$written;
+        return (bool) $written;
     }
 
     protected static function installInSymfony4($event, $dir)
@@ -354,7 +354,6 @@ trait Installer
         if (version_compare($symfonyVersion, '5.0.0-dev', '>=')) {
             return static::installInSymfony5($event, $dir);
         }
-
 
         return file_exists($dir . '/config/packages/framework.yaml')
             ? static::installInSymfony4($event, $dir)
