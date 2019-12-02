@@ -10,6 +10,7 @@ use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use ReflectionProperty;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
@@ -274,7 +275,12 @@ class PugSymfonyEngineTest extends AbstractTestCase
         }
 
         $tokenStorage = new TokenStorage();
-        self::$kernel->getContainer()->set('security.token_storage', $tokenStorage);
+        $container = self::$kernel->getContainer();
+        $reflectionProperty = new ReflectionProperty($container, 'services');
+        $reflectionProperty->setAccessible(true);
+        $services = $reflectionProperty->getValue($container);
+        $services['security.token_storage'] = $tokenStorage;
+        $reflectionProperty->setValue($container, $services);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
