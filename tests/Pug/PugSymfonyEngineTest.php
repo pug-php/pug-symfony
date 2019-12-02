@@ -12,7 +12,8 @@ use Pug\Pug;
 use Pug\PugSymfonyEngine;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\FrameworkBundle\Templating\Helper\AssetsHelper;
+use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
+use Symfony\Component\Asset\Packages;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
@@ -901,10 +902,14 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testCssWithCustomAssetsHelper()
     {
         if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\AssetsHelper')) {
-            include_once __DIR__.'/AssetsHelper.php';
+            include_once __DIR__ . '/AssetsHelper.php';
         }
 
-        $helper = new AssetsHelper();
+        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\FakeAssetsHelper')) {
+            include_once __DIR__ . '/FakeAssetsHelper.php';
+        }
+
+        $helper = new FakeAssetsHelper(new Packages());
         $css = new Css($helper);
 
         self::assertSame("url('fake:foo')", $css->getUrl('foo'));
