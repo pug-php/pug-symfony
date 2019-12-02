@@ -900,7 +900,10 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testCssWithCustomAssetsHelper()
     {
-        include_once __DIR__ . '/AssetsHelper.php';
+        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\AssetsHelper')) {
+            include_once __DIR__.'/AssetsHelper.php';
+        }
+
         $helper = new AssetsHelper();
         $css = new Css($helper);
 
