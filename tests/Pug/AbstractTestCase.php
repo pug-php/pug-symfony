@@ -21,7 +21,7 @@ abstract class AbstractTestCase extends KernelTestCase
 
     protected static function isAtLeastSymfony5()
     {
-        return defined('Symfony\Component\HttpKernel\Kernel::VERSION') &&
+        return defined('Symfony\\Component\\HttpKernel\\Kernel::VERSION') &&
             version_compare(Kernel::VERSION, '5.0.0-dev', '>=');
     }
 
@@ -60,7 +60,9 @@ abstract class AbstractTestCase extends KernelTestCase
     {
         self::clearCache();
         foreach (self::getConfigFiles() as $file) {
-            file_put_contents($file, static::$originalFiles[$file]);
+            if (isset(static::$originalFiles[$file])) {
+                file_put_contents($file, static::$originalFiles[$file]);
+            }
         }
     }
 

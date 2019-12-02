@@ -300,18 +300,18 @@ matrix:
       env:
         - SYMFONY_VERSION='4.3.*'
         - PUG_VERSION='^3.0.0'
-    - php: 7.4snapshot
+    - php: 7.4
       env:
         - SYMFONY_VERSION='4.4.*'
         - PUG_VERSION='^3.0.0'
-    - php: 7.4snapshot
+    - php: 7.4
       env:
         - STABILITY='dev'
         - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
         - SYMFONY_VERSION='5.0.*'
         - TWIG_VERSION='^2.10.0'
         - PUG_VERSION='^3.0.0'
-    - php: 7.4snapshot
+    - php: 7.4
       env:
         - STABILITY='dev'
         - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
@@ -331,6 +331,7 @@ before_script:
   - if [ -f ~/xdebug.ini ]; then mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi;
   - chmod -R 0777 tests/project
 script:
+  - php debug.php
   - if [ "$COVERAGE" = "true" ]; then vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml; else vendor/bin/phpunit --verbose --no-coverage; fi;
   - if [ "$COVERAGE" = "true" ]; then php tests/checkCoverage.php; fi;
 after_script:

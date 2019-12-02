@@ -81,7 +81,7 @@ trait Installer
         if (preg_match('/\[\s*\n/', $contents)) {
             if (strpos($contents, $bundleClass) === false) {
                 $contents = preg_replace_callback('/\[\s*\n/', function ($match) use ($bundle) {
-                    return $match[0] . "$bundle\n";
+                    return $match[0] . "    $bundle\n";
                 }, $contents);
                 $proceedTask(
                     file_put_contents($appFile, $contents),
