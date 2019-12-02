@@ -21,7 +21,7 @@ abstract class AbstractTestCase extends KernelTestCase
 
     protected static function isAtLeastSymfony5()
     {
-        return defined('Symfony\Component\HttpKernel\Kernel::VERSION') &&
+        return defined('Symfony\\Component\\HttpKernel\\Kernel::VERSION') &&
             version_compare(Kernel::VERSION, '5.0.0-dev', '>=');
     }
 

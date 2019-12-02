@@ -31,10 +31,9 @@ class JadeSymfonyBundle extends Bundle
     public function registerCommands(Application $application)
     {
         $method = new ReflectionMethod('Pug\\PugSymfonyBundle\\Command\\AssetsPublishCommand', '__construct');
+        $class = $method->getNumberOfParameters() === 1 ? $method->getParameters()[0]->getClass() : null;
 
-        if ($method->getNumberOfParameters() === 1 &&
-            $method->getParameters()[0]->getClass()->getName() === 'Pug\\PugSymfonyEngine'
-        ) {
+        if ($class && $class->getName() === 'Pug\\PugSymfonyEngine') {
             $application->addCommands([
                 new AssetsPublishCommand($this->container->get('Pug\\PugSymfonyEngine')),
             ]);
