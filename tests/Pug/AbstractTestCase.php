@@ -47,8 +47,8 @@ abstract class AbstractTestCase extends KernelTestCase
                 }
 
                 file_put_contents($file, strtr($contents, [
-                    '%kernel.root_dir%' => '%kernel.project_dir%',
-                    "templating: { engines: ['pug', 'php'] }" => '',
+                    '%kernel.root_dir%'                            => '%kernel.project_dir%',
+                    "templating: { engines: ['pug', 'php'] }"      => '',
                     "templating:\n        engines: ['pug', 'php']" => '',
                 ]));
             }
