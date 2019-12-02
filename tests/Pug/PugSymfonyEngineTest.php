@@ -10,9 +10,11 @@ use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use ReflectionProperty;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\FrameworkBundle\Templating\Helper\AssetsHelper;
+use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
+use Symfony\Component\Asset\Packages;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Filesystem\Filesystem;
@@ -273,7 +275,12 @@ class PugSymfonyEngineTest extends AbstractTestCase
         }
 
         $tokenStorage = new TokenStorage();
-        self::$kernel->getContainer()->set('security.token_storage', $tokenStorage);
+        $container = self::$kernel->getContainer();
+        $reflectionProperty = new ReflectionProperty($container, 'services');
+        $reflectionProperty->setAccessible(true);
+        $services = $reflectionProperty->getValue($container);
+        $services['security.token_storage'] = $tokenStorage;
+        $reflectionProperty->setValue($container, $services);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
@@ -900,8 +907,15 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testCssWithCustomAssetsHelper()
     {
-        include_once __DIR__ . '/AssetsHelper.php';
-        $helper = new AssetsHelper();
+        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\AssetsHelper')) {
+            include_once __DIR__ . '/AssetsHelper.php';
+        }
+
+        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\FakeAssetsHelper')) {
+            include_once __DIR__ . '/FakeAssetsHelper.php';
+        }
+
+        $helper = new FakeAssetsHelper(new Packages());
         $css = new Css($helper);
 
         self::assertSame("url('fake:foo')", $css->getUrl('foo'));

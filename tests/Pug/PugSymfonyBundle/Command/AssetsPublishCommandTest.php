@@ -19,10 +19,19 @@ class BadEngine extends JadeSymfonyEngine
 
 class AssetsPublishCommandTest extends AbstractTestCase
 {
+    protected function getNewAssetsPublishCommand()
+    {
+        if ($this->isAtLeastSymfony5()) {
+            return new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel));
+        }
+
+        return new AssetsPublishCommand();
+    }
+
     public function testCommand()
     {
         $application = new Application(self::$kernel);
-        $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
+        $application->add($this->getNewAssetsPublishCommand());
 
         // Convert PHP style files to JS style
         $customHelperFile = __DIR__ . '/../../../project/app/Resources/views/custom-helper.pug';
@@ -62,7 +71,7 @@ else
     {
         $application = new Application(self::$kernel);
         self::$kernel->getContainer()->set('templating.engine.pug', new BadEngine(self::$kernel));
-        $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
+        $application->add($this->getNewAssetsPublishCommand());
 
         $command = $application->find('assets:publish');
         $commandTester = new CommandTester($command);

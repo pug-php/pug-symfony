@@ -7,7 +7,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Command\\ContainerAwareCommand')) {
+    // @codeCoverageIgnoreStart
     class_alias('Jade\\JadeSymfonyBundle\\Command\\PugAwareCommand', 'Symfony\\Bundle\\FrameworkBundle\\Command\\ContainerAwareCommand');
+    // @codeCoverageIgnoreEnd
 }
 
 class AssetsPublishCommand extends ContainerAwareCommand

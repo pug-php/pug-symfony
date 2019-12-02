@@ -10,6 +10,9 @@ use Twig\Loader\LoaderInterface;
 use Twig\Source;
 use Twig\Template;
 
+/**
+ * @codeCoverageIgnore
+ */
 class Environment extends TwigEnvironment
 {
     use PrivatePropertyAccessor;
