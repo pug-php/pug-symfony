@@ -90,4 +90,14 @@ trait Options
     {
         return $this->pug->setCustomOptions($options);
     }
+
+    /**
+     * Get pug variables shared across views.
+     *
+     * @return array
+     */
+    public function getSharedVariables()
+    {
+        return $this->getOptionDefault('shared_variables', []);
+    }
 }

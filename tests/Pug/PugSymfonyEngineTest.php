@@ -179,6 +179,9 @@ class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
 
 class PugSymfonyEngineTest extends AbstractTestCase
 {
+    /**
+     * @group i
+     */
     public function testPreRenderPhp()
     {
         $kernel = new TestKernel(function (Container $container) {
@@ -189,7 +192,11 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $kernel->boot();
         $pugSymfony = new PugSymfonyEngine($kernel);
 
-        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("/foo")'));
+        self::assertSame(
+            '<html><head><title>My Site</title></head><body><footer><p>/foo</p>Some footer text</footer></body></html>',
+            $pugSymfony->render('asset.pug')
+        );
     }
 
     public function testPreRenderJs()

@@ -6,7 +6,11 @@ use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
 use Pug\Pug;
 use Pug\Twig\Environment;
+use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
+use Symfony\Component\Asset\Package;
+use Symfony\Component\Asset\Packages;
+use Symfony\Component\Asset\VersionStrategy\EmptyVersionStrategy;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
@@ -224,6 +228,14 @@ trait HelpersHandler
             $loader = new MixedLoader($twig->getLoader());
             $twig->setLoader($loader);
             $this->share('twig', $twig);
+            $extensions = $twig->getExtensions();
+
+            if (version_compare(Environment::VERSION, '3.0.0-dev', '>=') &&
+                !isset($extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'])) {
+                $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
+                $extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'] = $assetExtension;
+                $twig->addExtension($assetExtension);
+            }
 
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */

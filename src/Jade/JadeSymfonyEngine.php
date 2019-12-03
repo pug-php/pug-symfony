@@ -187,11 +187,14 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     {
         $parts = explode(':', strval($name));
         $directory = $this->defaultTemplateDirectory;
+
         if (count($parts) > 1) {
             $name = $parts[2];
+
             if (!empty($parts[1])) {
                 $name = $parts[1] . DIRECTORY_SEPARATOR . $name;
             }
+
             if ($bundle = $this->kernel->getBundle($parts[0])) {
                 $directory = $bundle->getPath() .
                     DIRECTORY_SEPARATOR . 'Resources' .
@@ -393,6 +396,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     protected static function extractUniquePaths($paths)
     {
         $result = [];
+
         foreach ($paths as $path) {
             $realPath = realpath($path) ?: $path;
 
