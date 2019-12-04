@@ -105,7 +105,7 @@ abstract class EnvironmentBase extends TwigEnvironment
             }
 
             $fileName = $this->isDebug() ? 'PugDebugTemplateTemplate' : 'PugTemplateTemplate';
-            $templateFile = __DIR__ . "/../../../templates/$fileName.php";
+            $templateFile = __DIR__ . "/../../../cache-templates/$fileName.php";
             $name = $source->getName();
             $className = isset($this->classNames[$name]) ? $this->classNames[$name] : "__Template_" . sha1($path);
             $replacements = [

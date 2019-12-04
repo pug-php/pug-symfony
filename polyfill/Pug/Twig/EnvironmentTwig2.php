@@ -9,7 +9,7 @@ use Twig\Source;
  */
 class EnvironmentTwig2 extends EnvironmentBase
 {
-    public function compileSource(Source $source)
+    public function compileSource(Source $source, $name = null)
     {
         return $this->compileSourceBase($source);
     }

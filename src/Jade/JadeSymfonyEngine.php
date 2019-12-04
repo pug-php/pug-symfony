@@ -63,7 +63,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $appDir = $this->getAppDirectory($kernel);
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
-        $viewDirectories = [$appDir . '/Resources/views'];
+        $viewDirectories = [$this->isAtLeastSymfony5() ? $rootDir . '/templates' : $appDir . '/Resources/views'];
 
         if ($container->has('twig') &&
             ($twig = $container->get('twig')) &&
@@ -165,17 +165,29 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     protected function crawlDirectories($srcDir, &$assetsDirectories, &$viewDirectories)
     {
         $baseDir = null;
+
+        if ($this->isAtLeastSymfony5()) {
+            $baseDir = dirname($srcDir) . '/templates';
+
+            if (!$this->fs->exists($baseDir)) {
+                $baseDir = null;
+            }
+        }
+
         if ($this->fs->exists($srcDir)) {
             foreach (scandir($srcDir) as $directory) {
                 if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                     continue;
                 }
+
                 if (is_dir($viewDirectory = $srcDir . '/' . $directory . '/Resources/views')) {
                     if (is_null($baseDir)) {
                         $baseDir = $viewDirectory;
                     }
+
                     $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
                 }
+
                 $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
             }
         }
