@@ -2,14 +2,12 @@
 
 namespace Pug\Twig;
 
-use Twig\Source;
-
 /**
  * @codeCoverageIgnore
  */
-class EnvironmentTwig2 extends EnvironmentBase
+class EnvironmentTwig1 extends EnvironmentBase
 {
-    public function compileSource(Source $source)
+    public function compileSource($source, $name = null)
     {
         return $this->compileSourceBase($source);
     }

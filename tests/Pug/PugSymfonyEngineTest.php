@@ -2,8 +2,12 @@
 
 namespace Pug\Tests;
 
+use AppKernel;
+use Closure;
 use Composer\Composer;
 use Composer\Script\Event;
+use DateTime;
+use InvalidArgumentException;
 use Jade\JadeSymfonyEngine;
 use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
@@ -64,20 +68,30 @@ class LogoutUrlGenerator extends BaseLogoutUrlGenerator
     }
 }
 
-class TestKernel extends \AppKernel
+class TestKernel extends AppKernel
 {
     /**
-     * @var \Closure
+     * @var Closure
      */
     private $containerConfigurator;
 
-    public function __construct(\Closure $containerConfigurator, $environment = 'test', $debug = false)
+    public function __construct(Closure $containerConfigurator, $environment = 'test', $debug = false)
     {
         $this->containerConfigurator = $containerConfigurator;
 
         parent::__construct($environment, $debug);
 
         $this->rootDir = realpath(__DIR__ . '/../project/app');
+    }
+
+    public function getProjectDir()
+    {
+        return null;
+    }
+
+    public function getRootDir()
+    {
+        return $this->rootDir;
     }
 
     public function registerContainerConfiguration(LoaderInterface $loader)
@@ -127,7 +141,7 @@ class Task
         return $this->dueDate;
     }
 
-    public function setDueDate(\DateTime $dueDate = null)
+    public function setDueDate(DateTime $dueDate = null)
     {
         $this->dueDate = $dueDate;
     }
@@ -147,7 +161,7 @@ class TestController extends AbstractController
                 ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
                 ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
                 ->getForm();
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return $this->createFormBuilder(new Task())
                 ->add('name', 'text')
                 ->add('dueDate', 'date')
@@ -162,7 +176,7 @@ class InvalidExceptionOptionsPug extends Pug
     public function getOption($name)
     {
         if ($name === 'foobar') {
-            throw new \InvalidArgumentException('foobar not found');
+            throw new InvalidArgumentException('foobar not found');
         }
 
         return parent::getOption($name);
@@ -187,6 +201,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'php',
+                'baseDir'            => __DIR__ . '/../project/app/Resources/views',
             ]);
         });
         $kernel->boot();
@@ -217,6 +232,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
+                'baseDir'            => __DIR__ . '/../project/app/Resources/views',
             ]);
         });
         $kernel->boot();
@@ -395,7 +411,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         if ($message === null) {
             try {
                 $pugSymfony->getOption('foo');
-            } catch (\InvalidArgumentException $e) {
+            } catch (InvalidArgumentException $e) {
                 $message = $e->getMessage();
             }
         }

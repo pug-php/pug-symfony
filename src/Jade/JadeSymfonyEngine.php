@@ -74,10 +74,19 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
             $viewDirectories[] = $paths[0];
         }
 
-        $this->defaultTemplateDirectory = end($viewDirectories);
         $srcDir = $rootDir . '/src';
         $webDir = $rootDir . '/web';
-        $baseDir = $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
+        $userOptions = ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: [];
+        $baseDir = isset($userOptions['baseDir'])
+            ? $userOptions['baseDir']
+            : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
+        $this->defaultTemplateDirectory = $baseDir;
+        $viewDirectories[] = $baseDir;
+
+        if (isset($userOptions['paths'])) {
+            $viewDirectories = array_merge($viewDirectories, $userOptions['paths'] ?: []);
+        }
+
         $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
         $options = array_merge([
@@ -91,7 +100,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
             'outputDirectory' => $webDir,
             'preRender'       => [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
-        ], ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: []);
+        ], $userOptions);
 
         if ($this->isAtLeastSymfony5()) {
             $options['on_node'] = [$this, 'handleTwigInclude'];

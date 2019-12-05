@@ -64,6 +64,15 @@ trait HelpersHandler
     protected static $globalHelpers = [];
 
     /**
+     * Version of Symfony to force pug compatibility.
+     *
+     * Default to Symfony\Component\HttpKernel\Kernel::VERSION
+     *
+     * @var string|int
+     */
+    protected $symfonyLevel;
+
+    /**
      * Get a global helper by name.
      *
      * @param string $name
@@ -339,11 +348,23 @@ trait HelpersHandler
 
     protected function getSymfonyVersion()
     {
-        return defined('Symfony\Component\HttpKernel\Kernel::VERSION') ? Kernel::VERSION : 0;
+        return $this->symfonyLevel ?: (defined('Symfony\Component\HttpKernel\Kernel::VERSION') ? Kernel::VERSION : 0);
     }
 
     protected function isAtLeastSymfony5()
     {
         return version_compare($this->getSymfonyVersion(), '5.0.0-dev', '>=');
+    }
+
+    /**
+     * Set version of Symfony to force pug compatibility.
+     *
+     * Use Symfony\Component\HttpKernel\Kernel::VERSION if null.
+     *
+     * @param int|string|null $symfonyLevel
+     */
+    public function setSymfonyLevel($symfonyLevel)
+    {
+        $this->symfonyLevel = $symfonyLevel;
     }
 }
