@@ -86,7 +86,6 @@ class TestKernel extends AppKernel
 
     public function getProjectDir()
     {
-        return null;
     }
 
     public function getRootDir()
