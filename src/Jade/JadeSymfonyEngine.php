@@ -234,6 +234,10 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
             }
         }
 
+        if (!method_exists($this->pug, 'renderFile') && !$directory) {
+            $directory = $this->defaultTemplateDirectory;
+        }
+
         return ($directory ? $directory . DIRECTORY_SEPARATOR : '') . $name;
     }
 
