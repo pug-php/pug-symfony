@@ -81,7 +81,7 @@ class TestKernel extends AppKernel
 
         parent::__construct($environment, $debug);
 
-        $this->rootDir = realpath(__DIR__ . '/../project/app');
+        $this->rootDir = $this->getRootDir();
     }
 
     public function getProjectDir()
@@ -90,7 +90,7 @@ class TestKernel extends AppKernel
 
     public function getRootDir()
     {
-        return $this->rootDir;
+        return realpath(__DIR__ . '/../project/app');
     }
 
     public function registerContainerConfiguration(LoaderInterface $loader)
@@ -192,15 +192,11 @@ class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
 
 class PugSymfonyEngineTest extends AbstractTestCase
 {
-    /**
-     * @group i
-     */
     public function testPreRenderPhp()
     {
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'php',
-                'baseDir'            => __DIR__ . '/../project/app/Resources/views',
             ]);
         });
         $kernel->boot();
@@ -208,7 +204,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("/foo")'));
         self::assertSame(
-            '<html><head><title>My Site</title></head><body><footer><p>/foo</p>Some footer text</footer></body></html>',
+            '<html><head><title>My Site</title></head><body><p>/foo</p><footer><p></p>Some footer text</footer></body></html>',
             $pugSymfony->render('asset.pug')
         );
     }
@@ -231,7 +227,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
-                'baseDir'            => __DIR__ . '/../project/app/Resources/views',
             ]);
         });
         $kernel->boot();

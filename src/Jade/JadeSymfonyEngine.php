@@ -80,8 +80,13 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $baseDir = isset($userOptions['baseDir'])
             ? $userOptions['baseDir']
             : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
+        $baseDir = $baseDir ? (realpath($baseDir) ?: $baseDir) : (isset($viewDirectories[0]) && file_exists($viewDirectories[0]) ? $viewDirectories[0] : $baseDir);
         $this->defaultTemplateDirectory = $baseDir;
-        $viewDirectories[] = $baseDir;
+        $fallbackDirectory = $rootDir . '/app/Resources/views';
+
+        if (file_exists($rootDir . '/app/Resources/views')) {
+            $viewDirectories[] = $fallbackDirectory;
+        }
 
         if (isset($userOptions['paths'])) {
             $viewDirectories = array_merge($viewDirectories, $userOptions['paths'] ?: []);
@@ -101,6 +106,10 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
             'preRender'       => [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
         ], $userOptions);
+
+        $options['paths'] = array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
+            return $path !== $baseDir;
+        });
 
         if ($this->isAtLeastSymfony5()) {
             $options['on_node'] = [$this, 'handleTwigInclude'];
@@ -124,6 +133,8 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
 
             $this->share($globalKey, $globalValue);
         }
+
+        $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
     }
 
     public function handleTwigInclude(NodeEvent $nodeEvent)
@@ -204,10 +215,9 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         return $baseDir ?: $this->defaultTemplateDirectory;
     }
 
-    protected function getFileFromName($name)
+    protected function getFileFromName($name, $directory = null)
     {
         $parts = explode(':', strval($name));
-        $directory = $this->defaultTemplateDirectory;
 
         if (count($parts) > 1) {
             $name = $parts[2];
@@ -217,13 +227,14 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
             }
 
             if ($bundle = $this->kernel->getBundle($parts[0])) {
-                $directory = $bundle->getPath() .
+                return $bundle->getPath() .
                     DIRECTORY_SEPARATOR . 'Resources' .
-                    DIRECTORY_SEPARATOR . 'views';
+                    DIRECTORY_SEPARATOR . 'views' .
+                    DIRECTORY_SEPARATOR . $name;
             }
         }
 
-        return $directory . DIRECTORY_SEPARATOR . $name;
+        return ($directory ? $directory . DIRECTORY_SEPARATOR : '') . $name;
     }
 
     protected function getPugCodeLayoutStructure($pugCode)
@@ -270,14 +281,9 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     public function preRender($pugCode)
     {
         $parts = $this->getPugCodeLayoutStructure($pugCode);
-        $className = get_class($this);
-        foreach ($this->replacements as $name => $callable) {
-            $parts[0] .= ":php\n" .
-                "    if (!function_exists('$name')) {\n" .
-                "        function $name() {\n" .
-                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n" .
-                "        }\n" .
-                "    }\n";
+
+        if (count($this->replacements)) {
+            $this->addPhpFunctions($parts[0]);
         }
 
         return implode('', $parts);
@@ -387,7 +393,13 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
      */
     public function exists($name)
     {
-        return $this->fs->exists($this->getFileFromName($name));
+        foreach ($this->getOptionDefault('paths', []) as $directory) {
+            if ($this->fs->exists($directory . DIRECTORY_SEPARATOR . $name)) {
+                return true;
+            }
+        }
+
+        return $this->fs->exists($this->getFileFromName($name, $this->defaultTemplateDirectory));
     }
 
     /**
@@ -416,16 +428,22 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
 
     protected static function extractUniquePaths($paths)
     {
-        $result = [];
+        return array_unique(array_map(function ($path) {
+            return realpath($path) ?: $path;
+        }, $paths));
+    }
 
-        foreach ($paths as $path) {
-            $realPath = realpath($path) ?: $path;
+    private function addPhpFunctions(&$code)
+    {
+        $className = get_class($this);
+        $code .= ":php\n";
 
-            if (!in_array($realPath, $result)) {
-                $result[] = $path;
-            }
+        foreach ($this->replacements as $name => $callable) {
+            $code .= "    if (!function_exists('$name')) {\n" .
+                "        function $name() {\n" .
+                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n" .
+                "        }\n" .
+                "    }\n";
         }
-
-        return $result;
     }
 }
