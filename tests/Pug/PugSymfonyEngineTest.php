@@ -8,7 +8,6 @@ use Composer\Composer;
 use Composer\Script\Event;
 use DateTime;
 use InvalidArgumentException;
-use Jade\JadeSymfonyEngine;
 use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
@@ -100,6 +99,11 @@ class TestKernel extends AppKernel
         $loader->load($this->containerConfigurator);
     }
 
+    public function getCacheDir()
+    {
+        return sys_get_temp_dir() . '/pug-symfony';
+    }
+
     /**
      * Override the parent method to force recompiling the container.
      * For performance reasons the container is also not dumped to disk.
@@ -182,7 +186,7 @@ class InvalidExceptionOptionsPug extends Pug
     }
 }
 
-class InvalidExceptionOptionsPugSymfony extends JadeSymfonyEngine
+class InvalidExceptionOptionsPugSymfony extends PugSymfonyEngine
 {
     public function getEngineClassName()
     {
@@ -219,7 +223,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $kernel->boot();
         $pugSymfony = new PugSymfonyEngine($kernel);
 
-        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("foo")'));
+        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("/foo")'));
     }
 
     public function testPreRenderFile()
