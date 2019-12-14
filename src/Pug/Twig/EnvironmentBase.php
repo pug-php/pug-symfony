@@ -144,7 +144,7 @@ abstract class EnvironmentBase extends TwigEnvironment
 
     public function renderBase($name, array $context = [])
     {
-        if ($this->pugSymfonyEngine->supports($name)) {
+        if (is_string($name) && $this->pugSymfonyEngine->supports($name)) {
             foreach (['context', 'blocks', 'macros'] as $name) {
                 if (array_key_exists($name, $context)) {
                     throw new ReservedVariable($name);

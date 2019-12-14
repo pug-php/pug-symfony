@@ -571,6 +571,10 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testInstall()
     {
+        if ($this->isAtLeastSymfony5()) {
+            $this->markTestSkipped('Symfony < 5 test');
+        }
+
         include_once __DIR__ . '/CaptureIO.php';
         $io = new CaptureIO();
         $composer = new Composer();
@@ -659,6 +663,10 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testInstallPartialStates()
     {
+        if ($this->isAtLeastSymfony5()) {
+            $this->markTestSkipped('Symfony < 5 test');
+        }
+
         include_once __DIR__ . '/CaptureIO.php';
         $io = new CaptureIO();
         $composer = new Composer();
@@ -759,6 +767,10 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testInstallSymfony4()
     {
+        if ($this->isAtLeastSymfony5()) {
+            $this->markTestSkipped('Symfony < 5 test');
+        }
+
         include_once __DIR__ . '/CaptureIO.php';
         $io = new CaptureIO();
         $composer = new Composer();

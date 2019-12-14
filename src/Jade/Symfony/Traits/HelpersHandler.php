@@ -152,8 +152,12 @@ trait HelpersHandler
             $loader = $twig->getLoader();
 
             $template = $loader->uniqueTemplate(
-                '{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}'
+                '{{' . $name . '(' . implode(', ', array_keys($variables)) . ')}}'
             );
+
+            if ($twig::MAJOR_VERSION >= 3) {
+                return $twig->render($twig->createTemplate($template, $name), $variables);
+            }
 
             return $twig->render($template, $variables);
         };

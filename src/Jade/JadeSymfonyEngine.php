@@ -85,7 +85,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $baseDir = isset($userOptions['baseDir'])
             ? $userOptions['baseDir']
             : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
-        $baseDir = $baseDir ? (realpath($baseDir) ?: $baseDir) : (isset($viewDirectories[0]) && file_exists($viewDirectories[0]) ? $viewDirectories[0] : $baseDir);
+        $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
         $this->defaultTemplateDirectory = $baseDir;
         $fallbackDirectory = $rootDir . '/app/Resources/views';
 
@@ -194,13 +194,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
 
     protected function crawlDirectories($srcDir, &$assetsDirectories, &$viewDirectories)
     {
-        $baseDir = $this->isAtLeastSymfony5() ? dirname($srcDir) . '/templates' : $this->fallbackTemplateDirectory;
+        $baseDir = isset($viewDirectories[0]) && file_exists($viewDirectories[0])
+            ? $viewDirectories[0]
+            : $this->fallbackTemplateDirectory;
 
-        if ($baseDir && !$this->fs->exists($baseDir)) {
-            $baseDir = null;
-        }
-
-        if ($this->fs->exists($srcDir)) {
+        if (file_exists($srcDir)) {
             foreach (scandir($srcDir) as $directory) {
                 if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
                     continue;
@@ -404,12 +402,12 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     public function exists($name)
     {
         foreach ($this->getOptionDefault('paths', []) as $directory) {
-            if ($this->fs->exists($directory . DIRECTORY_SEPARATOR . $name)) {
+            if (file_exists($directory . DIRECTORY_SEPARATOR . $name)) {
                 return true;
             }
         }
 
-        return $this->fs->exists($this->getFileFromName($name, $this->defaultTemplateDirectory));
+        return file_exists($this->getFileFromName($name, $this->defaultTemplateDirectory));
     }
 
     /**
