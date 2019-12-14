@@ -2,7 +2,6 @@
 
 namespace Pug\Twig;
 
-use Jade\Exceptions\ReservedVariable;
 use Twig\Source;
 use Twig\Template;
 

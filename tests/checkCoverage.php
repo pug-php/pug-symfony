@@ -13,7 +13,7 @@ if (version_compare(PHP_VERSION, '7.3.0-dev', '>=')) {
 }
 
 $xmlFile = isset($argv[2]) ? $argv[2] : __DIR__ . '/../coverage.xml';
-$requiredCoverage = isset($argv[1]) ? intval($argv[1]) : 90;
+$requiredCoverage = isset($argv[1]) ? intval($argv[1]) : 80;
 
 if (!file_exists($xmlFile)) {
     echo 'Error: Code coverage files not found. Please run `unit-tests:run`.';
