@@ -87,6 +87,11 @@ class TestKernel extends AppKernel
     {
     }
 
+    public function getLogDir()
+    {
+        return sys_get_temp_dir() . '/pug-symfony-log';
+    }
+
     public function getRootDir()
     {
         return realpath(__DIR__ . '/../project/app');
@@ -101,7 +106,7 @@ class TestKernel extends AppKernel
 
     public function getCacheDir()
     {
-        return sys_get_temp_dir() . '/pug-symfony';
+        return sys_get_temp_dir() . '/pug-symfony-cache';
     }
 
     /**
