@@ -2,15 +2,20 @@
 
 namespace Pug\Tests\PugSymfonyBundle\Command;
 
-use Jade\JadeSymfonyEngine;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
 use Pug\PugSymfonyEngine;
 use Pug\Tests\AbstractTestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\HttpKernel\KernelInterface;
 
-class BadEngine extends JadeSymfonyEngine
+class BadEngine extends PugSymfonyEngine
 {
+    public function __construct(KernelInterface $kernel)
+    {
+        // Noop
+    }
+
     public function getEngine()
     {
         return (object) [];
@@ -19,10 +24,10 @@ class BadEngine extends JadeSymfonyEngine
 
 class AssetsPublishCommandTest extends AbstractTestCase
 {
-    protected function getNewAssetsPublishCommand()
+    protected function getNewAssetsPublishCommand($className = 'Pug\\PugSymfonyEngine')
     {
         if ($this->isAtLeastSymfony5()) {
-            return new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel));
+            return new AssetsPublishCommand(new $className(self::$kernel));
         }
 
         return new AssetsPublishCommand();
@@ -71,7 +76,7 @@ else
     {
         $application = new Application(self::$kernel);
         self::$kernel->getContainer()->set('templating.engine.pug', new BadEngine(self::$kernel));
-        $application->add($this->getNewAssetsPublishCommand());
+        $application->add($this->getNewAssetsPublishCommand('Pug\\Tests\\PugSymfonyBundle\\Command\\BadEngine'));
 
         $command = $application->find('assets:publish');
         $commandTester = new CommandTester($command);

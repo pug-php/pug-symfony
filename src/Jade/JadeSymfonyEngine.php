@@ -84,7 +84,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         $this->defaultTemplateDirectory = $baseDir;
         $fallbackDirectory = $rootDir . '/app/Resources/views';
 
-        if (file_exists($rootDir . '/app/Resources/views')) {
+        if (file_exists($fallbackDirectory)) {
+            if (!file_exists($baseDir)) {
+                $baseDir = $fallbackDirectory;
+            }
+
             $viewDirectories[] = $fallbackDirectory;
         }
 
