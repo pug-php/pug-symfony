@@ -47,6 +47,11 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
     protected $defaultTemplateDirectory;
 
     /**
+     * @var string
+     */
+    protected $fallbackTemplateDirectory;
+
+    /**
      * @var Filesystem
      */
     protected $fs;
@@ -89,6 +94,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
                 $baseDir = $fallbackDirectory;
             }
 
+            $this->fallbackTemplateDirectory = $fallbackDirectory;
             $viewDirectories[] = $fallbackDirectory;
         }
 
@@ -188,14 +194,10 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
 
     protected function crawlDirectories($srcDir, &$assetsDirectories, &$viewDirectories)
     {
-        $baseDir = null;
+        $baseDir = $this->isAtLeastSymfony5() ? dirname($srcDir) . '/templates' : $this->fallbackTemplateDirectory;
 
-        if ($this->isAtLeastSymfony5()) {
-            $baseDir = dirname($srcDir) . '/templates';
-
-            if (!$this->fs->exists($baseDir)) {
-                $baseDir = null;
-            }
+        if ($baseDir && !$this->fs->exists($baseDir)) {
+            $baseDir = null;
         }
 
         if ($this->fs->exists($srcDir)) {
