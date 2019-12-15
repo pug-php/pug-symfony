@@ -275,6 +275,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testFallbackAppDir()
     {
+        $this->markTestSkipped('The baseDir option is now aligned on default template directory.');
+
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $baseDir = realpath($pugSymfony->getOption('baseDir'));
         $appView = __DIR__ . '/../project/app/Resources/views';
