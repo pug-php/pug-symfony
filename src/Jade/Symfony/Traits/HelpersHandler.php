@@ -6,6 +6,7 @@ use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
 use Pug\Pug;
 use Pug\Twig\Environment;
+use Pug\Twig\EnvironmentTwig3;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\Asset\Package;
@@ -16,6 +17,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\RequestContext;
+use Twig\Source;
 
 /**
  * Trait HelpersHandler.
@@ -79,8 +81,14 @@ trait HelpersHandler
      *
      * @return callable
      */
-    public static function getGlobalHelper($name)
+    public static function getGlobalHelper($name, $twig = null)
     {
+        var_dump($twig);
+        // exit;
+        if ($twig && $twig instanceof EnvironmentTwig3) {
+            return $twig->getFunctionAsCallable($name);
+        }
+
         return static::$globalHelpers[$name];
     }
 
@@ -155,9 +163,11 @@ trait HelpersHandler
                 '{{' . $name . '(' . implode(', ', array_keys($variables)) . ')}}'
             );
 
-            if ($twig::MAJOR_VERSION >= 3) {
-                return $twig->render($twig->createTemplate($template, $name), $variables);
-            }
+//            if ($twig::MAJOR_VERSION >= 3) {
+//                file_put_contents('temp.php', $twig->compileSource(new Source($code, $name), $variables));
+//                exit;
+//                return $twig->render($twig->createTemplate($template, $name), $variables);
+//            }
 
             return $twig->render($template, $variables);
         };
@@ -176,7 +186,7 @@ trait HelpersHandler
      */
     protected function getTwigCallable($twig, $function, $name)
     {
-        /* @var \Twig_Function $function */
+        /* @var \Twig_Function|\Twig\TwigFunction $function */
         $callable = $function->getCallable();
 
         if (!$callable ||
@@ -243,7 +253,7 @@ trait HelpersHandler
             $this->share('twig', $twig);
             $extensions = $twig->getExtensions();
 
-            if (version_compare(Environment::VERSION, '3.0.0-dev', '>=') &&
+            if ($twig::MAJOR_VERSION >= 3 &&
                 !isset($extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'])) {
                 $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
                 $extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'] = $assetExtension;
@@ -314,13 +324,13 @@ trait HelpersHandler
             'asset'         => ['assets', 'getUrl'],
             'asset_version' => ['assets', 'getVersion'],
             'css_url'       => ['css', 'getUrl'],
-            'csrf_token'    => ['form', 'csrfToken'],
+            //'csrf_token'    => ['form', 'csrfToken'],
             'url'           => ['router', 'url'],
             'path'          => ['router', 'path'],
             'absolute_url'  => ['http', 'generateAbsoluteUrl'],
             'relative_path' => ['http', 'generateRelativePath'],
             'is_granted'    => ['security', 'isGranted'],
-        ], $this->twigHelpers);
+        ], $this->twigHelpers ?: []);
     }
 
     protected function globalizeHelpers()
@@ -342,7 +352,7 @@ trait HelpersHandler
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
         $this->helpers = [];
-        $this->copyTwigFunctions($services);
+        // $this->copyTwigFunctions($services);
         $this->copyStandardHelpers($services);
         $this->copySpecialHelpers($services);
         $this->copyUserHelpers($helpers);

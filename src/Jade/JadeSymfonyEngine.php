@@ -449,7 +449,7 @@ class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersH
         foreach ($this->replacements as $name => $callable) {
             $code .= "    if (!function_exists('$name')) {\n" .
                 "        function $name() {\n" .
-                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n" .
+                "            return call_user_func_array($className::getGlobalHelper('$name', isset(\$twig) ? \$twig : null), func_get_args());\n" .
                 "        }\n" .
                 "    }\n";
         }
