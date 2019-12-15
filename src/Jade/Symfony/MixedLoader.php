@@ -16,6 +16,8 @@ if (PugEngine::getTwigVersion() > 2) {
     return;
 }
 
+// @codeCoverageIgnoreEnd
+
 require __DIR__ . '/../../../polyfill/Jade/Symfony/MixedLoaderTwig2.php';
 
 class_alias('Jade\\Symfony\\MixedLoaderTwig2', 'Jade\\Symfony\\MixedLoader');
