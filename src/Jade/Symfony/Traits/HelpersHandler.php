@@ -2,11 +2,13 @@
 
 namespace Jade\Symfony\Traits;
 
+use Closure;
 use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
 use Pug\Pug;
 use Pug\Twig\Environment;
 use Pug\Twig\EnvironmentTwig3;
+use ReflectionException;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\Asset\Package;
@@ -17,7 +19,11 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\RequestContext;
-use Twig\Source;
+use Twig\Environment as TwigEnvironment;
+use Twig\TwigFunction;
+use Twig_Environment;
+use Twig_Extension;
+use Twig_Function;
 
 /**
  * Trait HelpersHandler.
@@ -83,8 +89,6 @@ trait HelpersHandler
      */
     public static function getGlobalHelper($name, $twig = null)
     {
-        var_dump($twig);
-        // exit;
         if ($twig && $twig instanceof EnvironmentTwig3) {
             return $twig->getFunctionAsCallable($name);
         }
@@ -143,10 +147,10 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig_Environment $twig
-     * @param string            $name
+     * @param Twig_Environment $twig
+     * @param string           $name
      *
-     * @return \Closure
+     * @return Closure
      */
     protected function compileTwigCallable($twig, $name)
     {
@@ -176,17 +180,17 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig_Environment $twig
-     * @param callable          $function
-     * @param string            $name
+     * @param Twig_Environment $twig
+     * @param callable         $function
+     * @param string           $name
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      *
-     * @return \Closure
+     * @return Closure
      */
     protected function getTwigCallable($twig, $function, $name)
     {
-        /* @var \Twig_Function|\Twig\TwigFunction $function */
+        /* @var Twig_Function|TwigFunction $function */
         $callable = $function->getCallable();
 
         if (!$callable ||
@@ -202,12 +206,12 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig_Environment $twig
-     * @param callable          $function
+     * @param Twig_Environment $twig
+     * @param callable         $function
      */
     protected function copyTwigFunction($twig, $function)
     {
-        /* @var \Twig_Function $function */
+        /* @var Twig_Function $function */
         $name = $function->getName();
 
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
@@ -226,7 +230,7 @@ trait HelpersHandler
     {
         $twig = $container->has('twig') ? $container->get('twig') : null;
 
-        $twig = ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) ? $twig : null;
+        $twig = ($twig instanceof Twig_Environment || $twig instanceof TwigEnvironment) ? $twig : null;
 
         if ($twig && $this->isAtLeastSymfony5()) {
             $twig = Environment::fromTwigEnvironment($twig, $this);
@@ -245,7 +249,7 @@ trait HelpersHandler
         $twig = $this->getTwig($services);
 
         if ($twig) {
-            /* @var \Twig_Environment $twig */
+            /* @var Twig_Environment $twig */
             $twig = clone $twig;
             $twig->env = $twig;
             $loader = new MixedLoader($twig->getLoader());
@@ -261,7 +265,7 @@ trait HelpersHandler
             }
 
             foreach ($twig->getExtensions() as $extension) {
-                /* @var \Twig_Extension $extension */
+                /* @var Twig_Extension $extension */
                 foreach ($extension->getFunctions() as $function) {
                     $this->copyTwigFunction($twig, $function);
                 }
