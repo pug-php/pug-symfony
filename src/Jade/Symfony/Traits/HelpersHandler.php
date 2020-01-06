@@ -356,6 +356,7 @@ trait HelpersHandler
     protected function registerHelpers(ContainerInterface $services, $helpers)
     {
         $this->helpers = [];
+        $this->getTwig($services);
         // $this->copyTwigFunctions($services);
         $this->copyStandardHelpers($services);
         $this->copySpecialHelpers($services);
