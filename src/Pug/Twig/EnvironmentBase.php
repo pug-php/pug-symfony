@@ -2,7 +2,6 @@
 
 namespace Pug\Twig;
 
-use BadMethodCallException;
 use Jade\Exceptions\ReservedVariable;
 use Jade\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\PugSymfonyEngine;
