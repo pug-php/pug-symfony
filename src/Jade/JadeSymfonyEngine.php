@@ -24,7 +24,10 @@ use Twig\Loader\FilesystemLoader;
 
 class JadeSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHandlerInterface
 {
-    use Installer, HelpersHandler, Filters, Options;
+    use Installer;
+    use HelpersHandler;
+    use Filters;
+    use Options;
 
     /**
      * @var ContainerInterface|null
