@@ -81,7 +81,11 @@ trait HelpersHandler
      */
     public static function getGlobalHelper($name)
     {
-        return static::$globalHelpers[$name];
+        return is_callable(static::$globalHelpers[$name])
+            ? static::$globalHelpers[$name]
+            : function ($input = null) {
+                return $input;
+            };
     }
 
     /**

@@ -253,6 +253,12 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testPreRenderCsrfToken()
     {
+        if (version_compare(getenv('SYMFONY_VERSION'), '5.0') >= 0) {
+            self::markTestSkipped('CSRF token function not available with Symfony 5.0.');
+
+            return;
+        }
+
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
@@ -296,8 +302,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testSecurityToken()
     {
-        if (version_compare(getenv('SYMFONY_VERSION'), '3.2') < 0) {
-            self::markTestSkipped('security.token_storage compatible since 3.3.');
+        if (version_compare(getenv('SYMFONY_VERSION'), '3.2') < 0 && version_compare(getenv('SYMFONY_VERSION'), '5.0') >= 0) {
+            self::markTestSkipped('security.token_storage compatible since 3.3 and until 5.0.');
 
             return;
         }
@@ -350,6 +356,12 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testFormHelpers()
     {
+        if (version_compare(getenv('SYMFONY_VERSION'), '4.4') >= 0) {
+            self::markTestSkipped('Test not compatible with Symfony 4.4+.');
+
+            return;
+        }
+
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $controller = new TestController();
         $controller->setContainer(self::$kernel->getContainer());
