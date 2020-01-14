@@ -2,6 +2,8 @@
 
 namespace Pug;
 
+use ErrorException;
+use Exception;
 use Pug\Symfony\Contracts\HelpersHandlerInterface;
 use Pug\Symfony\Contracts\InstallerInterface;
 use Pug\Symfony\Traits\Filters;
@@ -166,9 +168,8 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         }
     }
 
-    protected function getAppDirectory($kernel)
+    protected function getAppDirectory(KernelInterface $kernel)
     {
-        /* @var KernelInterface $kernel */
         if (method_exists($kernel, 'getProjectDir') &&
             ($directory = $kernel->getProjectDir())
         ) {
@@ -239,10 +240,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             }
         }
 
-        if (!method_exists($this->pug, 'renderFile') && !$directory) {
-            $directory = $this->defaultTemplateDirectory;
-        }
-
         return ($directory ? $directory . DIRECTORY_SEPARATOR : '') . $name;
     }
 
@@ -287,7 +284,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return string
      */
-    public function preRender($pugCode)
+    public function preRender(string $pugCode)
     {
         $parts = $this->getPugCodeLayoutStructure($pugCode);
 
@@ -303,7 +300,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return int
      */
-    public function getPreRenderLinesCount()
+    public function getPreRenderLinesCount(): int
     {
         return count($this->replacements) * 6;
     }
@@ -313,7 +310,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return Pug
      */
-    public function getEngine()
+    public function getEngine(): Pug
     {
         return $this->pug;
     }
@@ -333,7 +330,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @param array $parameters
      *
-     * @throws \ErrorException when a forbidden parameter key is used
+     * @throws ErrorException when a forbidden parameter key is used
      *
      * @return array input parameters with global parameters
      */
@@ -341,13 +338,16 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
     {
         foreach (['view', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
-                throw new \ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
+                throw new ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
             }
         }
+
         $sharedVariables = $this->getOptionDefault('shared_variables');
+
         if ($sharedVariables) {
             $parameters = array_merge($sharedVariables, $parameters);
         }
+
         $parameters['view'] = $this;
 
         return $parameters;
@@ -357,20 +357,19 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      * Render a template by name.
      *
      * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
-     * @param array                                                           $parameters
+     * @param array $parameters
      *
-     * @throws \ErrorException when a forbidden parameter key is used
+     * @throws ErrorException when a forbidden parameter key is used
+     * @throws Exception      when the PHP code generated from the pug code throw an exception
      *
      * @return string
      */
     public function render($name, array $parameters = [])
     {
-        $parameters = $this->getParameters($parameters);
-        $method = method_exists($this->pug, 'renderFile')
-            ? [$this->pug, 'renderFile']
-            : [$this->pug, 'render'];
-
-        return call_user_func($method, $this->getFileFromName($name), $parameters);
+        return $this->pug->renderFile(
+            $this->getFileFromName($name),
+            $this->getParameters($parameters)
+        );
     }
 
     /**
@@ -379,18 +378,16 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
      * @param array                                                           $parameters
      *
-     * @throws \ErrorException when a forbidden parameter key is used
+     * @throws ErrorException when a forbidden parameter key is used
      *
      * @return string
      */
     public function renderString($code, array $parameters = [])
     {
-        $parameters = $this->getParameters($parameters);
-        $method = method_exists($this->pug, 'renderString')
-            ? [$this->pug, 'renderString']
-            : [$this->pug, 'render'];
-
-        return call_user_func($method, $code, $parameters);
+        return $this->pug->renderString(
+            $code,
+            $this->getParameters($parameters)
+        );
     }
 
     /**
@@ -420,13 +417,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function supports($name)
     {
-        // @codeCoverageIgnoreStart
-        $extensions = method_exists($this->pug, 'getExtensions')
-            ? $this->pug->getExtensions()
-            : $this->pug->getOption('extensions');
-        // @codeCoverageIgnoreEnd
-
-        foreach ($extensions as $extension) {
+        foreach ($this->pug->getOption('extensions') as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
             }

@@ -7,12 +7,16 @@ use Closure;
 use Composer\Composer;
 use Composer\Script\Event;
 use DateTime;
+use ErrorException;
+use Exception;
 use InvalidArgumentException;
 use Pug\Symfony\Css;
 use Pug\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use Pug\Twig\Environment;
+use ReflectionException;
 use ReflectionProperty;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,11 +32,7 @@ use Twig\Loader\ArrayLoader;
 
 class TokenStorage extends BaseTokenStorage
 {
-    public function __construct()
-    {
-    }
-
-    public function getToken()
+    public function getToken(): string
     {
         return 'the token';
     }
@@ -40,7 +40,7 @@ class TokenStorage extends BaseTokenStorage
 
 class CustomHelper
 {
-    public function foo()
+    public function foo(): string
     {
         return 'bar';
     }
@@ -48,7 +48,7 @@ class CustomHelper
 
 class Upper extends AbstractFilter
 {
-    public function parse($code)
+    public function parse(string $code): string
     {
         return strtoupper($code);
     }
@@ -56,12 +56,12 @@ class Upper extends AbstractFilter
 
 class LogoutUrlGenerator extends BaseLogoutUrlGenerator
 {
-    public function getLogoutUrl($key = null)
+    public function getLogoutUrl(string $key = null): string
     {
         return 'logout-url';
     }
 
-    public function getLogoutPath($key = null)
+    public function getLogoutPath(string $key = null): string
     {
         return 'logout-path';
     }
@@ -97,6 +97,11 @@ class TestKernel extends AppKernel
         return realpath(__DIR__ . '/../project/app');
     }
 
+    /**
+     * @param LoaderInterface $loader
+     *
+     * @throws Exception
+     */
     public function registerContainerConfiguration(LoaderInterface $loader)
     {
         parent::registerContainerConfiguration($loader);
@@ -201,6 +206,9 @@ class InvalidExceptionOptionsPugSymfony extends PugSymfonyEngine
 
 class PugSymfonyEngineTest extends AbstractTestCase
 {
+    /**
+     * @throws ErrorException
+     */
     public function testPreRenderPhp()
     {
         $kernel = new TestKernel(function (Container $container) {
@@ -218,6 +226,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testPreRenderJs()
     {
         $kernel = new TestKernel(function (Container $container) {
@@ -251,6 +262,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         ]));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testPreRenderCsrfToken()
     {
         if ($this->isAtLeastSymfony5()) {
@@ -284,7 +298,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $this->markTestSkipped('The baseDir option is now aligned on default template directory.');
 
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $baseDir = realpath($pugSymfony->getOption('baseDir'));
+        $baseDir = realpath($pugSymfony->getOptionDefault('baseDir'));
         $appView = __DIR__ . '/../project/app/Resources/views';
         $srcView = __DIR__ . '/../project/src/TestBundle/Resources/views';
 
@@ -293,13 +307,17 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         rename($srcView, $srcView . '.save');
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $baseDir = realpath($pugSymfony->getOption('baseDir'));
+        $baseDir = realpath($pugSymfony->getOptionDefault('baseDir'));
         rename($srcView . '.save', $srcView);
 
         self::assertTrue($baseDir !== false);
         self::assertSame(realpath($appView), $baseDir);
     }
 
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
     public function testSecurityToken()
     {
         if (version_compare($this->getSymfonyVersion(), '3.3', '<') || $this->isAtLeastSymfony5()) {
@@ -321,13 +339,13 @@ class PugSymfonyEngineTest extends AbstractTestCase
     }
 
     /**
-     * @throws \ErrorException
-     * @throws \ReflectionException
+     * @throws ErrorException
+     * @throws ReflectionException
      */
     public function testLogoutHelper()
     {
         $generator = new LogoutUrlGenerator();
-        /* @var \Twig_Environment $twig */
+        /* @var Environment $twig */
         $twig = self::$kernel->getContainer()->get('twig');
 
         foreach ($twig->getExtensions() as $extension) {
@@ -352,7 +370,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     }
 
     /**
-     * @throws \ErrorException
+     * @throws ErrorException
      */
     public function testFormHelpers()
     {
@@ -421,24 +439,14 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOptions(['foo' => 'bar']);
 
-        $message = method_exists($pugSymfony->getEngine(), 'hasOption') && $pugSymfony->getOption('foo') === null
-            ? 'foo is not a valid option name.'
-            : null;
-        if ($message === null) {
-            try {
-                $pugSymfony->getOption('foo');
-            } catch (InvalidArgumentException $e) {
-                $message = $e->getMessage();
-            }
-        }
-
-        self::assertSame('foo is not a valid option name.', $message);
-
-        $pugSymfony->setCustomOptions(['foo' => 'bar']);
-        self::assertSame('bar', $pugSymfony->getOption('foo'));
+        self::assertSame('bar', $pugSymfony->getOptionDefault('foo'));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testBundleView()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -447,6 +455,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testAssetHelperPhp()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -469,6 +480,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testAssetHelperJs()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -491,6 +505,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testFilter()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -525,6 +542,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertFalse($pugSymfony->supports('foo-bar'));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testCustomOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -536,7 +556,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $pugSymfony->setOption('indentSize', 3);
         $pugSymfony->setOption('prettyprint', '   ');
 
-        self::assertSame(3, $pugSymfony->getOption('indentSize'));
+        self::assertSame(3, $pugSymfony->getOptionDefault('indentSize'));
         self::assertSame(
             "<div>\n   <p></p>\n</div>",
             str_replace("\r", '', trim($pugSymfony->render('p.pug')))
@@ -544,7 +564,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         $pugSymfony->setOptions(['indentSize' => 5, 'prettyprint' => '     ']);
 
-        self::assertSame(5, $pugSymfony->getOption('indentSize'));
+        self::assertSame(5, $pugSymfony->getOptionDefault('indentSize'));
         self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
         self::assertSame(
             "<div>\n     <p></p>\n</div>",
@@ -553,7 +573,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     }
 
     /**
-     * @expectedException        \ErrorException
+     * @expectedException        ErrorException
      * @expectedExceptionMessage The "this" key is forbidden.
      */
     public function testForbidThis()
@@ -562,7 +582,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     }
 
     /**
-     * @expectedException        \ErrorException
+     * @expectedException        ErrorException
      * @expectedExceptionMessage The "view" key is forbidden.
      */
     public function testForbidView()
