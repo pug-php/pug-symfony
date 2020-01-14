@@ -70,4 +70,9 @@ abstract class AbstractTestCase extends KernelTestCase
     {
         self::bootKernel();
     }
+
+    protected function getSymfonyVersion()
+    {
+        return Kernel::VERSION;
+    }
 }
