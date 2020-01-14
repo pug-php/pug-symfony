@@ -2,7 +2,7 @@
 
 namespace Pug\Tests\Exceptions;
 
-use Jade\Exceptions\ReservedVariable;
+use Pug\Exceptions\ReservedVariable;
 use Pug\Tests\AbstractTestCase;
 
 class ReservedVariableTest extends AbstractTestCase

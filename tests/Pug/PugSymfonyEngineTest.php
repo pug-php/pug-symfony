@@ -8,8 +8,8 @@ use Composer\Composer;
 use Composer\Script\Event;
 use DateTime;
 use InvalidArgumentException;
-use Jade\Symfony\Css;
-use Jade\Symfony\MixedLoader;
+use Pug\Symfony\Css;
+use Pug\Symfony\MixedLoader;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
@@ -276,7 +276,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertRegExp('/^\\\\?Jade\\\\Symfony\\\\(Jade|Pug)Engine$/', get_class($pugSymfony->getEngine()));
+        self::assertRegExp('/^\\\\?Pug\\\\Symfony\\\\PugEngine$/', get_class($pugSymfony->getEngine()));
     }
 
     public function testFallbackAppDir()

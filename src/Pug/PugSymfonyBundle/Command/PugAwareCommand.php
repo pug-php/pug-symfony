@@ -1,6 +1,6 @@
 <?php
 
-namespace Jade\JadeSymfonyBundle\Command;
+namespace Pug\PugSymfonyBundle\Command;
 
 use Pug\PugSymfonyEngine;
 use Symfony\Component\Console\Command\Command;

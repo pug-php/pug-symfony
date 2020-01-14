@@ -2,8 +2,8 @@
 
 namespace Pug\Twig;
 
-use Jade\Exceptions\ReservedVariable;
-use Jade\Symfony\Traits\PrivatePropertyAccessor;
+use Pug\Exceptions\ReservedVariable;
+use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\PugSymfonyEngine;
 use Twig\Environment as TwigEnvironment;
 use Twig\Loader\LoaderInterface;

@@ -1,19 +1,15 @@
 <?php
 
-namespace Jade\Symfony;
+namespace Pug\Symfony;
 
+use Twig\Error\LoaderError;
+use Twig\Loader\LoaderInterface;
 use Twig\Source;
-use Twig_Error_Loader;
-use Twig_LoaderInterface;
 
-if (!class_exists('Twig\\Environment')) {
-    return;
-}
-
-class MixedLoaderTwig3 implements Twig_LoaderInterface
+class MixedLoader implements LoaderInterface
 {
     /**
-     * @var Twig_LoaderInterface
+     * @var LoaderInterface
      */
     protected $base;
 
@@ -22,12 +18,12 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      */
     protected $extraTemplates = [];
 
-    public function __construct(Twig_LoaderInterface $base)
+    public function __construct(LoaderInterface $base)
     {
         $this->base = $base;
     }
 
-    public function uniqueTemplate($template)
+    public function uniqueTemplate($template): string
     {
         $name = uniqid();
         $this->setTemplateSource($name, $template);
@@ -35,7 +31,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
         return $name;
     }
 
-    public function setTemplateSource($name, $template)
+    public function setTemplateSource($name, $template): void
     {
         $this->extraTemplates[$name] = $template;
     }
@@ -49,13 +45,17 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
         return $this->base->getSourceContext($name);
     }
 
-    // @codeCoverageIgnoreStart
-    public function getSource($name)
+    /**
+     * @param string $name
+     *
+     * @throws LoaderError
+     *
+     * @return string
+     */
+    public function getSource($name): string
     {
         return $this->getSourceContext($name)->getCode();
     }
-
-    // @codeCoverageIgnoreEnd
 
     public function __call($name, $arguments)
     {
@@ -67,7 +67,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      *
      * @param string $name The name of the template to load
      *
-     * @throws Twig_Error_Loader When $name is not found
+     * @throws LoaderError When $name is not found
      *
      * @return string The cache key
      */
@@ -87,7 +87,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      * @param int    $time Timestamp of the last modification time of the
      *                     cached template
      *
-     * @throws Twig_Error_Loader When $name is not found
+     * @throws LoaderError When $name is not found
      *
      * @return bool true if the template is fresh, false otherwise
      */
@@ -107,7 +107,7 @@ class MixedLoaderTwig3 implements Twig_LoaderInterface
      *
      * @return bool If the template source code is handled by this loader or not
      */
-    public function exists(string $name)
+    public function exists(string $name): bool
     {
         if (isset($this->extraTemplates[$name])) {
             return true;

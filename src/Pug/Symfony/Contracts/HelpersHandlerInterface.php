@@ -1,6 +1,6 @@
 <?php
 
-namespace Jade\Symfony\Contracts;
+namespace Pug\Symfony\Contracts;
 
 use ArrayAccess;
 

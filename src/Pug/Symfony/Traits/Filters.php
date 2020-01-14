@@ -1,11 +1,13 @@
 <?php
 
-namespace Jade\Symfony\Traits;
+namespace Pug\Symfony\Traits;
+
+use Pug\Pug;
 
 /**
  * Trait Filters.
  *
- * @property-read \Pug\Pug $pug
+ * @property-read Pug $pug
  */
 trait Filters
 {

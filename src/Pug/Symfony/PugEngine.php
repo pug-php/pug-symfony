@@ -1,6 +1,6 @@
 <?php
 
-namespace Jade\Symfony;
+namespace Pug\Symfony;
 
 use Pug\Pug;
 

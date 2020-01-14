@@ -2,14 +2,37 @@
 
 namespace Pug\Twig;
 
-use Twig\Environment as TwigEnvironment;
+use Twig\Source;
+use Twig\Template;
 
-// @codeCoverageIgnoreStart
-require_once __DIR__ . '/../../../polyfill/Pug/Twig/EnvironmentTwig' . TwigEnvironment::MAJOR_VERSION . '.php';
-class_alias('Pug\\Twig\\EnvironmentTwig' . TwigEnvironment::MAJOR_VERSION, 'Pug\\Twig\\EnvironmentTwigPolyfill');
-
-class Environment extends EnvironmentTwigPolyfill
+/**
+ * @codeCoverageIgnore
+ */
+class Environment extends EnvironmentBase
 {
-}
+    /**
+     * @var string[]
+     */
+    protected $classNames = [];
 
-// @codeCoverageIgnoreEnd
+    public function compileSource(Source $source): string
+    {
+        return $this->compileSourceBase($source);
+    }
+
+    public function loadTemplate(string $cls, string $name, int $index = null): Template
+    {
+        if ($index !== null) {
+            $cls .= '___' . $index;
+        }
+
+        $this->classNames[$name] = $cls;
+
+        return parent::loadTemplate($cls, $name, $index);
+    }
+
+    public function render($name, array $context = []): string
+    {
+        return $this->renderBase($name, array_merge($this->pugSymfonyEngine->getSharedVariables(), $context));
+    }
+}

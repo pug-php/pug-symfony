@@ -1,6 +1,6 @@
 <?php
 
-namespace Jade\Exceptions;
+namespace Pug\Exceptions;
 
 use RuntimeException;
 use Throwable;

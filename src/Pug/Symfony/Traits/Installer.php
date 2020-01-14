@@ -1,9 +1,9 @@
 <?php
 
-namespace Jade\Symfony\Traits;
+namespace Pug\Symfony\Traits;
 
 use Composer\IO\IOInterface;
-use Jade\Symfony\Contracts\InstallerInterface;
+use Pug\Symfony\Contracts\InstallerInterface;
 use Symfony\Component\HttpKernel\Kernel;
 
 /**
@@ -102,7 +102,7 @@ trait Installer
     {
         /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
-        $baseDirectory = __DIR__ . '/../../../..';
+        $baseDirectory = __DIR__.'/../../../pug-symfony';
 
         $flags = 0;
 
@@ -131,7 +131,7 @@ trait Installer
     {
         /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
-        $baseDirectory = __DIR__ . '/../../../..';
+        $baseDirectory = __DIR__.'/../../../pug-symfony';
 
         $flags = 0;
 
@@ -333,7 +333,7 @@ trait Installer
     {
         /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
-        $baseDirectory = __DIR__ . '/../../../..';
+        $baseDirectory = __DIR__.'/../../../pug-symfony';
 
         if (!$io->isInteractive() || file_exists($baseDirectory . '/installed')) {
             return true;

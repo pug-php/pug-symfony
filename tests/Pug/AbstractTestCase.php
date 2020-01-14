@@ -10,7 +10,7 @@ abstract class AbstractTestCase extends KernelTestCase
 {
     protected static $originalFiles = [];
 
-    private static function getConfigFiles()
+    private static function getConfigFiles(): array
     {
         return [
             __DIR__ . '/../project-s4/config/packages/framework.yaml',
@@ -19,13 +19,13 @@ abstract class AbstractTestCase extends KernelTestCase
         ];
     }
 
-    protected static function isAtLeastSymfony5()
+    protected static function isAtLeastSymfony5(): bool
     {
         return defined('Symfony\\Component\\HttpKernel\\Kernel::VERSION') &&
             version_compare(Kernel::VERSION, '5.0.0-dev', '>=');
     }
 
-    protected static function clearCache()
+    protected static function clearCache(): void
     {
         foreach (['app', 'var'] as $directory) {
             try {
@@ -36,7 +36,7 @@ abstract class AbstractTestCase extends KernelTestCase
         }
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         if (static::isAtLeastSymfony5()) {
             foreach (self::getConfigFiles() as $file) {
@@ -56,7 +56,7 @@ abstract class AbstractTestCase extends KernelTestCase
         self::clearCache();
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         self::clearCache();
         foreach (self::getConfigFiles() as $file) {
@@ -66,12 +66,12 @@ abstract class AbstractTestCase extends KernelTestCase
         }
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         self::bootKernel();
     }
 
-    protected function getSymfonyVersion()
+    protected function getSymfonyVersion(): string
     {
         return Kernel::VERSION;
     }
