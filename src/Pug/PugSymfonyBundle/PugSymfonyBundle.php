@@ -2,8 +2,8 @@
 
 namespace Pug\PugSymfonyBundle;
 
-use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Jade\JadeSymfonyBundle\JadeSymfonyBundle;
 
-class PugSymfonyBundle extends Bundle
+class PugSymfonyBundle extends JadeSymfonyBundle
 {
 }

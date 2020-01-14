@@ -5,7 +5,7 @@ namespace Jade\Symfony\Traits;
 /**
  * Trait Filters.
  *
- * @property-read \Pug\Pug $jade
+ * @property-read \Pug\Pug $pug
  */
 trait Filters
 {
@@ -19,7 +19,7 @@ trait Filters
      */
     public function filter($name, $filter)
     {
-        $this->jade->filter($name, $filter);
+        $this->pug->filter($name, $filter);
 
         return $this;
     }
@@ -33,7 +33,7 @@ trait Filters
      */
     public function hasFilter($name)
     {
-        return $this->jade->hasFilter($name);
+        return $this->pug->hasFilter($name);
     }
 
     /**
@@ -45,6 +45,6 @@ trait Filters
      */
     public function getFilter($name)
     {
-        return $this->jade->getFilter($name);
+        return $this->pug->getFilter($name);
     }
 }

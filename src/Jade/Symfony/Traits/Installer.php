@@ -4,6 +4,7 @@ namespace Jade\Symfony\Traits;
 
 use Composer\IO\IOInterface;
 use Jade\Symfony\Contracts\InstallerInterface;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Trait Installer.
@@ -80,7 +81,7 @@ trait Installer
         if (preg_match('/\[\s*\n/', $contents)) {
             if (strpos($contents, $bundleClass) === false) {
                 $contents = preg_replace_callback('/\[\s*\n/', function ($match) use ($bundle) {
-                    return $match[0] . "$bundle\n";
+                    return $match[0] . "    $bundle\n";
                 }, $contents);
                 $proceedTask(
                     file_put_contents($appFile, $contents),
@@ -95,6 +96,35 @@ trait Installer
         } else {
             $io->write('Sorry, config/bundles.php has a format we can\'t handle automatically.');
         }
+    }
+
+    protected static function installInSymfony5($event, $dir)
+    {
+        /** @var \Composer\Script\Event $event */
+        $io = $event->getIO();
+        $baseDirectory = __DIR__ . '/../../../..';
+
+        $flags = 0;
+
+        $bundleClass = 'Pug\PugSymfonyBundle\PugSymfonyBundle';
+        $bundle = "$bundleClass::class => ['all' => true],";
+        $addBundle = static::askConfirmation($io, 'Would you like us to add automatically the pug bundle in your config/bundles.php? [Y/N] ');
+
+        $proceedTask = function ($taskResult, $flag, $successMessage, $errorMessage) use (&$flags, $io) {
+            static::proceedTask($flags, $io, $taskResult, $flag, $successMessage, $errorMessage);
+        };
+
+        if ($addBundle) {
+            static::installSymfony4Bundle($io, $dir, $bundle, $bundleClass, $proceedTask, $flags);
+        } else {
+            $flags |= InstallerInterface::KERNEL_OK;
+        }
+
+        if (($flags & InstallerInterface::KERNEL_OK)) {
+            touch($baseDirectory . '/installed');
+        }
+
+        return true;
     }
 
     protected static function installInSymfony4($event, $dir)
@@ -317,6 +347,12 @@ trait Installer
             $io->write('Not inside a composer vendor directory, setup skipped.');
 
             return true;
+        }
+
+        $symfonyVersion = defined('Symfony\Component\HttpKernel\Kernel::VERSION') ? Kernel::VERSION : 0;
+
+        if (version_compare($symfonyVersion, '5.0.0-dev', '>=')) {
+            return static::installInSymfony5($event, $dir);
         }
 
         return file_exists($dir . '/config/packages/framework.yaml')

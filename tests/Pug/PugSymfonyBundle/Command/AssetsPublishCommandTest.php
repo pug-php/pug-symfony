@@ -2,31 +2,41 @@
 
 namespace Pug\Tests\PugSymfonyBundle\Command;
 
-use Jade\JadeSymfonyEngine;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
+use Pug\PugSymfonyEngine;
+use Pug\Tests\AbstractTestCase;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\HttpKernel\KernelInterface;
 
-class BadEngine extends JadeSymfonyEngine
+class BadEngine extends PugSymfonyEngine
 {
+    public function __construct(KernelInterface $kernel)
+    {
+        // Noop
+    }
+
     public function getEngine()
     {
         return (object) [];
     }
 }
 
-class AssetsPublishCommandTest extends KernelTestCase
+class AssetsPublishCommandTest extends AbstractTestCase
 {
-    public function setUp()
+    protected function getNewAssetsPublishCommand($className = 'Pug\\PugSymfonyEngine')
     {
-        self::bootKernel();
+        if ($this->isAtLeastSymfony5()) {
+            return new AssetsPublishCommand(new $className(self::$kernel));
+        }
+
+        return new AssetsPublishCommand();
     }
 
     public function testCommand()
     {
         $application = new Application(self::$kernel);
-        $application->add(new AssetsPublishCommand());
+        $application->add($this->getNewAssetsPublishCommand());
 
         // Convert PHP style files to JS style
         $customHelperFile = __DIR__ . '/../../../project/app/Resources/views/custom-helper.pug';
@@ -52,7 +62,7 @@ else
         file_put_contents($customHelperFile, $customHelper);
         file_put_contents($stylePhpFile, $stylePhp);
 
-        $this->assertContains('11 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
+        $this->assertContains('12 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
         $this->assertContains('1 templates failed to be cached', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertRegExp('/(Unknown\sfilter\supper|upper:\sFilter\sdoes\s?n[\'o]t\sexists)/', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertContains('filter.pug', $output, 'filter.pug fails as the upper filter does not exists.');
@@ -66,7 +76,7 @@ else
     {
         $application = new Application(self::$kernel);
         self::$kernel->getContainer()->set('templating.engine.pug', new BadEngine(self::$kernel));
-        $application->add(new AssetsPublishCommand());
+        $application->add($this->getNewAssetsPublishCommand('Pug\\Tests\\PugSymfonyBundle\\Command\\BadEngine'));
 
         $command = $application->find('assets:publish');
         $commandTester = new CommandTester($command);

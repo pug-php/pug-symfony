@@ -4,16 +4,31 @@ namespace Jade\Symfony\Traits;
 
 use Jade\Symfony\Css;
 use Jade\Symfony\MixedLoader;
+use Pug\Pug;
+use Pug\Twig\Environment;
+use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
+use Symfony\Component\Asset\Package;
+use Symfony\Component\Asset\Packages;
+use Symfony\Component\Asset\VersionStrategy\EmptyVersionStrategy;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\UrlHelper;
+use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Routing\RequestContext;
 
 /**
  * Trait HelpersHandler.
- *
- * @property-read \Pug\Pug $jade
  */
 trait HelpersHandler
 {
+    use PrivatePropertyAccessor;
+
+    /**
+     * @var Pug
+     */
+    protected $pug;
+
     /**
      * @var array
      */
@@ -48,6 +63,76 @@ trait HelpersHandler
 
     protected static $globalHelpers = [];
 
+    /**
+     * Version of Symfony to force pug compatibility.
+     *
+     * Default to Symfony\Component\HttpKernel\Kernel::VERSION
+     *
+     * @var string|int
+     */
+    protected $symfonyLevel;
+
+    /**
+     * Get a global helper by name.
+     *
+     * @param string $name
+     *
+     * @return callable
+     */
+    public static function getGlobalHelper($name)
+    {
+        return is_callable(static::$globalHelpers[$name])
+            ? static::$globalHelpers[$name]
+            : function ($input = null) {
+                return $input;
+            };
+    }
+
+    /**
+     * Get an helper by name.
+     *
+     * @param string $name
+     *
+     * @return mixed
+     */
+    public function offsetGet($name)
+    {
+        return $this->helpers[$name];
+    }
+
+    /**
+     * Check if an helper exists.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function offsetExists($name)
+    {
+        return isset($this->helpers[$name]);
+    }
+
+    /**
+     * Set an helper.
+     *
+     * @param string $name
+     * @param mixed  $value
+     */
+    public function offsetSet($name, $value)
+    {
+        $this->helpers[$name] = $value;
+    }
+
+    /**
+     * Remove an helper.
+     *
+     * @param string $name
+     */
+    public function offsetUnset($name)
+    {
+        unset($this->helpers[$name]);
+    }
+
     protected function getTemplatingHelper($name)
     {
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
@@ -71,8 +156,12 @@ trait HelpersHandler
             $loader = $twig->getLoader();
 
             $template = $loader->uniqueTemplate(
-                '{{' . $name . '(' . implode(', ', array_keys($variables)) . ') }}'
+                '{{' . $name . '(' . implode(', ', array_keys($variables)) . ')}}'
             );
+
+            if ($twig::MAJOR_VERSION >= 3) {
+                return $twig->render($twig->createTemplate($template, $name), $variables);
+            }
 
             return $twig->render($template, $variables);
         };
@@ -131,7 +220,17 @@ trait HelpersHandler
     {
         $twig = $container->has('twig') ? $container->get('twig') : null;
 
-        return ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) ? $twig : null;
+        $twig = ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) ? $twig : null;
+
+        if ($twig && $this->isAtLeastSymfony5()) {
+            $twig = Environment::fromTwigEnvironment($twig, $this);
+
+            $services = static::getPrivateProperty($container, 'services', $propertyAccessor);
+            $services['twig'] = $twig;
+            $propertyAccessor->setValue($container, $services);
+        }
+
+        return $twig;
     }
 
     protected function copyTwigFunctions(ContainerInterface $services)
@@ -146,6 +245,14 @@ trait HelpersHandler
             $loader = new MixedLoader($twig->getLoader());
             $twig->setLoader($loader);
             $this->share('twig', $twig);
+            $extensions = $twig->getExtensions();
+
+            if (version_compare(Environment::VERSION, '3.0.0-dev', '>=') &&
+                !isset($extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'])) {
+                $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
+                $extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'] = $assetExtension;
+                $twig->addExtension($assetExtension);
+            }
 
             foreach ($twig->getExtensions() as $extension) {
                 /* @var \Twig_Extension $extension */
@@ -168,16 +275,31 @@ trait HelpersHandler
         }
     }
 
-    protected function copySpecialHelpers(ContainerInterface $services)
+    protected function getHttpFoundationExtension(ContainerInterface $services)
     {
-        $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
-        /* @var \Symfony\Component\HttpFoundation\RequestStack $stack */
+        /* @var RequestStack $stack */
         $stack = $services->get('request_stack');
-        /* @var \Symfony\Component\Routing\RequestContext $context */
+
+        /* @var RequestContext $context */
         $context = $services->has('router.request_context')
             ? $services->get('router.request_context')
             : $services->get('router')->getContext();
-        $this->helpers['http'] = new HttpFoundationExtension($stack, $context);
+
+        // @codeCoverageIgnoreStart
+
+        if ($this->isAtLeastSymfony5()) {
+            return new HttpFoundationExtension(new UrlHelper($stack, $context));
+        }
+
+        return new HttpFoundationExtension($stack, $context);
+
+        // @codeCoverageIgnoreEnd
+    }
+
+    protected function copySpecialHelpers(ContainerInterface $services)
+    {
+        $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
+        $this->helpers['http'] = $this->getHttpFoundationExtension($services);
     }
 
     protected function copyUserHelpers(array $helpers)
@@ -232,60 +354,25 @@ trait HelpersHandler
         $this->globalizeHelpers();
     }
 
-    /**
-     * Get a global helper by name.
-     *
-     * @param string $name
-     *
-     * @return callable
-     */
-    public static function getGlobalHelper($name)
+    protected function getSymfonyVersion()
     {
-        return static::$globalHelpers[$name];
+        return $this->symfonyLevel ?: (defined('Symfony\Component\HttpKernel\Kernel::VERSION') ? Kernel::VERSION : 0);
+    }
+
+    protected function isAtLeastSymfony5()
+    {
+        return version_compare($this->getSymfonyVersion(), '5.0.0-dev', '>=');
     }
 
     /**
-     * Get an helper by name.
+     * Set version of Symfony to force pug compatibility.
      *
-     * @param string $name
+     * Use Symfony\Component\HttpKernel\Kernel::VERSION if null.
      *
-     * @return mixed
+     * @param int|string|null $symfonyLevel
      */
-    public function offsetGet($name)
+    public function setSymfonyLevel($symfonyLevel)
     {
-        return $this->helpers[$name];
-    }
-
-    /**
-     * Check if an helper exists.
-     *
-     * @param string $name
-     *
-     * @return bool
-     */
-    public function offsetExists($name)
-    {
-        return isset($this->helpers[$name]);
-    }
-
-    /**
-     * Set an helper.
-     *
-     * @param string $name
-     * @param mixed  $value
-     */
-    public function offsetSet($name, $value)
-    {
-        $this->helpers[$name] = $value;
-    }
-
-    /**
-     * Remove an helper.
-     *
-     * @param string $name
-     */
-    public function offsetUnset($name)
-    {
-        unset($this->helpers[$name]);
+        $this->symfonyLevel = $symfonyLevel;
     }
 }

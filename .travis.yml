@@ -300,14 +300,29 @@ matrix:
       env:
         - SYMFONY_VERSION='4.3.*'
         - PUG_VERSION='^3.0.0'
-    - php: 7.4snapshot
+    - php: 7.4
       env:
         - SYMFONY_VERSION='4.4.*'
+        - PUG_VERSION='^3.0.0'
+    - php: 7.4
+      env:
+        - STABILITY='dev'
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
+        - SYMFONY_VERSION='5.0.*'
+        - TWIG_VERSION='^2.10.0'
+        - PUG_VERSION='^3.0.0'
+    - php: 7.4
+      env:
+        - STABILITY='dev'
+        - REMOVE_DEV_PACKAGE="codeclimate/php-test-reporter"
+        - SYMFONY_VERSION='5.0.*'
+        - TWIG_VERSION='^3.0.0'
         - PUG_VERSION='^3.0.0'
 before_script:
   - if [ "$REMOVE_PACKAGE" != "" ]; then travis_retry composer remove --no-update -n ${REMOVE_PACKAGE}; fi;
   - if [ "$REMOVE_DEV_PACKAGE" != "" ]; then travis_retry composer remove --dev --no-update -n ${REMOVE_DEV_PACKAGE}; fi;
   - if [ "$SYMFONY_VERSION" != "" ]; then travis_retry composer require --no-update -n symfony/symfony=$SYMFONY_VERSION; fi;
+  - if [ "$TWIG_VERSION" != "" ]; then travis_retry composer require --no-update -n twig/twig=$TWIG_VERSION; fi;
   - if [ "$SYMFONY_VERSION" = "3.0.*" ]; then travis_retry composer require --no-update -n twig/twig=^1; fi;
   - if [ "$PUG_VERSION" != "" ]; then travis_retry composer require --no-update -n pug-php/pug=$PUG_VERSION; fi;
   - if [ "$STABILITY" != "" ]; then travis_retry composer config minimum-stability ${STABILITY}; fi;
