@@ -18,7 +18,7 @@ trait Installer
 
     protected static function installSymfony4Config(IOInterface $io, $dir, $templateService, $proceedTask, &$flags)
     {
-        $configFile = $dir . '/config/packages/framework.yaml';
+        $configFile = $dir.'/config/packages/framework.yaml';
         $contents = @file_get_contents($configFile) ?: '';
 
         if (!preg_match('/[^a-zA-Z]pug[^a-zA-Z]/', $contents)) {
@@ -29,7 +29,7 @@ trait Installer
                 $newContents = preg_replace('/[[,]\s*([\'"]?)twig[\'"]?/', '$0, $2pug$2', $contents);
             } elseif (preg_match('/^framework\s*:\s*\n/m', $contents)) {
                 $newContents = preg_replace_callback('/^framework\s*:\s*\n/', function ($match) use ($templateService) {
-                    return $match[0] . $templateService;
+                    return $match[0].$templateService;
                 }, $contents);
             }
             if ($newContents) {
@@ -50,13 +50,13 @@ trait Installer
 
     protected static function installSymfony4ServiceConfig(IOInterface $io, $dir, $pugService, $proceedTask, &$flags)
     {
-        $configFile = $dir . '/config/services.yaml';
+        $configFile = $dir.'/config/services.yaml';
         $contents = @file_get_contents($configFile) ?: '';
 
         if (strpos($contents, 'templating.engine.pug') === false) {
             if (preg_match('/^services\s*:\s*\n/m', $contents)) {
                 $contents = preg_replace_callback('/^services\s*:\s*\n/m', function ($match) use ($pugService) {
-                    return $match[0] . $pugService;
+                    return $match[0].$pugService;
                 }, $contents);
                 $proceedTask(
                     file_put_contents($configFile, $contents),
@@ -75,13 +75,13 @@ trait Installer
 
     protected static function installSymfony4Bundle(IOInterface $io, $dir, $bundle, $bundleClass, $proceedTask, &$flags)
     {
-        $appFile = $dir . '/config/bundles.php';
+        $appFile = $dir.'/config/bundles.php';
         $contents = @file_get_contents($appFile) ?: '';
 
         if (preg_match('/\[\s*\n/', $contents)) {
             if (strpos($contents, $bundleClass) === false) {
                 $contents = preg_replace_callback('/\[\s*\n/', function ($match) use ($bundle) {
-                    return $match[0] . "    $bundle\n";
+                    return $match[0]."    $bundle\n";
                 }, $contents);
                 $proceedTask(
                     file_put_contents($appFile, $contents),
@@ -121,7 +121,7 @@ trait Installer
         }
 
         if (($flags & InstallerInterface::KERNEL_OK)) {
-            touch($baseDirectory . '/installed');
+            touch($baseDirectory.'/installed');
         }
 
         return true;
@@ -135,13 +135,13 @@ trait Installer
 
         $flags = 0;
 
-        $templateService = "\n    templating:\n" .
+        $templateService = "\n    templating:\n".
             "        engines: ['twig', 'pug']\n";
-        $pugService = "\n    templating.engine.pug:\n" .
-            "        public: true\n" .
-            "        autowire: false\n" .
-            "        class: Pug\PugSymfonyEngine\n" .
-            "        arguments:\n" .
+        $pugService = "\n    templating.engine.pug:\n".
+            "        public: true\n".
+            "        autowire: false\n".
+            "        class: Pug\PugSymfonyEngine\n".
+            "        arguments:\n".
             "            - '@kernel'\n";
         $bundleClass = 'Pug\PugSymfonyBundle\PugSymfonyBundle';
         $bundle = "$bundleClass::class => ['all' => true],";
@@ -172,7 +172,7 @@ trait Installer
         }
 
         if (($flags & InstallerInterface::KERNEL_OK) && ($flags & InstallerInterface::CONFIG_OK) && ($flags & InstallerInterface::ENGINE_OK)) {
-            touch($baseDirectory . '/installed');
+            touch($baseDirectory.'/installed');
         }
 
         return true;
@@ -180,7 +180,7 @@ trait Installer
 
     protected static function installSymfony3Config(IOInterface $io, $dir, $service, $proceedTask, &$flags)
     {
-        $configFile = $dir . '/app/config/config.yml';
+        $configFile = $dir.'/app/config/config.yml';
         $contents = @file_get_contents($configFile) ?: '';
 
         if (preg_match('/^framework\s*:/m', $contents)) {
@@ -226,7 +226,7 @@ trait Installer
                     $engines = @json_decode(str_replace("'", '"', trim($match[1])));
                     // @codeCoverageIgnoreStart
                     if (!is_array($engines)) {
-                        $io->write('Automatic engine adding is only possible if framework.templating.engines is a ' .
+                        $io->write('Automatic engine adding is only possible if framework.templating.engines is a '.
                             'one-line setting in config.yml.');
 
                         break;
@@ -239,7 +239,7 @@ trait Installer
                         break;
                     }
                     array_unshift($engines, 'pug');
-                    $line = preg_replace('/^(\s+engines\s*:)(.*)$/', '$1 ' . json_encode($engines), $line);
+                    $line = preg_replace('/^(\s+engines\s*:)(.*)$/', '$1 '.json_encode($engines), $line);
                     $proceeded = true;
                     break;
                 }
@@ -260,7 +260,7 @@ trait Installer
 
     protected static function installSymfony3Bundle(IOInterface $io, $dir, $bundle, $proceedTask, &$flags)
     {
-        $appFile = $dir . '/app/AppKernel.php';
+        $appFile = $dir.'/app/AppKernel.php';
         $contents = @file_get_contents($appFile) ?: '';
 
         if (preg_match('/^[ \\t]*new\\s+Symfony\\\\Bundle\\\\FrameworkBundle\\\\FrameworkBundle\\(\\)/m', $contents)) {
@@ -283,9 +283,9 @@ trait Installer
 
     protected static function installInSymfony3(IOInterface $io, $baseDirectory, $dir)
     {
-        $service = "\n    templating.engine.pug:\n" .
-            "        public: true\n" .
-            "        class: Pug\PugSymfonyEngine\n" .
+        $service = "\n    templating.engine.pug:\n".
+            "        public: true\n".
+            "        class: Pug\PugSymfonyEngine\n".
             "        arguments: [\"@kernel\"]\n";
 
         $bundle = 'new Pug\PugSymfonyBundle\PugSymfonyBundle()';
@@ -311,7 +311,7 @@ trait Installer
         }
 
         if (($flags & InstallerInterface::KERNEL_OK) && ($flags & InstallerInterface::CONFIG_OK) && ($flags & InstallerInterface::ENGINE_OK)) {
-            touch($baseDirectory . '/installed');
+            touch($baseDirectory.'/installed');
         }
 
         return true;
@@ -335,15 +335,15 @@ trait Installer
         $io = $event->getIO();
         $baseDirectory = __DIR__.'/../../../pug-symfony';
 
-        if (!$io->isInteractive() || file_exists($baseDirectory . '/installed')) {
+        if (!$io->isInteractive() || file_exists($baseDirectory.'/installed')) {
             return true;
         }
 
         $dir = is_string($dir) && is_dir($dir)
             ? $dir
-            : $baseDirectory . '/../../..';
+            : $baseDirectory.'/../../..';
 
-        if (!file_exists($dir . '/composer.json')) {
+        if (!file_exists($dir.'/composer.json')) {
             $io->write('Not inside a composer vendor directory, setup skipped.');
 
             return true;
@@ -355,7 +355,7 @@ trait Installer
             return static::installInSymfony5($event, $dir);
         }
 
-        return file_exists($dir . '/config/packages/framework.yaml')
+        return file_exists($dir.'/config/packages/framework.yaml')
             ? static::installInSymfony4($event, $dir)
             : static::installInSymfony3($io, $baseDirectory, $dir);
     }

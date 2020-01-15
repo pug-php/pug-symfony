@@ -3,8 +3,8 @@
 namespace Pug\Twig;
 
 use Pug\Exceptions\ReservedVariable;
-use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\PugSymfonyEngine;
+use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Twig\Environment as TwigEnvironment;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
@@ -105,9 +105,9 @@ abstract class EnvironmentBase extends TwigEnvironment
             }
 
             $fileName = $this->isDebug() ? 'PugDebugTemplateTemplate' : 'PugTemplateTemplate';
-            $templateFile = __DIR__ . "/../../../cache-templates/$fileName.php";
+            $templateFile = __DIR__."/../../../cache-templates/$fileName.php";
             $name = $source->getName();
-            $className = isset($this->classNames[$name]) ? $this->classNames[$name] : "__Template_" . sha1($path);
+            $className = isset($this->classNames[$name]) ? $this->classNames[$name] : '__Template_'.sha1($path);
             $replacements = [
                 $fileName               => $className,
                 '"{{filename}}"'        => var_export($name, true),
@@ -119,8 +119,8 @@ abstract class EnvironmentBase extends TwigEnvironment
 
             if ($this->isDebug()) {
                 $replacements['"{{source}}"'] = var_export($code, true);
-                $replacements['__internal_1'] = '__internal_' . sha1('1' . $path);
-                $replacements['__internal_2'] = '__internal_' . sha1('2' . $path);
+                $replacements['__internal_1'] = '__internal_'.sha1('1'.$path);
+                $replacements['__internal_2'] = '__internal_'.sha1('2'.$path);
             }
 
             return strtr(file_get_contents($templateFile), $replacements);
@@ -134,7 +134,7 @@ abstract class EnvironmentBase extends TwigEnvironment
     public function loadTemplateBase(string $cls, string $name, int $index = null)
     {
         if ($index !== null) {
-            $cls .= '___' . $index;
+            $cls .= '___'.$index;
         }
 
         $this->classNames[$name] = $cls;

@@ -4,16 +4,16 @@ namespace Pug;
 
 use ErrorException;
 use Exception;
+use Phug\Compiler\Event\NodeEvent;
+use Phug\Parser\Node\FilterNode;
+use Phug\Parser\Node\ImportNode;
+use Phug\Parser\Node\TextNode;
 use Pug\Symfony\Contracts\HelpersHandlerInterface;
 use Pug\Symfony\Contracts\InstallerInterface;
 use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
-use Phug\Compiler\Event\NodeEvent;
-use Phug\Parser\Node\FilterNode;
-use Phug\Parser\Node\ImportNode;
-use Phug\Parser\Node\TextNode;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -71,8 +71,8 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         $environment = $kernel->getEnvironment();
         $appDir = $kernel->getProjectDir();
         $rootDir = dirname($appDir);
-        $assetsDirectories = [$appDir . '/Resources/assets'];
-        $viewDirectories = [$rootDir . '/templates'];
+        $assetsDirectories = [$appDir.'/Resources/assets'];
+        $viewDirectories = [$rootDir.'/templates'];
 
         if ($container->has('twig') &&
             (/** @var Environment $twig */ $twig = $container->get('twig')) &&
@@ -83,15 +83,15 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $viewDirectories[] = $paths[0];
         }
 
-        $srcDir = $rootDir . '/src';
-        $webDir = $rootDir . '/public';
+        $srcDir = $rootDir.'/src';
+        $webDir = $rootDir.'/public';
         $userOptions = ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: [];
         $baseDir = isset($userOptions['baseDir'])
             ? $userOptions['baseDir']
             : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
         $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
         $this->defaultTemplateDirectory = $baseDir;
-        $fallbackDirectory = $rootDir . '/app/Resources/views';
+        $fallbackDirectory = $rootDir.'/app/Resources/views';
 
         if (file_exists($fallbackDirectory)) {
             if (!file_exists($baseDir)) {
@@ -157,7 +157,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $location = $node->getSourceLocation();
             $line = $location->getLine() - $this->getPreRenderLinesCount();
             $template = var_export($location->getPath(), true);
-            $code->setValue('$this->loadTemplate(' . $path . ', ' . $template . ', ' . $line . ')->display($context);');
+            $code->setValue('$this->loadTemplate('.$path.', '.$template.', '.$line.')->display($context);');
             $filter = new FilterNode($node->getToken());
             $filter->setName('php');
             $filter->appendChild($code);
@@ -173,19 +173,19 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
 
         if (file_exists($srcDir)) {
             foreach (scandir($srcDir) as $directory) {
-                if ($directory === '.' || $directory === '..' || is_file($srcDir . '/' . $directory)) {
+                if ($directory === '.' || $directory === '..' || is_file($srcDir.'/'.$directory)) {
                     continue;
                 }
 
-                if (is_dir($viewDirectory = $srcDir . '/' . $directory . '/Resources/views')) {
+                if (is_dir($viewDirectory = $srcDir.'/'.$directory.'/Resources/views')) {
                     if (is_null($baseDir)) {
                         $baseDir = $viewDirectory;
                     }
 
-                    $viewDirectories[] = $srcDir . '/' . $directory . '/Resources/views';
+                    $viewDirectories[] = $srcDir.'/'.$directory.'/Resources/views';
                 }
 
-                $assetsDirectories[] = $srcDir . '/' . $directory . '/Resources/assets';
+                $assetsDirectories[] = $srcDir.'/'.$directory.'/Resources/assets';
             }
         }
 
@@ -200,18 +200,18 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $name = $parts[2];
 
             if (!empty($parts[1])) {
-                $name = $parts[1] . DIRECTORY_SEPARATOR . $name;
+                $name = $parts[1].DIRECTORY_SEPARATOR.$name;
             }
 
             if ($bundle = $this->kernel->getBundle($parts[0])) {
-                return $bundle->getPath() .
-                    DIRECTORY_SEPARATOR . 'Resources' .
-                    DIRECTORY_SEPARATOR . 'views' .
-                    DIRECTORY_SEPARATOR . $name;
+                return $bundle->getPath().
+                    DIRECTORY_SEPARATOR.'Resources'.
+                    DIRECTORY_SEPARATOR.'views'.
+                    DIRECTORY_SEPARATOR.$name;
             }
         }
 
-        return ($directory ? $directory . DIRECTORY_SEPARATOR : '') . $name;
+        return ($directory ? $directory.DIRECTORY_SEPARATOR : '').$name;
     }
 
     protected function getPugCodeLayoutStructure($pugCode)
@@ -224,7 +224,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
 
         $parts[1] .= "\n";
         $parts[1] = explode("\n", $parts[1], 2);
-        $parts[0] .= 'extend' . $parts[1][0] . "\n";
+        $parts[0] .= 'extend'.$parts[1][0]."\n";
         $parts[1] = substr($parts[1][1], 0, -1);
 
         return $parts;
@@ -293,7 +293,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function getCacheDir()
     {
-        return $this->kernel->getCacheDir() . DIRECTORY_SEPARATOR . 'pug';
+        return $this->kernel->getCacheDir().DIRECTORY_SEPARATOR.'pug';
     }
 
     /**
@@ -309,7 +309,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
     {
         foreach (['view', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
-                throw new ErrorException('The "' . $forbiddenKey . '" key is forbidden.');
+                throw new ErrorException('The "'.$forbiddenKey.'" key is forbidden.');
             }
         }
 
@@ -328,7 +328,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      * Render a template by name.
      *
      * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
-     * @param array $parameters
+     * @param array                                                           $parameters
      *
      * @throws ErrorException when a forbidden parameter key is used
      * @throws Exception      when the PHP code generated from the pug code throw an exception
@@ -371,7 +371,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
     public function exists($name)
     {
         foreach ($this->getOptionDefault('paths', []) as $directory) {
-            if (file_exists($directory . DIRECTORY_SEPARATOR . $name)) {
+            if (file_exists($directory.DIRECTORY_SEPARATOR.$name)) {
                 return true;
             }
         }
@@ -410,10 +410,10 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         $code .= ":php\n";
 
         foreach ($this->replacements as $name => $callable) {
-            $code .= "    if (!function_exists('$name')) {\n" .
-                "        function $name() {\n" .
-                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n" .
-                "        }\n" .
+            $code .= "    if (!function_exists('$name')) {\n".
+                "        function $name() {\n".
+                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n".
+                "        }\n".
                 "    }\n";
         }
     }

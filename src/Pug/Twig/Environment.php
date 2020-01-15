@@ -23,7 +23,7 @@ class Environment extends EnvironmentBase
     public function loadTemplate(string $cls, string $name, int $index = null): Template
     {
         if ($index !== null) {
-            $cls .= '___' . $index;
+            $cls .= '___'.$index;
         }
 
         $this->classNames[$name] = $cls;

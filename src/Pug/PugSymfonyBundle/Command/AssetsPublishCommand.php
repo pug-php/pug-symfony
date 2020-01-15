@@ -27,7 +27,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
     {
         if (!($pug instanceof Renderer)) {
             throw new InvalidArgumentException(
-                'Allowed pug engine are Pug\\Pug or Phug\\Renderer, ' . get_class($pug) . ' given.'
+                'Allowed pug engine are Pug\\Pug or Phug\\Renderer, '.get_class($pug).' given.'
             );
         }
 
@@ -54,12 +54,12 @@ class AssetsPublishCommand extends ContainerAwareCommand
         $symfonyEngine = isset($this->pugSymfonyEngine) ? $this->pugSymfonyEngine : $this->getContainer()->get('templating.engine.pug');
         [$directories, $success, $errors, $errorDetails] = $this->cacheTemplates($symfonyEngine->getEngine());
         $count = count($directories);
-        $output->writeln($count . ' ' . ($count === 1 ? 'directory' : 'directories') . ' scanned: ' . implode(', ', $directories) . '.');
-        $output->writeln($success . ' templates cached.');
-        $output->writeln($errors . ' templates failed to be cached.');
+        $output->writeln($count.' '.($count === 1 ? 'directory' : 'directories').' scanned: '.implode(', ', $directories).'.');
+        $output->writeln($success.' templates cached.');
+        $output->writeln($errors.' templates failed to be cached.');
 
         foreach ($errorDetails as $index => $detail) {
-            $output->writeln("\n" . ($index + 1) . ') ' . $detail['inputFile']);
+            $output->writeln("\n".($index + 1).') '.$detail['inputFile']);
             $output->writeln($detail['error']->getMessage());
             $output->writeln($detail['error']->getTraceAsString());
         }
