@@ -39,14 +39,14 @@ class AssetsPublishCommandTest extends AbstractTestCase
         $application->add($this->getNewAssetsPublishCommand());
 
         // Convert PHP style files to JS style
-        $customHelperFile = __DIR__ . '/../../../project/app/Resources/views/custom-helper.pug';
+        $customHelperFile = __DIR__.'/../../../project/app/Resources/views/custom-helper.pug';
         $customHelper = file_get_contents($customHelperFile);
         file_put_contents($customHelperFile, 'if view.custom
     u=view.custom.foo()
 else
     s Noop
 ');
-        $stylePhpFile = __DIR__ . '/../../../project/app/Resources/views/style-php.pug';
+        $stylePhpFile = __DIR__.'/../../../project/app/Resources/views/style-php.pug';
         $stylePhp = file_get_contents($stylePhpFile);
         file_put_contents($stylePhpFile, '.foo(style=\'background-position: 50% -402px; background-image: \' + css_url(\'assets/img/patterns/5.png\') + \';\')
 .foo(style={\'background-position\': "50% -402px", \'background-image\': css_url(\'assets/img/patterns/5.png\')})

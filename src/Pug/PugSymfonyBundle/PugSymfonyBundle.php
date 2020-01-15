@@ -2,9 +2,9 @@
 
 namespace Pug\PugSymfonyBundle;
 
-use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
 use Pug\PugSymfonyEngine;
+use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use ReflectionMethod;
 use Symfony\Component\Console\Application;
 use Symfony\Component\DependencyInjection\ContainerInterface;

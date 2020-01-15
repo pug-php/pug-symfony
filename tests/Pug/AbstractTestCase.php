@@ -13,9 +13,9 @@ abstract class AbstractTestCase extends KernelTestCase
     private static function getConfigFiles(): array
     {
         return [
-            __DIR__ . '/../project-s4/config/packages/framework.yaml',
-            __DIR__ . '/../project/app/config.yml',
-            __DIR__ . '/../project/app/config/config.yml',
+            __DIR__.'/../project-s4/config/packages/framework.yaml',
+            __DIR__.'/../project/app/config.yml',
+            __DIR__.'/../project/app/config/config.yml',
         ];
     }
 
@@ -29,7 +29,7 @@ abstract class AbstractTestCase extends KernelTestCase
     {
         foreach (['app', 'var'] as $directory) {
             try {
-                (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
+                (new Filesystem())->remove(__DIR__."/../project/$directory/cache");
             } catch (\Exception $e) {
                 // noop
             }

@@ -3,9 +3,9 @@
 namespace Pug\Symfony\Traits;
 
 use Closure;
+use Pug\Pug;
 use Pug\Symfony\Css;
 use Pug\Symfony\MixedLoader;
-use Pug\Pug;
 use Pug\Twig\Environment;
 use ReflectionException;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
@@ -143,14 +143,14 @@ trait HelpersHandler
         $callable = function () use ($twig, $name) {
             $variables = [];
             foreach (func_get_args() as $index => $argument) {
-                $variables['arg' . $index] = $argument;
+                $variables['arg'.$index] = $argument;
             }
 
             /* @var MixedLoader $loader */
             $loader = $twig->getLoader();
 
             $template = $loader->uniqueTemplate(
-                '{{' . $name . '(' . implode(', ', array_keys($variables)) . ')}}'
+                '{{'.$name.'('.implode(', ', array_keys($variables)).')}}'
             );
 
             if ($twig::MAJOR_VERSION >= 3) {
@@ -172,7 +172,7 @@ trait HelpersHandler
      *
      * @return Closure
      */
-    protected function getTwigCallable(\Twig\Environment$twig, TwigFunction $function, string $name)
+    protected function getTwigCallable(\Twig\Environment $twig, TwigFunction $function, string $name)
     {
         $callable = $function->getCallable();
 
@@ -255,8 +255,8 @@ trait HelpersHandler
     {
         foreach ($this->templatingHelpers as $helper) {
             if (
-                $services->has('templating.helper.' . $helper) &&
-                ($instance = $services->get('templating.helper.' . $helper, ContainerInterface::NULL_ON_INVALID_REFERENCE))
+                $services->has('templating.helper.'.$helper) &&
+                ($instance = $services->get('templating.helper.'.$helper, ContainerInterface::NULL_ON_INVALID_REFERENCE))
             ) {
                 $this->helpers[$helper] = $instance;
             }
@@ -273,7 +273,7 @@ trait HelpersHandler
             ? $services->get('router.request_context')
             : $services->get('router')->getContext();
 
-       return new HttpFoundationExtension(new UrlHelper($stack, $context));
+        return new HttpFoundationExtension(new UrlHelper($stack, $context));
     }
 
     protected function copySpecialHelpers(ContainerInterface $services)
@@ -286,7 +286,7 @@ trait HelpersHandler
     {
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
-            $name = strtolower(substr($name, 0, 1)) . substr($name, 1);
+            $name = strtolower(substr($name, 0, 1)).substr($name, 1);
             $this->helpers[$name] = $helper;
         }
     }

@@ -27,7 +27,7 @@ class PugTemplateTemplate extends Template
 
     public function getTemplateName()
     {
-        return "{{filename}}";
+        return '{{filename}}';
     }
 
     public function isTraitable()
@@ -42,6 +42,6 @@ class PugTemplateTemplate extends Template
 
     public function getSourceContext()
     {
-        return new Source("", "{{filename}}", "{{path}}");
+        return new Source('', '{{filename}}', '{{path}}');
     }
 }
