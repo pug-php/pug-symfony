@@ -3,7 +3,7 @@
 namespace Pug\Symfony\Traits;
 
 use Closure;
-use Pug\Pug;
+use Phug\Renderer;
 use Pug\Symfony\Css;
 use Pug\Symfony\MixedLoader;
 use Pug\Twig\Environment;
@@ -28,7 +28,7 @@ trait HelpersHandler
     use PrivatePropertyAccessor;
 
     /**
-     * @var Pug
+     * @var Renderer
      */
     protected $pug;
 
@@ -125,6 +125,16 @@ trait HelpersHandler
     public function offsetUnset($name)
     {
         unset($this->helpers[$name]);
+    }
+
+    /**
+     * Get the Pug engine.
+     *
+     * @return Renderer
+     */
+    public function getEngine(): Renderer
+    {
+        return $this->pug;
     }
 
     protected function getTemplatingHelper($name)

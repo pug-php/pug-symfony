@@ -277,16 +277,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
     }
 
     /**
-     * Get the Pug engine.
-     *
-     * @return Pug
-     */
-    public function getEngine(): Pug
-    {
-        return $this->pug;
-    }
-
-    /**
      * Get the Pug cache directory path.
      *
      * @return string
@@ -355,7 +345,9 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function renderString($code, array $parameters = [])
     {
-        return $this->pug->renderString(
+        $method = method_exists($this->pug, 'renderString') ? 'renderString' : 'render';
+
+        return $this->pug->$method(
             $code,
             $this->getParameters($parameters)
         );

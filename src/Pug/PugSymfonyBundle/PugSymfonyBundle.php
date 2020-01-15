@@ -14,7 +14,15 @@ class PugSymfonyBundle extends Bundle
 {
     use PrivatePropertyAccessor;
 
-    protected $container;
+    /**
+     * @var PugSymfonyEngine
+     */
+    protected $pugSymfonyEngine;
+
+    public function __construct(PugSymfonyEngine $pugSymfonyEngine)
+    {
+        $this->pugSymfonyEngine = $pugSymfonyEngine;
+    }
 
     public function setContainer(ContainerInterface $container = null)
     {

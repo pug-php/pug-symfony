@@ -196,14 +196,6 @@ class InvalidExceptionOptionsPug extends Pug
     }
 }
 
-class InvalidExceptionOptionsPugSymfony extends PugSymfonyEngine
-{
-    public function getEngineClassName()
-    {
-        return '\Pug\Tests\InvalidExceptionOptionsPug';
-    }
-}
-
 class PugSymfonyEngineTest extends AbstractTestCase
 {
     /**
@@ -948,13 +940,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
             'Sorry, config/bundles.php has a format we can\'t handle automatically.',
         ], $io->getLastOutput());
         $fs->remove($installedFile);
-    }
-
-    public function testOptionDefaultingOnException()
-    {
-        $engine = new InvalidExceptionOptionsPugSymfony(self::$kernel);
-
-        self::assertSame('my default', $engine->getOptionDefault('foobar', 'my default'));
     }
 
     public function testMixedLoader()

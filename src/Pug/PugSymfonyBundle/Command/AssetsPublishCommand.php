@@ -2,20 +2,23 @@
 
 namespace Pug\PugSymfonyBundle\Command;
 
-use InvalidArgumentException;
 use Phug\Renderer;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Pug\PugSymfonyEngine;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
-if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Command\\ContainerAwareCommand')) {
-    // @codeCoverageIgnoreStart
-    class_alias('Jade\\JadeSymfonyBundle\\Command\\PugAwareCommand', 'Symfony\\Bundle\\FrameworkBundle\\Command\\ContainerAwareCommand');
-    // @codeCoverageIgnoreEnd
-}
-
-class AssetsPublishCommand extends ContainerAwareCommand
+class AssetsPublishCommand extends Command
 {
+    protected $pugSymfonyEngine;
+
+    public function __construct(PugSymfonyEngine $pugSymfonyEngine)
+    {
+        $this->pugSymfonyEngine = $pugSymfonyEngine;
+        parent::__construct(null);
+    }
+
     protected function configure()
     {
         $this
@@ -23,14 +26,8 @@ class AssetsPublishCommand extends ContainerAwareCommand
             ->setDescription('Export your assets in the web directory.');
     }
 
-    protected function cacheTemplates($pug)
+    protected function cacheTemplates(Renderer $pug)
     {
-        if (!($pug instanceof Renderer)) {
-            throw new InvalidArgumentException(
-                'Allowed pug engine are Pug\\Pug or Phug\\Renderer, '.get_class($pug).' given.'
-            );
-        }
-
         $success = 0;
         $errors = 0;
         $errorDetails = [];
@@ -49,10 +46,15 @@ class AssetsPublishCommand extends ContainerAwareCommand
         return [$directories, $success, $errors, $errorDetails];
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function outputError(OutputInterface $output, Throwable $error): void
     {
-        $symfonyEngine = isset($this->pugSymfonyEngine) ? $this->pugSymfonyEngine : $this->getContainer()->get('templating.engine.pug');
-        [$directories, $success, $errors, $errorDetails] = $this->cacheTemplates($symfonyEngine->getEngine());
+        $output->writeln($error->getMessage());
+        $output->writeln($error->getTraceAsString());
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        [$directories, $success, $errors, $errorDetails] = $this->cacheTemplates($this->pugSymfonyEngine->getEngine());
         $count = count($directories);
         $output->writeln($count.' '.($count === 1 ? 'directory' : 'directories').' scanned: '.implode(', ', $directories).'.');
         $output->writeln($success.' templates cached.');
@@ -60,8 +62,7 @@ class AssetsPublishCommand extends ContainerAwareCommand
 
         foreach ($errorDetails as $index => $detail) {
             $output->writeln("\n".($index + 1).') '.$detail['inputFile']);
-            $output->writeln($detail['error']->getMessage());
-            $output->writeln($detail['error']->getTraceAsString());
+            $this->outputError($output, $detail['error']);
         }
 
         return 0;
