@@ -20,6 +20,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
+use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHandlerInterface
@@ -68,13 +69,13 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         $container = $kernel->getContainer();
         $this->container = $container;
         $environment = $kernel->getEnvironment();
-        $appDir = $this->getAppDirectory($kernel);
+        $appDir = $kernel->getProjectDir();
         $rootDir = dirname($appDir);
         $assetsDirectories = [$appDir . '/Resources/assets'];
-        $viewDirectories = [$this->isAtLeastSymfony5() ? $rootDir . '/templates' : $appDir . '/Resources/views'];
+        $viewDirectories = [$rootDir . '/templates'];
 
         if ($container->has('twig') &&
-            ($twig = $container->get('twig')) &&
+            (/** @var Environment $twig */ $twig = $container->get('twig')) &&
             ($loader = $twig->getLoader()) instanceof FilesystemLoader &&
             is_array($paths = $loader->getPaths()) &&
             isset($paths[0])
@@ -83,7 +84,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         }
 
         $srcDir = $rootDir . '/src';
-        $webDir = $rootDir . '/web';
+        $webDir = $rootDir . '/public';
         $userOptions = ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: [];
         $baseDir = isset($userOptions['baseDir'])
             ? $userOptions['baseDir']
@@ -105,7 +106,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $viewDirectories = array_merge($viewDirectories, $userOptions['paths'] ?: []);
         }
 
-        $pugClassName = $this->getEngineClassName();
         $debug = substr($environment, 0, 3) === 'dev';
         $options = array_merge([
             'debug'           => $debug,
@@ -118,17 +118,14 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             'outputDirectory' => $webDir,
             'preRender'       => [$this, 'preRender'],
             'prettyprint'     => $kernel->isDebug(),
+            'on_node'         => [$this, 'handleTwigInclude'],
         ], $userOptions);
 
         $options['paths'] = array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
             return $path !== $baseDir;
         });
 
-        if ($this->isAtLeastSymfony5()) {
-            $options['on_node'] = [$this, 'handleTwigInclude'];
-        }
-
-        $this->pug = new $pugClassName($options);
+        $this->pug = new Pug($options);
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
         $this->assets = new Assets($this->pug);
 
@@ -166,32 +163,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $filter->appendChild($code);
             $nodeEvent->setNode($filter);
         }
-    }
-
-    protected function getAppDirectory(KernelInterface $kernel)
-    {
-        if (method_exists($kernel, 'getProjectDir') &&
-            ($directory = $kernel->getProjectDir())
-        ) {
-            if ($this->isAtLeastSymfony5()) {
-                return "$directory/src";
-            }
-
-            if (file_exists($directory = "$directory/app")) {
-                return realpath($directory);
-            }
-        }
-
-        /* @var Kernel $kernel */
-        return $kernel->getRootDir(false); // @codeCoverageIgnore
-    }
-
-    protected function getEngineClassName()
-    {
-        $engineName = class_exists('\\Pug\\Pug') ? 'Pug' : 'Jade';
-        include_once __DIR__ . '/Symfony/' . $engineName . 'Engine.php';
-
-        return '\\Pug\\Symfony\\' . $engineName . 'Engine';
     }
 
     protected function crawlDirectories($srcDir, &$assetsDirectories, &$viewDirectories)

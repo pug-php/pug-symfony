@@ -2,10 +2,12 @@
 
 namespace Pug\Symfony\Traits;
 
+use Closure;
 use Pug\Symfony\Css;
 use Pug\Symfony\MixedLoader;
 use Pug\Pug;
 use Pug\Twig\Environment;
+use ReflectionException;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\Asset\Package;
@@ -14,8 +16,9 @@ use Symfony\Component\Asset\VersionStrategy\EmptyVersionStrategy;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
-use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\RequestContext;
+use Twig\Extension\ExtensionInterface;
+use Twig\TwigFunction;
 
 /**
  * Trait HelpersHandler.
@@ -62,15 +65,6 @@ trait HelpersHandler
     ];
 
     protected static $globalHelpers = [];
-
-    /**
-     * Version of Symfony to force pug compatibility.
-     *
-     * Default to Symfony\Component\HttpKernel\Kernel::VERSION
-     *
-     * @var string|int
-     */
-    protected $symfonyLevel;
 
     /**
      * Get a global helper by name.
@@ -139,10 +133,10 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig_Environment $twig
+     * @param \Twig\Environment $twig
      * @param string            $name
      *
-     * @return \Closure
+     * @return Closure
      */
     protected function compileTwigCallable($twig, $name)
     {
@@ -170,17 +164,16 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig_Environment $twig
+     * @param \Twig\Environment $twig
      * @param callable          $function
      * @param string            $name
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      *
-     * @return \Closure
+     * @return Closure
      */
-    protected function getTwigCallable($twig, $function, $name)
+    protected function getTwigCallable(\Twig\Environment$twig, TwigFunction $function, string $name)
     {
-        /* @var \Twig_Function $function */
         $callable = $function->getCallable();
 
         if (!$callable ||
@@ -195,13 +188,8 @@ trait HelpersHandler
         return $callable;
     }
 
-    /**
-     * @param \Twig_Environment $twig
-     * @param callable          $function
-     */
-    protected function copyTwigFunction($twig, $function)
+    protected function copyTwigFunction(\Twig\Environment $twig, TwigFunction $function): void
     {
-        /* @var \Twig_Function $function */
         $name = $function->getName();
 
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
@@ -220,9 +208,9 @@ trait HelpersHandler
     {
         $twig = $container->has('twig') ? $container->get('twig') : null;
 
-        $twig = ($twig instanceof \Twig_Environment || $twig instanceof \Twig\Environment) ? $twig : null;
+        $twig = ($twig instanceof \Twig\Environment) ? $twig : null;
 
-        if ($twig && $this->isAtLeastSymfony5()) {
+        if ($twig) {
             $twig = Environment::fromTwigEnvironment($twig, $this);
 
             $services = static::getPrivateProperty($container, 'services', $propertyAccessor);
@@ -239,7 +227,7 @@ trait HelpersHandler
         $twig = $this->getTwig($services);
 
         if ($twig) {
-            /* @var \Twig_Environment $twig */
+            /* @var \Twig\Environment $twig */
             $twig = clone $twig;
             $twig->env = $twig;
             $loader = new MixedLoader($twig->getLoader());
@@ -255,7 +243,7 @@ trait HelpersHandler
             }
 
             foreach ($twig->getExtensions() as $extension) {
-                /* @var \Twig_Extension $extension */
+                /* @var ExtensionInterface $extension */
                 foreach ($extension->getFunctions() as $function) {
                     $this->copyTwigFunction($twig, $function);
                 }
@@ -285,15 +273,7 @@ trait HelpersHandler
             ? $services->get('router.request_context')
             : $services->get('router')->getContext();
 
-        // @codeCoverageIgnoreStart
-
-        if ($this->isAtLeastSymfony5()) {
-            return new HttpFoundationExtension(new UrlHelper($stack, $context));
-        }
-
-        return new HttpFoundationExtension($stack, $context);
-
-        // @codeCoverageIgnoreEnd
+       return new HttpFoundationExtension(new UrlHelper($stack, $context));
     }
 
     protected function copySpecialHelpers(ContainerInterface $services)
@@ -352,27 +332,5 @@ trait HelpersHandler
         $this->copyUserHelpers($helpers);
         $this->storeReplacements();
         $this->globalizeHelpers();
-    }
-
-    protected function getSymfonyVersion()
-    {
-        return $this->symfonyLevel ?: (defined('Symfony\Component\HttpKernel\Kernel::VERSION') ? Kernel::VERSION : 0);
-    }
-
-    protected function isAtLeastSymfony5()
-    {
-        return version_compare($this->getSymfonyVersion(), '5.0.0-dev', '>=');
-    }
-
-    /**
-     * Set version of Symfony to force pug compatibility.
-     *
-     * Use Symfony\Component\HttpKernel\Kernel::VERSION if null.
-     *
-     * @param int|string|null $symfonyLevel
-     */
-    public function setSymfonyLevel($symfonyLevel)
-    {
-        $this->symfonyLevel = $symfonyLevel;
     }
 }
