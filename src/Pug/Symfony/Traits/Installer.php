@@ -343,6 +343,9 @@ trait Installer
             return true;
         }
 
+        var_dump($dir, is_string($dir) && is_dir($dir), $baseDirectory, realpath($baseDirectory));
+        exit;
+
         $dir = is_string($dir) && is_dir($dir)
             ? $dir
             : $baseDirectory.'/../../..';
