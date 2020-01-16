@@ -331,6 +331,10 @@ trait Installer
 
     public static function install($event, $dir = null)
     {
+        if (!is_string($dir)) {
+            $dir = null;
+        }
+
         /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
         $baseDirectory = __DIR__.'/../../../pug-symfony';
@@ -339,8 +343,6 @@ trait Installer
             return true;
         }
 
-        var_dump($dir, $baseDirectory, realpath($baseDirectory));
-        exit;
         $dir = is_string($dir) && is_dir($dir)
             ? $dir
             : $baseDirectory.'/../../..';
