@@ -6,6 +6,8 @@
 
 Pug template engine for Symfony
 
+This is the documentation for the ongoing version 3.0. [Click here to load the documentation for 2.8](https://github.com/pug-php/pug-symfony/tree/2.8.0#pug-symfony)
+
 ## Install
 
 In the root directory of your Symfony project, open a terminal and enter.
