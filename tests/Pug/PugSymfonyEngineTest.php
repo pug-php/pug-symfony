@@ -2,6 +2,7 @@
 
 namespace Pug\Tests;
 
+use App\Kernel;
 use AppKernel;
 use Closure;
 use Composer\Composer;
@@ -24,7 +25,6 @@ use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
@@ -67,7 +67,7 @@ class LogoutUrlGenerator extends BaseLogoutUrlGenerator
     }
 }
 
-class TestKernel extends AppKernel
+class TestKernel extends Kernel
 {
     /**
      * @var Closure
@@ -83,10 +83,6 @@ class TestKernel extends AppKernel
         $this->rootDir = $this->getRootDir();
     }
 
-    public function getProjectDir()
-    {
-    }
-
     public function getLogDir()
     {
         return sys_get_temp_dir().'/pug-symfony-log';
@@ -94,7 +90,7 @@ class TestKernel extends AppKernel
 
     public function getRootDir()
     {
-        return realpath(__DIR__.'/../project/app');
+        return realpath(__DIR__.'/../project-s5');
     }
 
     /**
@@ -105,7 +101,7 @@ class TestKernel extends AppKernel
     public function registerContainerConfiguration(LoaderInterface $loader)
     {
         parent::registerContainerConfiguration($loader);
-        $loader->load(__DIR__.'/../project/app/config/config.yml');
+        $loader->load(__DIR__.'/../project-s5/config/packages/framework.yaml');
         $loader->load($this->containerConfigurator);
     }
 
@@ -259,12 +255,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testPreRenderCsrfToken()
     {
-        if ($this->isAtLeastSymfony5()) {
-            self::markTestSkipped('CSRF token function not available with Symfony 5.0.');
-
-            return;
-        }
-
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
@@ -282,17 +272,15 @@ class PugSymfonyEngineTest extends AbstractTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertRegExp('/^\\\\?Pug\\\\Symfony\\\\PugEngine$/', get_class($pugSymfony->getEngine()));
+        self::assertInstanceOf(Pug::class, $pugSymfony->getEngine());
     }
 
     public function testFallbackAppDir()
     {
-        $this->markTestSkipped('The baseDir option is now aligned on default template directory.');
-
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $baseDir = realpath($pugSymfony->getOptionDefault('baseDir'));
-        $appView = __DIR__.'/../project/app/Resources/views';
-        $srcView = __DIR__.'/../project/src/TestBundle/Resources/views';
+        $appView = __DIR__.'/../project-s5/templates';
+        $srcView = __DIR__.'/../project-s5/src/TestBundle/Resources/views';
 
         self::assertTrue($baseDir !== false);
         self::assertSame(realpath($srcView), $baseDir);
@@ -312,12 +300,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testSecurityToken()
     {
-        if (version_compare($this->getSymfonyVersion(), '3.3', '<') || $this->isAtLeastSymfony5()) {
-            self::markTestSkipped('security.token_storage compatible since 3.3 and until 5.0.');
-
-            return;
-        }
-
         $tokenStorage = new TokenStorage();
         $container = self::$kernel->getContainer();
         $reflectionProperty = new ReflectionProperty($container, 'services');
@@ -366,12 +348,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testFormHelpers()
     {
-        if (version_compare($this->getSymfonyVersion(), '4.4', '>=')) {
-            self::markTestSkipped('Test not compatible with Symfony 4.4+.');
-
-            return;
-        }
-
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $controller = new TestController();
         $controller->setContainer(self::$kernel->getContainer());
@@ -590,356 +566,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $html = preg_replace('/<div( class="[^"]+")([^>]+)>/', '<div$2$1>', $html);
 
         self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
-    }
-
-    /**
-     * @group install
-     */
-    public function testInstall()
-    {
-        if ($this->isAtLeastSymfony5()) {
-            $this->markTestSkipped('Symfony < 5 test');
-        }
-
-        include_once __DIR__.'/CaptureIO.php';
-        $io = new CaptureIO();
-        $composer = new Composer();
-        $installedFile = __DIR__.'/../../installed';
-        $fs = new Filesystem();
-        touch($installedFile);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__.'/../project'));
-
-        $fs->remove($installedFile);
-        $io->setInteractive(true);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__.'/../project'));
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        $io->setPermissive(true);
-        $io->reset();
-        $dir = sys_get_temp_dir().'/pug-temp';
-        $fs->remove($dir);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Not inside a composer vendor directory, setup skipped.',
-        ], $io->getLastOutput());
-
-        $io->reset();
-        $fs->mkdir($dir);
-        $fs->touch($dir.'/composer.json');
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'framework entry not found in config.yml.',
-            'Sorry, AppKernel.php has a format we can\'t handle automatically.',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileNotExists($installedFile);
-
-        foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
-            $fs->copy(__DIR__.'/../project'.$file, $dir.$file);
-        }
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'templating.engine.pug setting in config.yml already exists.',
-            'Pug engine already exist in framework.templating.engines in config.yml.',
-            'The bundle already exists in AppKernel.php',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir.'/app/config/config.yml', str_replace(
-            ['pug', 'services:'],
-            ['x', 'x:'],
-            file_get_contents($dir.'/app/config/config.yml')
-        ));
-        file_put_contents($dir.'/app/AppKernel.php', str_replace(
-            'Pug',
-            'X',
-            file_get_contents($dir.'/app/AppKernel.php')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Engine service added in config.yml',
-            'Engine added to framework.templating.engines in config.yml',
-            'Bundle added to AppKernel.php',
-        ], $io->getLastOutput());
-        self::assertContains(
-            'Pug\PugSymfonyBundle\PugSymfonyBundle()',
-            file_get_contents($dir.'/app/AppKernel.php')
-        );
-        self::assertContains(
-            'templating.engine.pug',
-            file_get_contents($dir.'/app/config/config.yml')
-        );
-        clearstatcache();
-        self::assertFileExists($installedFile);
-    }
-
-    /**
-     * @group install
-     */
-    public function testInstallPartialStates()
-    {
-        if ($this->isAtLeastSymfony5()) {
-            $this->markTestSkipped('Symfony < 5 test');
-        }
-
-        include_once __DIR__.'/CaptureIO.php';
-        $io = new CaptureIO();
-        $composer = new Composer();
-        $installedFile = __DIR__.'/../../installed';
-        $io->setPermissive(true);
-        $io->setInteractive(true);
-        $io->reset();
-        $dir = sys_get_temp_dir().'/pug-temp';
-        $fs = new Filesystem();
-        $fs->mkdir($dir);
-        $fs->touch($dir.'/composer.json');
-        $fs->remove($installedFile);
-        clearstatcache();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        $fs->remove($installedFile);
-
-        file_put_contents($dir.'/app/config/config.yml', implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    engines: ["twig","php"]',
-            '    bar3: biz',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-            'bar: biz',
-        ]));
-        PugSymfonyEngine::install(new Event('install', $composer, $io), $dir);
-        self::assertSame(implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'services:',
-            '    templating.engine.pug:',
-            '        public: true',
-            '        class: Pug\PugSymfonyEngine',
-            '        arguments: ["@kernel"]',
-            '',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    engines: ["pug","twig","php"]',
-            '    bar3: biz',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-            'bar: biz',
-        ]), file_get_contents($dir.'/app/config/config.yml'));
-        self::assertFileExists($installedFile);
-        $fs->remove($installedFile);
-
-        file_put_contents($dir.'/app/config/config.yml', implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    bar3: biz',
-            'bar:',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-        ]));
-        PugSymfonyEngine::install(new Event('install', $composer, $io), $dir);
-        self::assertSame(implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'services:',
-            '    templating.engine.pug:',
-            '        public: true',
-            '        class: Pug\PugSymfonyEngine',
-            '        arguments: ["@kernel"]',
-            '',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    bar3: biz',
-            'bar:',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-        ]), file_get_contents($dir.'/app/config/config.yml'));
-        self::assertFileNotExists($installedFile);
-    }
-
-    /**
-     * @group install
-     */
-    public function testInstallSymfony4()
-    {
-        if ($this->isAtLeastSymfony5()) {
-            $this->markTestSkipped('Symfony < 5 test');
-        }
-
-        include_once __DIR__.'/CaptureIO.php';
-        $io = new CaptureIO();
-        $composer = new Composer();
-        $installedFile = __DIR__.'/../../installed';
-        $fs = new Filesystem();
-        $fs->touch($installedFile);
-        $version = static::isAtLeastSymfony5() ? 5 : 4;
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__.'/../project-s'.$version));
-
-        $fs->remove($installedFile);
-        $io->setInteractive(true);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__.'/../project-s'.$version));
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        $io->setPermissive(true);
-        $io->reset();
-        $dir = sys_get_temp_dir().'/pug-temp';
-        $fs->remove($dir);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Not inside a composer vendor directory, setup skipped.',
-        ], $io->getLastOutput());
-
-        $io->reset();
-        $fs->mkdir($dir);
-        $fs->touch($dir.'/composer.json');
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'framework entry not found in config.yml.',
-            'Sorry, AppKernel.php has a format we can\'t handle automatically.',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileNotExists($installedFile);
-
-        foreach (['/config/services.yaml', '/config/packages/framework.yaml', '/config/bundles.php'] as $file) {
-            $fs->copy(__DIR__.'/../project-s'.$version.$file, $dir.$file);
-        }
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'templating.engine.pug setting in config/packages/framework.yaml already exists.',
-            'templating.engine.pug setting in config/services.yaml already exists.',
-            'The bundle already exists in config/bundles.php',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir.'/config/services.yaml', str_replace(
-            'pug',
-            'x',
-            file_get_contents($dir.'/config/services.yaml')
-        ));
-        file_put_contents($dir.'/config/packages/framework.yaml', str_replace(
-            ['pug', 'templating'],
-            ['X', 'foo'],
-            file_get_contents($dir.'/config/packages/framework.yaml')
-        ));
-        file_put_contents($dir.'/config/bundles.php', str_replace(
-            'Pug',
-            'X',
-            file_get_contents($dir.'/config/bundles.php')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Engine service added in config/packages/framework.yaml',
-            'Engine service added in config/services.yaml',
-            'Bundle added to config/bundles.php',
-        ], $io->getLastOutput());
-        self::assertContains(
-            'Pug\PugSymfonyBundle\PugSymfonyBundle',
-            file_get_contents($dir.'/config/bundles.php')
-        );
-        self::assertContains(
-            'templating.engine.pug',
-            file_get_contents($dir.'/config/services.yaml')
-        );
-        self::assertContains(
-            "'pug'",
-            file_get_contents($dir.'/config/packages/framework.yaml')
-        );
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir.'/config/packages/framework.yaml', str_replace(
-            'pug',
-            'X',
-            file_get_contents($dir.'/config/packages/framework.yaml')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir.'/config/packages/framework.yaml', preg_replace(
-            '/^(\s+)engines\s*:\s*\[[^\]]+]/m',
-            "\$1engines:\n\$1    - twig",
-            file_get_contents($dir.'/config/packages/framework.yaml')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir.'/config/services.yaml', str_replace(
-            ['services', 'pug'],
-            ['x', 'x'],
-            file_get_contents($dir.'/config/services.yaml')
-        ));
-        file_put_contents($dir.'/config/packages/framework.yaml', str_replace(
-            ['pug', 'twig', 'framework'],
-            ['x', 'x', 'x'],
-            file_get_contents($dir.'/config/packages/framework.yaml')
-        ));
-        file_put_contents($dir.'/config/bundles.php', preg_replace(
-            '/\[\s*\n\s*/',
-            '[',
-            file_get_contents($dir.'/config/bundles.php')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'framework entry not found in config/packages/framework.yaml.',
-            'services entry not found in config/services.yaml.',
-            'Sorry, config/bundles.php has a format we can\'t handle automatically.',
-        ], $io->getLastOutput());
-        $fs->remove($installedFile);
     }
 
     public function testMixedLoader()

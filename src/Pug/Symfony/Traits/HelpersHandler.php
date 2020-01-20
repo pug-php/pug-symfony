@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Routing\RequestContext;
+use Twig\Environment as TwigEnvironment;
 use Twig\Extension\ExtensionInterface;
 use Twig\TwigFunction;
 
@@ -143,8 +144,8 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig\Environment $twig
-     * @param string            $name
+     * @param TwigEnvironment $twig
+     * @param string          $name
      *
      * @return Closure
      */
@@ -174,15 +175,15 @@ trait HelpersHandler
     }
 
     /**
-     * @param \Twig\Environment $twig
-     * @param callable          $function
-     * @param string            $name
+     * @param TwigEnvironment $twig
+     * @param callable        $function
+     * @param string          $name
      *
      * @throws ReflectionException
      *
      * @return Closure
      */
-    protected function getTwigCallable(\Twig\Environment $twig, TwigFunction $function, string $name)
+    protected function getTwigCallable(TwigEnvironment $twig, TwigFunction $function, string $name)
     {
         $callable = $function->getCallable();
 
@@ -198,7 +199,7 @@ trait HelpersHandler
         return $callable;
     }
 
-    protected function copyTwigFunction(\Twig\Environment $twig, TwigFunction $function): void
+    protected function copyTwigFunction(TwigEnvironment $twig, TwigFunction $function): void
     {
         $name = $function->getName();
 
@@ -218,7 +219,7 @@ trait HelpersHandler
     {
         $twig = $container->has('twig') ? $container->get('twig') : null;
 
-        $twig = ($twig instanceof \Twig\Environment) ? $twig : null;
+        $twig = ($twig instanceof TwigEnvironment) ? $twig : null;
 
         if ($twig) {
             $twig = Environment::fromTwigEnvironment($twig, $this);
@@ -237,7 +238,7 @@ trait HelpersHandler
         $twig = $this->getTwig($services);
 
         if ($twig) {
-            /* @var \Twig\Environment $twig */
+            /* @var TwigEnvironment $twig */
             $twig = clone $twig;
             $twig->env = $twig;
             $loader = new MixedLoader($twig->getLoader());

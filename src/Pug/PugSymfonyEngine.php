@@ -147,7 +147,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
     }
 
-    public function handleTwigInclude(NodeEvent $nodeEvent)
+    public function handleTwigInclude(NodeEvent $nodeEvent): void
     {
         $node = $nodeEvent->getNode();
 
@@ -165,7 +165,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         }
     }
 
-    protected function crawlDirectories($srcDir, &$assetsDirectories, &$viewDirectories)
+    protected function crawlDirectories(string $srcDir, array &$assetsDirectories, array &$viewDirectories): ?string
     {
         $baseDir = isset($viewDirectories[0]) && file_exists($viewDirectories[0])
             ? $viewDirectories[0]
@@ -192,7 +192,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         return $baseDir ?: $this->defaultTemplateDirectory;
     }
 
-    protected function getFileFromName($name, $directory = null)
+    protected function getFileFromName(string $name, string $directory = null): string
     {
         $parts = explode(':', strval($name));
 
@@ -214,7 +214,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         return ($directory ? $directory.DIRECTORY_SEPARATOR : '').$name;
     }
 
-    protected function getPugCodeLayoutStructure($pugCode)
+    protected function getPugCodeLayoutStructure(string $pugCode): array
     {
         $parts = preg_split('/^extend(?=s?\s)/m', $pugCode, 2);
 
@@ -241,7 +241,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return $this
      */
-    public function share($variables, $value = null)
+    public function share($variables, $value = null): PugSymfonyEngine
     {
         $this->pug->share($variables, $value);
 
@@ -255,7 +255,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return string
      */
-    public function preRender(string $pugCode)
+    public function preRender(string $pugCode): string
     {
         $parts = $this->getPugCodeLayoutStructure($pugCode);
 
@@ -268,8 +268,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
 
     /**
      * Get number of lines occupied by pre-render code.
-     *
-     * @return int
      */
     public function getPreRenderLinesCount(): int
     {
@@ -278,12 +276,26 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
 
     /**
      * Get the Pug cache directory path.
-     *
-     * @return string
      */
-    public function getCacheDir()
+    public function getCacheDir(): string
     {
         return $this->kernel->getCacheDir().DIRECTORY_SEPARATOR.'pug';
+    }
+
+    /**
+     * Return an array of the global variables all views receive.
+     *
+     * @return array
+     */
+    public function getGlobalVariables(): array
+    {
+        return [
+            $this->getOptionDefault('shared_variables'),
+            [
+                'view' => $this,
+                'app' => $this->kernel,
+            ],
+        ];
     }
 
     /**
@@ -295,21 +307,19 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return array input parameters with global parameters
      */
-    public function getParameters(array $parameters = [])
+    public function getParameters(array $parameters = []): array
     {
-        foreach (['view', 'this'] as $forbiddenKey) {
+        foreach (['view', 'this', 'app'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $parameters)) {
                 throw new ErrorException('The "'.$forbiddenKey.'" key is forbidden.');
             }
         }
 
-        $sharedVariables = $this->getOptionDefault('shared_variables');
-
-        if ($sharedVariables) {
-            $parameters = array_merge($sharedVariables, $parameters);
+        foreach ($this->getGlobalVariables() as $sharedVariables) {
+            if ($sharedVariables) {
+                $parameters = array_merge($sharedVariables, $parameters);
+            }
         }
-
-        $parameters['view'] = $this;
 
         return $parameters;
     }
@@ -325,7 +335,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return string
      */
-    public function render($name, array $parameters = [])
+    public function render($name, array $parameters = []): string
     {
         return $this->pug->renderFile(
             $this->getFileFromName($name),
@@ -343,7 +353,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return string
      */
-    public function renderString($code, array $parameters = [])
+    public function renderString($code, array $parameters = []): string
     {
         $method = method_exists($this->pug, 'renderString') ? 'renderString' : 'render';
 
@@ -360,7 +370,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return bool
      */
-    public function exists($name)
+    public function exists($name): bool
     {
         foreach ($this->getOptionDefault('paths', []) as $directory) {
             if (file_exists($directory.DIRECTORY_SEPARATOR.$name)) {
@@ -378,7 +388,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return bool
      */
-    public function supports($name)
+    public function supports($name): bool
     {
         foreach ($this->pug->getOption('extensions') as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
@@ -389,14 +399,14 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         return false;
     }
 
-    protected static function extractUniquePaths($paths)
+    protected static function extractUniquePaths(array $paths): array
     {
         return array_unique(array_map(function ($path) {
             return realpath($path) ?: $path;
         }, $paths));
     }
 
-    private function addPhpFunctions(&$code)
+    private function addPhpFunctions(string &$code): void
     {
         $className = get_class($this);
         $code .= ":php\n";
