@@ -241,7 +241,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      *
      * @return $this
      */
-    public function share($variables, $value = null): PugSymfonyEngine
+    public function share($variables, $value = null): self
     {
         $this->pug->share($variables, $value);
 
@@ -293,7 +293,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $this->getOptionDefault('shared_variables'),
             [
                 'view' => $this,
-                'app' => $this->kernel,
+                'app'  => $this->kernel,
             ],
         ];
     }

@@ -4,7 +4,6 @@ namespace Pug\Tests;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpKernel\Kernel;
 
 abstract class AbstractTestCase extends KernelTestCase
 {

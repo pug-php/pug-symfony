@@ -4,7 +4,6 @@ namespace Pug\Symfony\Traits;
 
 use Composer\IO\IOInterface;
 use Pug\Symfony\Contracts\InstallerInterface;
-use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * Trait Installer.
