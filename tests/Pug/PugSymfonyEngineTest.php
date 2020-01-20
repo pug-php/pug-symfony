@@ -3,10 +3,7 @@
 namespace Pug\Tests;
 
 use App\Kernel;
-use AppKernel;
 use Closure;
-use Composer\Composer;
-use Composer\Script\Event;
 use DateTime;
 use ErrorException;
 use Exception;
