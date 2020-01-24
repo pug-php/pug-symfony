@@ -5,6 +5,7 @@ namespace Pug;
 use ErrorException;
 use Exception;
 use Phug\Compiler\Event\NodeEvent;
+use Phug\Component\ComponentExtension;
 use Phug\Parser\Node\FilterNode;
 use Phug\Parser\Node\ImportNode;
 use Phug\Parser\Node\TextNode;
@@ -39,6 +40,11 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      * @var Assets
      */
     protected $assets;
+
+    /**
+     * @var ComponentExtension
+     */
+    protected $componentExtension;
 
     /**
      * @var Kernel|KernelInterface
@@ -127,7 +133,18 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
 
         $this->pug = new Pug($options);
         $this->registerHelpers($container, array_slice(func_get_args(), 1));
-        $this->assets = new Assets($this->pug);
+
+        if ($userOptions['assets'] ?? true) {
+            $this->assets = new Assets($this->pug);
+        }
+
+        if ($userOptions['component'] ?? true) {
+            ComponentExtension::enable($this->pug);
+
+            $this->componentExtension = $this->pug->getModule(ComponentExtension::class);
+
+            $this->pug->getCompiler()->setOption('mixin_keyword', $this->pug->getOption('mixin_keyword'));
+        }
 
         foreach ($container->get('twig')->getGlobals() as $globalKey => $globalValue) {
             if ($globalValue instanceof AppVariable) {
