@@ -65,6 +65,8 @@ abstract class AbstractTestCase extends KernelTestCase
             // noop
         }
 
+        chdir(__DIR__.'/../..');
+
         self::bootKernel();
     }
 }
