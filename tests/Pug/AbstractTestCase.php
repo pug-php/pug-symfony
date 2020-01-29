@@ -2,8 +2,13 @@
 
 namespace Pug\Tests;
 
+use Pug\Twig\Environment;
+use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Form\FormRenderer;
+use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 abstract class AbstractTestCase extends KernelTestCase
 {
@@ -68,5 +73,23 @@ abstract class AbstractTestCase extends KernelTestCase
         chdir(__DIR__.'/../..');
 
         self::bootKernel();
+
+        $this->addFormRenderer(static::$container);
+    }
+
+    protected function addFormRenderer(ContainerInterface $container)
+    {
+        require_once __DIR__.'/TestCsrfTokenManager.php';
+
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+        $csrfManager = new TestCsrfTokenManager();
+        $formEngine = new TwigRendererEngine(['form_div_layout.html.twig'], $twig);
+
+        $twig->addRuntimeLoader(new FactoryRuntimeLoader([
+            FormRenderer::class => static function () use ($formEngine, $csrfManager) {
+                return new FormRenderer($formEngine, $csrfManager);
+            },
+        ]));
     }
 }

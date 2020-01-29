@@ -259,10 +259,11 @@ class PugSymfonyEngineTest extends AbstractTestCase
         });
         $kernel->boot();
         $pugSymfony = new PugSymfonyEngine($kernel);
+        $this->addFormRenderer($kernel->getContainer());
 
         self::assertSame('<p>Hello</p>', $pugSymfony->renderString('p Hello'));
 
-        self::assertRegExp('/<p>[a-zA-Z0-9_-]{10,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
+        self::assertRegExp('/<p>[a-zA-Z0-9_-]{20,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
     }
 
     public function testGetEngine()
@@ -286,6 +287,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $services['security.token_storage'] = $tokenStorage;
         $reflectionProperty->setValue($container, $services);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $this->addFormRenderer($container);
 
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
@@ -327,8 +329,10 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testFormHelpers()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $container = self::$kernel->getContainer();
+        $this->addFormRenderer($container);
         $controller = new TestController();
-        $controller->setContainer(self::$kernel->getContainer());
+        $controller->setContainer($container);
 
         self::assertRegExp('/^'.implode('', [
             '<form name="form" method="get"( action="")?\s*>\s*',
