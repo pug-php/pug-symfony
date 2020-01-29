@@ -272,25 +272,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertInstanceOf(Pug::class, $pugSymfony->getEngine());
     }
 
-    public function testFallbackAppDir()
-    {
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $baseDir = realpath($pugSymfony->getOptionDefault('baseDir'));
-        $appView = __DIR__.'/../project-s5/templates';
-        $srcView = __DIR__.'/../project-s5/src/TestBundle/Resources/views';
-
-        self::assertTrue($baseDir !== false);
-        self::assertSame(realpath($srcView), $baseDir);
-
-        rename($srcView, $srcView.'.save');
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $baseDir = realpath($pugSymfony->getOptionDefault('baseDir'));
-        rename($srcView.'.save', $srcView);
-
-        self::assertTrue($baseDir !== false);
-        self::assertSame(realpath($appView), $baseDir);
-    }
-
     /**
      * @throws ErrorException
      * @throws ReflectionException
@@ -537,21 +518,19 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
-    /**
-     * @expectedException        ErrorException
-     * @expectedExceptionMessage The "this" key is forbidden.
-     */
     public function testForbidThis()
     {
+        self::expectException(ErrorException::class);
+        self::expectExceptionMessage('The "this" key is forbidden.');
+
         (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['this' => 42]);
     }
 
-    /**
-     * @expectedException        ErrorException
-     * @expectedExceptionMessage The "view" key is forbidden.
-     */
     public function testForbidView()
     {
+        self::expectException(ErrorException::class);
+        self::expectExceptionMessage('The "view" key is forbidden.');
+
         (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['view' => 42]);
     }
 

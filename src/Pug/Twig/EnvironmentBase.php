@@ -5,6 +5,7 @@ namespace Pug\Twig;
 use Pug\Exceptions\ReservedVariable;
 use Pug\PugSymfonyEngine;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Twig\Environment as TwigEnvironment;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
@@ -22,6 +23,11 @@ abstract class EnvironmentBase extends TwigEnvironment
     protected $pugSymfonyEngine;
 
     /**
+     * @var ContainerInterface
+     */
+    protected $container;
+
+    /**
      * @var string[]
      */
     protected $classNames = [];
@@ -31,7 +37,7 @@ abstract class EnvironmentBase extends TwigEnvironment
         parent::__construct($loader, $options);
     }
 
-    public static function fromTwigEnvironment(TwigEnvironment $baseTwig, PugSymfonyEngine $pugSymfonyEngine)
+    public static function fromTwigEnvironment(TwigEnvironment $baseTwig, PugSymfonyEngine $pugSymfonyEngine, ContainerInterface $container)
     {
         $twig = new static($baseTwig->getLoader(), [
             'debug'            => $baseTwig->isDebug(),
@@ -50,6 +56,7 @@ abstract class EnvironmentBase extends TwigEnvironment
         ]);
 
         $twig->setPugSymfonyEngine($pugSymfonyEngine);
+        $twig->setContainer($container);
 
         $extensions = $baseTwig->getExtensions();
 
@@ -68,6 +75,14 @@ abstract class EnvironmentBase extends TwigEnvironment
     public function setPugSymfonyEngine(PugSymfonyEngine $pugSymfonyEngine)
     {
         $this->pugSymfonyEngine = $pugSymfonyEngine;
+    }
+
+    /**
+     * @param ContainerInterface $container
+     */
+    public function setContainer(ContainerInterface $container): void
+    {
+        $this->container = $container;
     }
 
     public function compileSourceBase(Source $source)

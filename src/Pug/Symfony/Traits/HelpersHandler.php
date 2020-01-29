@@ -8,6 +8,8 @@ use Pug\Symfony\Css;
 use Pug\Symfony\MixedLoader;
 use Pug\Twig\Environment;
 use ReflectionException;
+use ReflectionMethod;
+use RuntimeException;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\Asset\Package;
@@ -138,52 +140,28 @@ trait HelpersHandler
         return $this->pug;
     }
 
-    protected function getTemplatingHelper($name)
+    protected function getTemplatingHelper(string $name)
     {
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
     }
 
-    /**
-     * @param TwigEnvironment $twig
-     * @param string          $name
-     *
-     * @return Closure
-     */
-    protected function compileTwigCallable($twig, $name)
+    protected function compileTwigCallable(Environment $twig, TwigFunction $function): Closure
     {
-        $callable = function () use ($twig, $name) {
-            $variables = [];
-            foreach (func_get_args() as $index => $argument) {
-                $variables['arg'.$index] = $argument;
-            }
-
-            /* @var MixedLoader $loader */
-            $loader = $twig->getLoader();
-
-            $template = $loader->uniqueTemplate(
-                '{{'.$name.'('.implode(', ', array_keys($variables)).')}}'
-            );
-
-            if ($twig::MAJOR_VERSION >= 3) {
-                return $twig->render($twig->createTemplate($template, $name), $variables);
-            }
-
-            return $twig->render($template, $variables);
+        return static function () use ($twig, $function) {
+            return $twig->runFunction($function, func_get_args());
         };
-
-        return $callable->bindTo($twig);
     }
 
     /**
-     * @param TwigEnvironment $twig
-     * @param callable        $function
-     * @param string          $name
+     * @param Environment  $twig
+     * @param TwigFunction $function
+     * @param string       $name
      *
      * @throws ReflectionException
      *
-     * @return Closure
+     * @return callable
      */
-    protected function getTwigCallable(TwigEnvironment $twig, TwigFunction $function, string $name)
+    protected function getTwigCallable(Environment $twig, TwigFunction $function): callable
     {
         $callable = $function->getCallable();
 
@@ -191,15 +169,15 @@ trait HelpersHandler
             is_callable($callable) &&
             is_array($callable) &&
             is_string($callable[0]) && is_string($callable[1]) &&
-            !(new \ReflectionMethod($callable[0], $callable[1]))->isStatic()
+            !(new ReflectionMethod($callable[0], $callable[1]))->isStatic()
         ) {
-            $callable = $this->compileTwigCallable($twig, $name);
+            $callable = $this->compileTwigCallable($twig, $function);
         }
 
         return $callable;
     }
 
-    protected function copyTwigFunction(TwigEnvironment $twig, TwigFunction $function): void
+    protected function copyTwigFunction(Environment $twig, TwigFunction $function): void
     {
         $name = $function->getName();
 
@@ -208,61 +186,56 @@ trait HelpersHandler
             return;
         }
 
-        $callable = $this->getTwigCallable($twig, $function, $name);
+        $callable = $this->getTwigCallable($twig, $function);
 
         if (is_callable($callable) && !is_string($callable)) {
             $this->twigHelpers[$name] = $callable;
         }
     }
 
-    protected function getTwig(ContainerInterface $container)
+    protected function getTwig(ContainerInterface $container): Environment
     {
         $twig = $container->has('twig') ? $container->get('twig') : null;
 
-        $twig = ($twig instanceof TwigEnvironment) ? $twig : null;
-
-        if ($twig) {
-            $twig = Environment::fromTwigEnvironment($twig, $this);
-
-            $services = static::getPrivateProperty($container, 'services', $propertyAccessor);
-            $services['twig'] = $twig;
-            $propertyAccessor->setValue($container, $services);
+        if (!($twig instanceof TwigEnvironment)) {
+            throw new RuntimeException('Twig service not configured.');
         }
+
+        $twig = Environment::fromTwigEnvironment($twig, $this, $container);
+
+        $services = static::getPrivateProperty($container, 'services', $propertyAccessor);
+        $services['twig'] = $twig;
+        $propertyAccessor->setValue($container, $services);
 
         return $twig;
     }
 
-    protected function copyTwigFunctions(ContainerInterface $services)
+    protected function copyTwigFunctions(ContainerInterface $services): void
     {
         $this->twigHelpers = [];
         $twig = $this->getTwig($services);
+        $twig->env = $twig;
+        $loader = new MixedLoader($twig->getLoader());
+        $twig->setLoader($loader);
+        $this->share('twig', $twig);
+        $extensions = $twig->getExtensions();
 
-        if ($twig) {
-            /* @var TwigEnvironment $twig */
-            $twig = clone $twig;
-            $twig->env = $twig;
-            $loader = new MixedLoader($twig->getLoader());
-            $twig->setLoader($loader);
-            $this->share('twig', $twig);
-            $extensions = $twig->getExtensions();
+        if (version_compare(Environment::VERSION, '3.0.0-dev', '>=') &&
+            !isset($extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'])) {
+            $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
+            $extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'] = $assetExtension;
+            $twig->addExtension($assetExtension);
+        }
 
-            if (version_compare(Environment::VERSION, '3.0.0-dev', '>=') &&
-                !isset($extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'])) {
-                $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
-                $extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'] = $assetExtension;
-                $twig->addExtension($assetExtension);
-            }
-
-            foreach ($twig->getExtensions() as $extension) {
-                /* @var ExtensionInterface $extension */
-                foreach ($extension->getFunctions() as $function) {
-                    $this->copyTwigFunction($twig, $function);
-                }
+        foreach ($twig->getExtensions() as $extension) {
+            /* @var ExtensionInterface $extension */
+            foreach ($extension->getFunctions() as $function) {
+                $this->copyTwigFunction($twig, $function);
             }
         }
     }
 
-    protected function copyStandardHelpers(ContainerInterface $services)
+    protected function copyStandardHelpers(ContainerInterface $services): void
     {
         foreach ($this->templatingHelpers as $helper) {
             if (
@@ -274,7 +247,7 @@ trait HelpersHandler
         }
     }
 
-    protected function getHttpFoundationExtension(ContainerInterface $services)
+    protected function getHttpFoundationExtension(ContainerInterface $services): HttpFoundationExtension
     {
         /* @var RequestStack $stack */
         $stack = $services->get('request_stack');
@@ -287,13 +260,13 @@ trait HelpersHandler
         return new HttpFoundationExtension(new UrlHelper($stack, $context));
     }
 
-    protected function copySpecialHelpers(ContainerInterface $services)
+    protected function copySpecialHelpers(ContainerInterface $services): void
     {
         $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
         $this->helpers['http'] = $this->getHttpFoundationExtension($services);
     }
 
-    protected function copyUserHelpers(array $helpers)
+    protected function copyUserHelpers(array $helpers): void
     {
         foreach ($helpers as $helper) {
             $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
@@ -302,7 +275,7 @@ trait HelpersHandler
         }
     }
 
-    protected function storeReplacements()
+    protected function storeReplacements(): void
     {
         $this->replacements = array_merge([
             'random'        => 'mt_rand',
@@ -318,7 +291,7 @@ trait HelpersHandler
         ], $this->twigHelpers);
     }
 
-    protected function globalizeHelpers()
+    protected function globalizeHelpers(): void
     {
         foreach ($this->replacements as $name => $callable) {
             if (is_array($callable) && !is_callable($callable) && isset($this->helpers[$callable[0]])) {
@@ -334,7 +307,7 @@ trait HelpersHandler
         }
     }
 
-    protected function registerHelpers(ContainerInterface $services, $helpers)
+    protected function registerHelpers(ContainerInterface $services, $helpers): void
     {
         $this->helpers = [];
         $this->copyTwigFunctions($services);

@@ -75,10 +75,9 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         $container = $kernel->getContainer();
         $this->container = $container;
         $environment = $kernel->getEnvironment();
-        $appDir = $kernel->getProjectDir();
-        $rootDir = dirname($appDir);
-        $assetsDirectories = [$appDir.'/Resources/assets'];
-        $viewDirectories = [$rootDir.'/templates'];
+        $projectDirectory = $kernel->getProjectDir();
+        $assetsDirectories = [$projectDirectory.'/Resources/assets'];
+        $viewDirectories = [$projectDirectory.'/templates'];
 
         if ($container->has('twig') &&
             (/** @var Environment $twig */ $twig = $container->get('twig')) &&
@@ -89,24 +88,14 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $viewDirectories[] = $paths[0];
         }
 
-        $srcDir = $rootDir.'/src';
-        $webDir = $rootDir.'/public';
+        $srcDir = $projectDirectory.'/src';
+        $webDir = $projectDirectory.'/public';
         $userOptions = ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: [];
         $baseDir = isset($userOptions['baseDir'])
             ? $userOptions['baseDir']
             : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
         $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
         $this->defaultTemplateDirectory = $baseDir;
-        $fallbackDirectory = $rootDir.'/app/Resources/views';
-
-        if (file_exists($fallbackDirectory)) {
-            if (!file_exists($baseDir)) {
-                $baseDir = $fallbackDirectory;
-            }
-
-            $this->fallbackTemplateDirectory = $fallbackDirectory;
-            $viewDirectories[] = $fallbackDirectory;
-        }
 
         if (isset($userOptions['paths'])) {
             $viewDirectories = array_merge($viewDirectories, $userOptions['paths'] ?: []);

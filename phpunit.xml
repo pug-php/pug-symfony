@@ -18,7 +18,6 @@
         </whitelist>
     </filter>
     <php>
-        <server name="KERNEL_DIR" value="tests/project-s5/" />
         <server name="KERNEL_CLASS" value="App\Kernel" />
     </php>
     <logging>
