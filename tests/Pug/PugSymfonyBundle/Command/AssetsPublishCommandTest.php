@@ -31,8 +31,8 @@ else
         $command = $application->find('assets:publish');
         $commandTester = new CommandTester($command);
         $commandTester->execute([
-            'command'  => $command->getName(),
-            '--env'    => 'prod',
+            'command' => $command->getName(),
+            '--env'   => 'prod',
         ]);
 
         $output = $commandTester->getDisplay();

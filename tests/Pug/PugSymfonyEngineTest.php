@@ -522,6 +522,27 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
+    public function testCustomBaseDir()
+    {
+        $container = self::$kernel->getContainer();
+        $property = new ReflectionProperty($container, 'parameters');
+        $property->setAccessible(true);
+        $value = $property->getValue($container);
+        $value['pug']['indentSize'] = 0;
+        $value['pug']['baseDir'] = __DIR__ . '/../project-s5/templates-bis';
+        $property->setValue($container, $value);
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(
+            '<section><p></p></section>',
+            trim($pugSymfony->render('p.pug'))
+        );
+    }
+
     public function testForbidThis()
     {
         self::expectException(ErrorException::class);

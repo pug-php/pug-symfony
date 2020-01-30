@@ -188,7 +188,9 @@ trait HelpersHandler
 
         $callable = $this->getTwigCallable($twig, $function);
 
-        if (is_callable($callable) && !is_string($callable)) {
+        if (is_callable($callable) &&
+            (!is_string($callable) || ($callable !== $name && $name !== 'include' && !function_exists($name)))
+        ) {
             $this->twigHelpers[$name] = $callable;
         }
     }
