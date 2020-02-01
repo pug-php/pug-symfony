@@ -533,7 +533,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $property->setAccessible(true);
         $value = $property->getValue($container);
         $value['pug']['indentSize'] = 0;
-        $value['pug']['baseDir'] = __DIR__ . '/../project-s5/templates-bis';
+        $value['pug']['baseDir'] = __DIR__.'/../project-s5/templates-bis';
         $property->setValue($container, $value);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 

@@ -222,10 +222,9 @@ trait HelpersHandler
         $this->share('twig', $twig);
         $extensions = $twig->getExtensions();
 
-        if (version_compare(Environment::VERSION, '3.0.0-dev', '>=') &&
-            !isset($extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'])) {
+        if (!isset($extensions[AssetExtension::class])) {
             $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
-            $extensions['Symfony\\Bridge\\Twig\\Extension\\AssetExtension'] = $assetExtension;
+            $extensions[AssetExtension::class] = $assetExtension;
             $twig->addExtension($assetExtension);
         }
 
