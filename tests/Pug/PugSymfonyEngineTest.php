@@ -2,11 +2,8 @@
 
 namespace Pug\Tests;
 
-use App\Kernel;
-use Closure;
 use DateTime;
 use ErrorException;
-use Exception;
 use InvalidArgumentException;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
@@ -20,9 +17,7 @@ use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
 use Symfony\Component\Asset\Packages;
-use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Twig\Loader\ArrayLoader;
@@ -64,68 +59,7 @@ class LogoutUrlGenerator extends BaseLogoutUrlGenerator
     }
 }
 
-class TestKernel extends Kernel
-{
-    /**
-     * @var Closure
-     */
-    private $containerConfigurator;
-
-    public function __construct(Closure $containerConfigurator, $environment = 'test', $debug = false)
-    {
-        $this->containerConfigurator = $containerConfigurator;
-
-        parent::__construct($environment, $debug);
-
-        $this->rootDir = $this->getRootDir();
-    }
-
-    public function getLogDir()
-    {
-        return sys_get_temp_dir().'/pug-symfony-log';
-    }
-
-    public function getRootDir()
-    {
-        return realpath(__DIR__.'/../project-s5');
-    }
-
-    /**
-     * @param LoaderInterface $loader
-     *
-     * @throws Exception
-     */
-    public function registerContainerConfiguration(LoaderInterface $loader)
-    {
-        parent::registerContainerConfiguration($loader);
-        $loader->load(__DIR__.'/../project-s5/config/packages/framework.yaml');
-        $loader->load($this->containerConfigurator);
-    }
-
-    public function getCacheDir()
-    {
-        return sys_get_temp_dir().'/pug-symfony-cache';
-    }
-
-    /**
-     * Override the parent method to force recompiling the container.
-     * For performance reasons the container is also not dumped to disk.
-     */
-    protected function initializeContainer()
-    {
-        $this->container = $this->buildContainer();
-        $this->container->compile();
-        $this->container->set('kernel', $this);
-    }
-}
-
-class TestFormBuilder extends FormBuilder
-{
-    public function getCompound()
-    {
-        return true;
-    }
-}
+require_once __DIR__.'/TestKernel.php';
 
 class Task
 {
@@ -357,35 +291,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         ])));
     }
 
-    public function testCustomHelper()
-    {
-        self::clearCache();
-        $helper = new CustomHelper();
-        $kernel = new TestKernel(function (Container $container) {
-            $container->setParameter('pug', [
-                'expressionLanguage' => 'php',
-            ]);
-        });
-        $kernel->boot();
-        $pugSymfony = new PugSymfonyEngine($kernel, $helper);
-
-        self::assertTrue(isset($pugSymfony['custom']));
-        self::assertSame($helper, $pugSymfony['custom']);
-
-        self::assertSame('<u>bar</u>', trim($pugSymfony->render('custom-helper.pug')));
-
-        unset($pugSymfony['custom']);
-        self::assertFalse(isset($pugSymfony['custom']));
-
-        self::assertSame('<s>Noop</s>', trim($pugSymfony->render('custom-helper.pug')));
-
-        $pugSymfony['custom'] = $helper;
-        self::assertTrue(isset($pugSymfony['custom']));
-        self::assertSame($helper, $pugSymfony['custom']);
-
-        self::assertSame('<u>bar</u>', trim($pugSymfony->render('custom-helper.pug')));
-    }
-
     public function testOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -532,7 +437,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $property = new ReflectionProperty($container, 'parameters');
         $property->setAccessible(true);
         $value = $property->getValue($container);
-        $value['pug']['indentSize'] = 0;
+        $value['pug']['prettyprint'] = false;
         $value['pug']['baseDir'] = __DIR__.'/../project-s5/templates-bis';
         $property->setValue($container, $value);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);

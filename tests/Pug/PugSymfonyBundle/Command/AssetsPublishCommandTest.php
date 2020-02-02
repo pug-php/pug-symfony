@@ -5,6 +5,7 @@ namespace Pug\Tests\PugSymfonyBundle\Command;
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
 use Pug\PugSymfonyEngine;
 use Pug\Tests\AbstractTestCase;
+use Pug\Tests\TestKernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -12,6 +13,11 @@ class AssetsPublishCommandTest extends AbstractTestCase
 {
     public function testCommand()
     {
+        require_once __DIR__.'/../../TestKernel.php';
+
+        self::$kernel = new TestKernel(function () {});
+        self::$kernel->boot();
+
         $application = new Application(self::$kernel);
         $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
 

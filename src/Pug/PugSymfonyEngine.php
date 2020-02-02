@@ -15,14 +15,9 @@ use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
-use Symfony\Bridge\Twig\AppVariable;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpKernel\Kernel;
+use RuntimeException;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
-use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
 
 class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHandlerInterface
 {
@@ -30,11 +25,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
     use HelpersHandler;
     use Filters;
     use Options;
-
-    /**
-     * @var ContainerInterface|null
-     */
-    protected $container;
 
     /**
      * @var Assets
@@ -47,11 +37,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
     protected $componentExtension;
 
     /**
-     * @var Kernel|KernelInterface
-     */
-    protected $kernel;
-
-    /**
      * @var string
      */
     protected $defaultTemplateDirectory;
@@ -61,96 +46,17 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     protected $fallbackTemplateDirectory;
 
-    /**
-     * @var Filesystem
-     */
-    protected $fs;
-
     public function __construct(KernelInterface $kernel)
     {
-        $this->kernel = $kernel;
-        $cache = $this->getCacheDir();
-        $this->fs = new Filesystem();
-        $this->fs->mkdir($cache);
         $container = $kernel->getContainer();
+
+        if (!$container->has('twig')) {
+            throw new RuntimeException('Twig needs to be configured.');
+        }
+
+        $this->kernel = $kernel;
         $this->container = $container;
-        $environment = $kernel->getEnvironment();
-        $projectDirectory = $kernel->getProjectDir();
-        $assetsDirectories = [$projectDirectory.'/Resources/assets'];
-        $viewDirectories = [$projectDirectory.'/templates'];
-
-        if ($container->has('twig') &&
-            (/** @var Environment $twig */ $twig = $container->get('twig')) &&
-            ($loader = $twig->getLoader()) instanceof FilesystemLoader &&
-            is_array($paths = $loader->getPaths()) &&
-            isset($paths[0])
-        ) {
-            $viewDirectories[] = $paths[0];
-        }
-
-        $srcDir = $projectDirectory.'/src';
-        $webDir = $projectDirectory.'/public';
-        $userOptions = ($container->hasParameter('pug') ? $container->getParameter('pug') : null) ?: [];
-        $baseDir = isset($userOptions['baseDir'])
-            ? $userOptions['baseDir']
-            : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
-        $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
-        $this->defaultTemplateDirectory = $baseDir;
-
-        if (isset($userOptions['paths'])) {
-            $viewDirectories = array_merge($viewDirectories, $userOptions['paths'] ?: []);
-        }
-
-        $debug = substr($environment, 0, 3) === 'dev';
-        $options = array_merge([
-            'debug'           => $debug,
-            'assetDirectory'  => static::extractUniquePaths($assetsDirectories),
-            'viewDirectories' => static::extractUniquePaths($viewDirectories),
-            'baseDir'         => $baseDir,
-            'cache'           => $debug ? false : $cache,
-            'environment'     => $environment,
-            'extension'       => ['.pug', '.jade'],
-            'outputDirectory' => $webDir,
-            'preRender'       => [$this, 'preRender'],
-            'prettyprint'     => $kernel->isDebug(),
-            'on_node'         => [$this, 'handleTwigInclude'],
-        ], $userOptions);
-
-        $options['paths'] = array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
-            return $path !== $baseDir;
-        });
-
-        $this->pug = new Pug($options);
-        $this->registerHelpers($container, array_slice(func_get_args(), 1));
-
-        if ($userOptions['assets'] ?? true) {
-            $this->assets = new Assets($this->pug);
-        }
-
-        if ($userOptions['component'] ?? true) {
-            ComponentExtension::enable($this->pug);
-
-            $this->componentExtension = $this->pug->getModule(ComponentExtension::class);
-
-            $this->pug->getCompiler()->setOption('mixin_keyword', $this->pug->getOption('mixin_keyword'));
-        }
-
-        foreach ($container->get('twig')->getGlobals() as $globalKey => $globalValue) {
-            if ($globalValue instanceof AppVariable) {
-                $globalValue->setDebug($kernel->isDebug());
-                $globalValue->setEnvironment($environment);
-                $globalValue->setRequestStack($container->get('request_stack'));
-                // @codeCoverageIgnoreStart
-                if ($container->has('security.token_storage')) {
-                    $globalValue->setTokenStorage($container->get('security.token_storage'));
-                }
-                // @codeCoverageIgnoreEnd
-            }
-
-            $this->share($globalKey, $globalValue);
-        }
-
-        $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
+        $this->enhanceTwig();
     }
 
     public function handleTwigInclude(NodeEvent $nodeEvent): void
@@ -249,7 +155,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function share($variables, $value = null): self
     {
-        $this->pug->share($variables, $value);
+        $this->getEngine()->share($variables, $value);
 
         return $this;
     }
@@ -343,7 +249,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function render($name, array $parameters = []): string
     {
-        return $this->pug->renderFile(
+        return $this->getEngine()->renderFile(
             $this->getFileFromName($name),
             $this->getParameters($parameters)
         );
@@ -361,9 +267,10 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function renderString($code, array $parameters = []): string
     {
-        $method = method_exists($this->pug, 'renderString') ? 'renderString' : 'render';
+        $pug = $this->getEngine();
+        $method = method_exists($pug, 'renderString') ? 'renderString' : 'render';
 
-        return $this->pug->$method(
+        return $pug->$method(
             $code,
             $this->getParameters($parameters)
         );
@@ -396,7 +303,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function supports($name): bool
     {
-        foreach ($this->pug->getOption('extensions') as $extension) {
+        foreach ($this->getOptionDefault('extensions', []) as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
             }

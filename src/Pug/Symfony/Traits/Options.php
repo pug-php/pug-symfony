@@ -7,36 +7,38 @@ use Pug\Pug;
 /**
  * Trait Options.
  *
- * @property-read Pug $pug
+ * @method Pug getEngine()
  */
 trait Options
 {
     /**
      * Get a Pug engine option or the default value passed as second parameter (null if omitted).
      *
-     * @param string $name
-     * @param mixed  $default
+     * @param string|string[] $name    option path (string) or deep path (array of strings).
+     * @param mixed           $default value to return if the option is not set (null by default).
      *
      * @return mixed
      */
     public function getOptionDefault($name, $default = null)
     {
-        return method_exists($this->pug, 'hasOption') && !$this->pug->hasOption($name)
+        $pug = $this->getEngine();
+
+        return method_exists($pug, 'hasOption') && !$pug->hasOption($name)
             ? $default
-            : $this->pug->getOption($name);
+            : $pug->getOption($name);
     }
 
     /**
      * Set a Pug engine option.
      *
-     * @param string|array $name
-     * @param mixed        $value
+     * @param string|string[] $name  option path (string) or deep path (array of strings).
+     * @param mixed           $value new value.
      *
      * @return Pug
      */
     public function setOption($name, $value)
     {
-        return $this->pug->setOption($name, $value);
+        return $this->getEngine()->setOption($name, $value);
     }
 
     /**
@@ -49,7 +51,7 @@ trait Options
     public function setOptions(array $options)
     {
         /** @var Pug $pug */
-        $pug = $this->pug->setOptions($options);
+        $pug = $this->getEngine()->setOptions($options);
 
         return $pug;
     }
