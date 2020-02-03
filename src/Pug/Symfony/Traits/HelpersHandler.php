@@ -9,8 +9,6 @@ use Pug\Pug;
 use Pug\Symfony\CssExtension;
 use Pug\Symfony\MixedLoader;
 use Pug\Twig\Environment;
-use ReflectionException;
-use ReflectionMethod;
 use RuntimeException;
 use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
@@ -156,7 +154,7 @@ trait HelpersHandler
     {
         if ($this->pug === null) {
             $cache = $this->getCacheDir();
-            (new Filesystem)->mkdir($cache);
+            (new Filesystem())->mkdir($cache);
             $userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
 
             $this->pug = $this->createEngine($this->getRendererOptions($cache, $userOptions));

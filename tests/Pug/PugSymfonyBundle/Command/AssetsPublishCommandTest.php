@@ -15,7 +15,8 @@ class AssetsPublishCommandTest extends AbstractTestCase
     {
         require_once __DIR__.'/../../TestKernel.php';
 
-        self::$kernel = new TestKernel(function () {});
+        self::$kernel = new TestKernel(function () {
+        });
         self::$kernel->boot();
 
         $application = new Application(self::$kernel);

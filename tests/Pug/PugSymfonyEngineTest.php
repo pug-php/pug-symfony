@@ -271,7 +271,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertRegExp('/^'.implode('', [
             '<form name="form" method="get">',
             '<input type="text" id="form_name" name="form\[name\]" required="required" class="foo"\s*\/>',
-            '<div><label class="required">Due date<\/label><div id="form_dueDate">(',
+            '<div\s*><label class="required">Due date<\/label><div id="form_dueDate">(',
             '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
             '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]"\s*>\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
             '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
