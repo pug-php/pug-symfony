@@ -278,15 +278,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
             '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
             '<\/div>\s*<\/div>\s*<div\s*>\s*<button type="submit" id="form_save" name="form\[save\]"\s*>Submit me<\/button>\s*<\/div>\s*',
             '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+"\s*\/>\s*<\/form>',
-        ]).'$/', trim($pugSymfony->renderString(implode("\n", [
-            '!=form_start(form, {method: "GET"})',
-            '!=form_errors(form)',
-            '!=form_row(form.name)',
-            '!=form_widget(form.name, {attr: {class: "foo"}})',
-            '!=form_row(form.dueDate)',
-            '!=form_row(form.save, {label: "Submit me"})',
-            '!=form_end(form)',
-        ]), [
+        ]).'$/', trim($pugSymfony->render('form', [
             'form' => $controller->index()->createView(),
         ])));
     }

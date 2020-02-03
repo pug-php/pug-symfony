@@ -3,6 +3,7 @@
 namespace Pug\PugSymfonyBundle;
 
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
+use Pug\PugSymfonyBundle\DependencyInjection\PugSymfonyExtension;
 use Pug\PugSymfonyEngine;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use ReflectionException;
@@ -32,7 +33,7 @@ class PugSymfonyBundle extends Bundle
             $engine = new PugSymfonyEngine($kernel);
             /** @var ReflectionProperty $propertyAccessor */
             $services = static::getPrivateProperty($container, 'services', $propertyAccessor);
-            $services['Pug\\PugSymfonyEngine'] = $engine;
+            $services[PugSymfonyEngine::class] = $engine;
             $propertyAccessor->setValue($container, $services);
         }
     }
@@ -50,5 +51,10 @@ class PugSymfonyBundle extends Bundle
                 new AssetsPublishCommand($engine),
             ]);
         }
+    }
+
+    public function getContainerExtension()
+    {
+        return new PugSymfonyExtension();
     }
 }
