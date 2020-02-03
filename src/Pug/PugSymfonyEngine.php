@@ -67,7 +67,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             $code = new TextNode($node->getToken());
             $path = var_export($node->getPath(), true);
             $location = $node->getSourceLocation();
-            $line = $location->getLine() - $this->getPreRenderLinesCount();
+            $line = $location->getLine();
             $template = var_export($location->getPath(), true);
             $code->setValue('$this->loadTemplate('.$path.', '.$template.', '.$line.')->display($context);');
             $filter = new FilterNode($node->getToken());
@@ -155,35 +155,9 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function share($variables, $value = null): self
     {
-        $this->getEngine()->share($variables, $value);
+        $this->getRenderer()->share($variables, $value);
 
         return $this;
-    }
-
-    /**
-     * Pug code transformation to do before Pug render.
-     *
-     * @param string $pugCode code input
-     *
-     * @return string
-     */
-    public function preRender(string $pugCode): string
-    {
-        $parts = $this->getPugCodeLayoutStructure($pugCode);
-
-        if (count($this->replacements)) {
-            $this->addPhpFunctions($parts[0]);
-        }
-
-        return implode('', $parts);
-    }
-
-    /**
-     * Get number of lines occupied by pre-render code.
-     */
-    public function getPreRenderLinesCount(): int
-    {
-        return count($this->replacements) * 6;
     }
 
     /**
@@ -233,6 +207,8 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
             }
         }
 
+        $parameters['this'] = $this->getTwig();
+
         return $parameters;
     }
 
@@ -249,7 +225,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function render($name, array $parameters = []): string
     {
-        return $this->getEngine()->renderFile(
+        return $this->getRenderer()->renderFile(
             $this->getFileFromName($name),
             $this->getParameters($parameters)
         );
@@ -267,7 +243,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
      */
     public function renderString($code, array $parameters = []): string
     {
-        $pug = $this->getEngine();
+        $pug = $this->getRenderer();
         $method = method_exists($pug, 'renderString') ? 'renderString' : 'render';
 
         return $pug->$method(
@@ -317,19 +293,5 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         return array_unique(array_map(function ($path) {
             return realpath($path) ?: $path;
         }, $paths));
-    }
-
-    private function addPhpFunctions(string &$code): void
-    {
-        $className = get_class($this);
-        $code .= ":php\n";
-
-        foreach ($this->replacements as $name => $callable) {
-            $code .= "    if (!function_exists('$name')) {\n".
-                "        function $name() {\n".
-                "            return call_user_func_array($className::getGlobalHelper('$name'), func_get_args());\n".
-                "        }\n".
-                "    }\n";
-        }
     }
 }

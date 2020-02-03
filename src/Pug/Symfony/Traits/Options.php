@@ -7,7 +7,7 @@ use Pug\Pug;
 /**
  * Trait Options.
  *
- * @method Pug getEngine()
+ * @method Pug getRenderer()
  */
 trait Options
 {
@@ -21,7 +21,7 @@ trait Options
      */
     public function getOptionDefault($name, $default = null)
     {
-        $pug = $this->getEngine();
+        $pug = $this->getRenderer();
 
         return method_exists($pug, 'hasOption') && !$pug->hasOption($name)
             ? $default
@@ -38,7 +38,7 @@ trait Options
      */
     public function setOption($name, $value)
     {
-        return $this->getEngine()->setOption($name, $value);
+        return $this->getRenderer()->setOption($name, $value);
     }
 
     /**
@@ -51,7 +51,7 @@ trait Options
     public function setOptions(array $options)
     {
         /** @var Pug $pug */
-        $pug = $this->getEngine()->setOptions($options);
+        $pug = $this->getRenderer()->setOptions($options);
 
         return $pug;
     }

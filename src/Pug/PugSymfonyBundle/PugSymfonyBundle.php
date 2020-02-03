@@ -3,7 +3,6 @@
 namespace Pug\PugSymfonyBundle;
 
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
-use Pug\PugSymfonyBundle\DependencyInjection\PugSymfonyExtension;
 use Pug\PugSymfonyEngine;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use ReflectionException;
@@ -51,10 +50,5 @@ class PugSymfonyBundle extends Bundle
                 new AssetsPublishCommand($engine),
             ]);
         }
-    }
-
-    public function getContainerExtension()
-    {
-        return new PugSymfonyExtension();
     }
 }

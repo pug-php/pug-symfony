@@ -32,9 +32,26 @@ abstract class EnvironmentBase extends TwigEnvironment
      */
     protected $classNames = [];
 
+    /**
+     * @var array
+     */
+    public $extensions = [];
+
     public function __construct(LoaderInterface $loader, $options = [])
     {
         parent::__construct($loader, $options);
+
+        $this->extensions = $this->getExtensions();
+    }
+
+    public function getEngine()
+    {
+        return $this->pugSymfonyEngine;
+    }
+
+    public function getRenderer()
+    {
+        return $this->pugSymfonyEngine->getRenderer();
     }
 
     public static function fromTwigEnvironment(TwigEnvironment $baseTwig, PugSymfonyEngine $pugSymfonyEngine, ContainerInterface $container)
@@ -90,7 +107,7 @@ abstract class EnvironmentBase extends TwigEnvironment
         $path = $source->getPath();
 
         if ($this->pugSymfonyEngine->supports($path)) {
-            $pug = $this->pugSymfonyEngine->getEngine();
+            $pug = $this->pugSymfonyEngine->getRenderer();
             $code = $source->getCode();
             $php = $pug->compile($code, $path);
             $codeFirstLine = $this->isDebug() ? 31 : 25;
@@ -99,7 +116,6 @@ abstract class EnvironmentBase extends TwigEnvironment
             $lines = explode("\n", $php);
 
             if ($this->isDebug()) {
-                $preRenderLinesCount = $this->pugSymfonyEngine->getPreRenderLinesCount();
                 $formatter = $pug->getCompiler()->getFormatter();
 
                 foreach ($lines as $index => $line) {
@@ -108,7 +124,7 @@ abstract class EnvironmentBase extends TwigEnvironment
                         $location = $node->getSourceLocation();
 
                         if ($location) {
-                            $newLine = $location->getLine() - $preRenderLinesCount;
+                            $newLine = $location->getLine();
 
                             if ($newLine > $templateLine) {
                                 $templateLine = $newLine;

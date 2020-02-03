@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
-use Pug\Symfony\Css;
+use Pug\Symfony\CssExtension;
 use Pug\Symfony\MixedLoader;
 use Pug\Twig\Environment;
 use ReflectionException;
@@ -204,7 +204,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertInstanceOf(Pug::class, $pugSymfony->getEngine());
+        self::assertInstanceOf(Pug::class, $pugSymfony->getRenderer());
     }
 
     /**
@@ -269,10 +269,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $controller->setContainer($container);
 
         self::assertRegExp('/^'.implode('', [
-            '<form name="form" method="get"( action="")?\s*>\s*',
-            '<div\s*>\s*<label for="form_name" class="required"\s*>Name<\/label>\s*',
-            '<input type="text" id="form_name" name="form\[name\]" required="required"\s*\/>\s*<\/div>\s*',
-            '<div\s*>\s*<label class="required"\s*>Due date<\/label>\s*<div id="form_dueDate"\s*>\s*(',
+            '<form name="form" method="get">',
+            '<input type="text" id="form_name" name="form\[name\]" required="required" class="foo"\s*\/>',
+            '<div><label class="required">Due date<\/label><div id="form_dueDate">(',
             '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
             '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]"\s*>\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
             '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
@@ -412,7 +411,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $pugSymfony->setOptions(['indentSize' => 5, 'prettyprint' => '     ']);
 
         self::assertSame(5, $pugSymfony->getOptionDefault('indentSize'));
-        self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
+        self::assertSame(5, $pugSymfony->getRenderer()->getOption('indentSize'));
         self::assertSame(
             "<div>\n     <p></p>\n</div>",
             str_replace("\r", '', trim($pugSymfony->render('p.pug')))
@@ -497,7 +496,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         }
 
         $helper = new FakeAssetsHelper(new Packages());
-        $css = new Css($helper);
+        $css = new CssExtension($helper);
 
         self::assertSame("url('fake:foo')", $css->getUrl('foo'));
     }

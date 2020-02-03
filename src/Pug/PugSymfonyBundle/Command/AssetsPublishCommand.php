@@ -54,7 +54,7 @@ class AssetsPublishCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        [$directories, $success, $errors, $errorDetails] = $this->cacheTemplates($this->pugSymfonyEngine->getEngine());
+        [$directories, $success, $errors, $errorDetails] = $this->cacheTemplates($this->pugSymfonyEngine->getRenderer());
         $count = count($directories);
         $output->writeln($count.' '.($count === 1 ? 'directory' : 'directories').' scanned: '.implode(', ', $directories).'.');
         $output->writeln($success.' templates cached.');

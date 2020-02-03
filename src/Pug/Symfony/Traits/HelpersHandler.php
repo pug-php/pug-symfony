@@ -6,7 +6,7 @@ use Closure;
 use Phug\Component\ComponentExtension;
 use Pug\Assets;
 use Pug\Pug;
-use Pug\Symfony\Css;
+use Pug\Symfony\CssExtension;
 use Pug\Symfony\MixedLoader;
 use Pug\Twig\Environment;
 use ReflectionException;
@@ -66,11 +66,6 @@ trait HelpersHandler
      * @var array
      */
     protected $twigHelpers;
-
-    /**
-     * @var array
-     */
-    protected $replacements;
 
     /**
      * @var array
@@ -157,14 +152,14 @@ trait HelpersHandler
      *
      * @return Pug
      */
-    public function getEngine(): Pug
+    public function getRenderer(): Pug
     {
         if ($this->pug === null) {
             $cache = $this->getCacheDir();
             (new Filesystem)->mkdir($cache);
             $userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
 
-            $this->pug = $this->createEngine($this->getEngineOptions($cache, $userOptions));
+            $this->pug = $this->createEngine($this->getRendererOptions($cache, $userOptions));
             $this->registerHelpers(array_slice(func_get_args(), 1));
             $this->initializePugPlugins($userOptions);
             $this->copyTwigGlobals();
@@ -174,7 +169,7 @@ trait HelpersHandler
         return $this->pug;
     }
 
-    protected function getEngineOptions(string $cache, array $userOptions): array
+    protected function getRendererOptions(string $cache, array $userOptions): array
     {
         $environment = $this->kernel->getEnvironment();
         $projectDirectory = $this->kernel->getProjectDir();
@@ -210,7 +205,6 @@ trait HelpersHandler
             'environment'     => $environment,
             'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
-            //'preRender'       => [$this, 'preRender'],
             'prettyprint'     => $debug,
             'on_node'         => [$this, 'handleTwigInclude'],
         ], $userOptions);
@@ -264,7 +258,7 @@ trait HelpersHandler
 
     protected function initializePugPlugins(array $userOptions): void
     {
-        $pug = $this->getEngine();
+        $pug = $this->getRenderer();
 
         if ($userOptions['assets'] ?? true) {
             $this->assets = new Assets($pug);
@@ -381,38 +375,6 @@ trait HelpersHandler
         return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
     }
 
-    protected function compileTwigCallable(Environment $twig, TwigFunction $function): Closure
-    {
-        return static function () use ($twig, $function) {
-            return $twig->runFunction($function, func_get_args());
-        };
-    }
-
-    /**
-     * @param Environment  $twig
-     * @param TwigFunction $function
-     * @param string       $name
-     *
-     * @throws ReflectionException
-     *
-     * @return callable
-     */
-    protected function getTwigCallable(Environment $twig, TwigFunction $function): callable
-    {
-        $callable = $function->getCallable();
-
-        if (!$callable ||
-            is_callable($callable) &&
-            is_array($callable) &&
-            is_string($callable[0]) && is_string($callable[1]) &&
-            !(new ReflectionMethod($callable[0], $callable[1]))->isStatic()
-        ) {
-            $callable = $this->compileTwigCallable($twig, $function);
-        }
-
-        return $callable;
-    }
-
     protected function copyTwigFunction(Environment $twig, TwigFunction $function): void
     {
         $name = $function->getName();
@@ -453,15 +415,24 @@ trait HelpersHandler
         $loader = new MixedLoader($twig->getLoader());
         $twig->setLoader($loader);
         $this->share('twig', $twig);
-        $extensions = $twig->getExtensions();
+        $twig->extensions = $twig->getExtensions();
 
-        if (!isset($extensions[AssetExtension::class])) {
+        if (!isset($twig->extensions[AssetExtension::class])) {
             $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
-            $extensions[AssetExtension::class] = $assetExtension;
+            $twig->extensions[AssetExtension::class] = $assetExtension;
             $twig->addExtension($assetExtension);
         }
 
-        foreach ($twig->getExtensions() as $extension) {
+        foreach ($this->helpers as $helper) {
+            $class = get_class($helper);
+
+            if (!isset($twig->extensions[$class])) {
+                $twig->extensions[$class] = $helper;
+                $twig->addExtension($helper);
+            }
+        }
+
+        foreach ($twig->extensions as $extension) {
             /* @var ExtensionInterface $extension */
             foreach ($extension->getFunctions() as $function) {
                 $this->copyTwigFunction($twig, $function);
@@ -496,7 +467,7 @@ trait HelpersHandler
 
     protected function copySpecialHelpers(): void
     {
-        $this->helpers['css'] = new Css($this->getTemplatingHelper('assets'));
+        $this->helpers['css'] = new CssExtension($this->getTemplatingHelper('assets'));
         $this->helpers['http'] = $this->getHttpFoundationExtension();
     }
 
@@ -509,25 +480,9 @@ trait HelpersHandler
         }
     }
 
-    protected function storeReplacements(): void
-    {
-        $this->replacements = array_merge([
-//            'random'        => 'mt_rand',
-//            'asset'         => ['assets', 'getUrl'],
-//            'asset_version' => ['assets', 'getVersion'],
-//            'css_url'       => ['css', 'getUrl'],
-//            'csrf_token'    => ['form', 'csrfToken'],
-//            'url'           => ['router', 'url'],
-//            'path'          => ['router', 'path'],
-//            'absolute_url'  => ['http', 'generateAbsoluteUrl'],
-//            'relative_path' => ['http', 'generateRelativePath'],
-//            'is_granted'    => ['security', 'isGranted'],
-        ], $this->twigHelpers);
-    }
-
     protected function globalizeHelpers(): void
     {
-        foreach ($this->replacements as $name => $callable) {
+        foreach ($this->twigHelpers as $name => $callable) {
             if (is_array($callable) && !is_callable($callable) && isset($this->helpers[$callable[0]])) {
                 $subCallable = $callable;
                 $subCallable[0] = $this->helpers[$subCallable[0]];
@@ -544,11 +499,10 @@ trait HelpersHandler
     protected function registerHelpers(array $helpers): void
     {
         $this->helpers = [];
+        $this->copySpecialHelpers();
         $this->copyTwigFunctions();
         $this->copyStandardHelpers();
-        $this->copySpecialHelpers();
         $this->copyUserHelpers($helpers);
-        $this->storeReplacements();
         $this->globalizeHelpers();
     }
 }

@@ -7,7 +7,7 @@ use Pug\Pug;
 /**
  * Trait Filters.
  *
- * @method Pug getEngine()
+ * @method Pug getRenderer()
  */
 trait Filters
 {
@@ -21,7 +21,7 @@ trait Filters
      */
     public function filter($name, $filter)
     {
-        $this->getEngine()->filter($name, $filter);
+        $this->getRenderer()->filter($name, $filter);
 
         return $this;
     }
@@ -35,7 +35,7 @@ trait Filters
      */
     public function hasFilter($name)
     {
-        return $this->getEngine()->hasFilter($name);
+        return $this->getRenderer()->hasFilter($name);
     }
 
     /**
@@ -47,6 +47,6 @@ trait Filters
      */
     public function getFilter($name)
     {
-        return $this->getEngine()->getFilter($name);
+        return $this->getRenderer()->getFilter($name);
     }
 }
