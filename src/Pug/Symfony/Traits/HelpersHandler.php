@@ -98,51 +98,6 @@ trait HelpersHandler
     ];
 
     /**
-     * Get an helper by name.
-     *
-     * @param string $name
-     *
-     * @return mixed
-     */
-    public function offsetGet($name)
-    {
-        return $this->helpers[$name];
-    }
-
-    /**
-     * Check if an helper exists.
-     *
-     * @param string $name
-     *
-     * @return bool
-     */
-    public function offsetExists($name)
-    {
-        return isset($this->helpers[$name]);
-    }
-
-    /**
-     * Set an helper.
-     *
-     * @param string $name
-     * @param mixed  $value
-     */
-    public function offsetSet($name, $value)
-    {
-        $this->helpers[$name] = $value;
-    }
-
-    /**
-     * Remove an helper.
-     *
-     * @param string $name
-     */
-    public function offsetUnset($name)
-    {
-        unset($this->helpers[$name]);
-    }
-
-    /**
      * Get the Pug engine.
      *
      * @return Pug

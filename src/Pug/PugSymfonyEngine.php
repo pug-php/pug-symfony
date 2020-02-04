@@ -2,7 +2,6 @@
 
 namespace Pug;
 
-use ArrayAccess;
 use ErrorException;
 use Exception;
 use Phug\Compiler\Event\NodeEvent;
@@ -20,7 +19,7 @@ use RuntimeException;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
 
-class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAccess
+class PugSymfonyEngine implements EngineInterface, InstallerInterface
 {
     use Installer;
     use HelpersHandler;
@@ -258,7 +257,9 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAcce
 
     public function getRenderArguments(string $name, array $context): array
     {
-        return [$name, $this->getParameters($context)];
+        $context = $this->getParameters($context);
+
+        return [$name, $context];
     }
 
     protected static function extractUniquePaths(array $paths): array

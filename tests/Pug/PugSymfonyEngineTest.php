@@ -303,15 +303,33 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $twig = $container->get('twig');
 
         self::assertInstanceOf(Environment::class, $twig);
-        self::assertSame(implode('', [
-            '<p>inc-twig</p>',
-            '<p>inc-pug</p>',
-            '<div><p></p></div>',
-        ]), trim($twig->render('inc-twig.pug', [
-            'form' => $controller->index()->createView(),
-        ])));
         self::assertInstanceOf(PugSymfonyEngine::class, $twig->getEngine());
         self::assertInstanceOf(Pug::class, $twig->getRenderer());
+        self::assertSame(implode("\n", [
+            '<p>inc-twig</p>',
+            '<p>inc-pug</p>',
+            '<div>',
+            '  <p></p>',
+            '</div>',
+        ]), str_replace("\r", '', trim($twig->render('inc-twig.pug', [
+            'form' => $controller->index()->createView(),
+        ]))));
+    }
+
+    /**
+     * @throws ErrorException
+     */
+    public function testServicesSharing()
+    {
+        $kernel = new TestKernel(function (Container $container) {
+            $container->setParameter('pug', [
+                'shared_services' => ['t' => 'translator'],
+            ]);
+        });
+        $kernel->boot();
+        $pugSymfony = new PugSymfonyEngine($kernel);
+
+        self::assertSame('<p>Hello Bob</p>', $pugSymfony->renderString('p=t.trans("Hello %name%", {"%name%": "Bob"})'));
     }
 
     public function testOptions()
