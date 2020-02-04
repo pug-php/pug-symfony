@@ -33,7 +33,7 @@ before_script:
   - if [ -f ~/xdebug.ini ]; then mv ~/xdebug.ini /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini; fi;
   - chmod -R 0777 tests/project-s5
 script:
-  - if [ "$COVERAGE" = "true" ]; then vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml; else vendor/bin/phpunit --verbose --no-coverage; fi;
+  - if [ "$COVERAGE" = "true" ]; then phpdbg -qrr vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml; else vendor/bin/phpunit --verbose --no-coverage; fi;
   - if [ "$COVERAGE" = "true" ]; then php tests/checkCoverage.php; fi;
 after_script:
   - if [ "$COVERAGE" = "true" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi;
