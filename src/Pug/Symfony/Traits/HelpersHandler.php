@@ -68,6 +68,11 @@ trait HelpersHandler
     /**
      * @var array
      */
+    protected $userOptions = [];
+
+    /**
+     * @var array
+     */
     protected $twigHelpers;
 
     /**
@@ -147,11 +152,10 @@ trait HelpersHandler
         if ($this->pug === null) {
             $cache = $this->getCacheDir();
             (new Filesystem())->mkdir($cache);
-            $userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
 
-            $this->pug = $this->createEngine($this->getRendererOptions($cache, $userOptions));
+            $this->pug = $this->createEngine($this->getRendererOptions($cache));
             $this->registerHelpers();
-            $this->initializePugPlugins($userOptions);
+            $this->initializePugPlugins();
             $this->copyTwigGlobals();
             $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
         }
@@ -164,7 +168,24 @@ trait HelpersHandler
         $this->nodeHandler = $nodeHandler;
     }
 
-    protected function getRendererOptions(string $cache, array $userOptions): array
+    protected function shareServices(): void
+    {
+        $services = $this->userOptions['shared_services'] ?? [];
+
+        if (!count($services)) {
+            return;
+        }
+
+        if (!isset($this->userOptions['shared_variables'])) {
+            $this->userOptions['shared_variables'] = [];
+        }
+
+        foreach ($services as $name => $service) {
+            $this->userOptions['shared_variables'][$name] = $this->container->get($service);
+        }
+    }
+
+    protected function getRendererOptions(string $cache): array
     {
         $environment = $this->kernel->getEnvironment();
         $projectDirectory = $this->kernel->getProjectDir();
@@ -180,14 +201,14 @@ trait HelpersHandler
 
         $srcDir = $projectDirectory.'/src';
         $webDir = $projectDirectory.'/public';
-        $baseDir = isset($userOptions['baseDir'])
-            ? $userOptions['baseDir']
+        $baseDir = isset($this->userOptions['baseDir'])
+            ? $this->userOptions['baseDir']
             : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
         $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
         $this->defaultTemplateDirectory = $baseDir;
 
-        if (isset($userOptions['paths'])) {
-            $viewDirectories = array_merge($viewDirectories, $userOptions['paths'] ?: []);
+        if (isset($this->userOptions['paths'])) {
+            $viewDirectories = array_merge($viewDirectories, $this->userOptions['paths'] ?: []);
         }
 
         $debug = $this->kernel->isDebug();
@@ -202,7 +223,7 @@ trait HelpersHandler
             'outputDirectory' => $webDir,
             'prettyprint'     => $debug,
             'on_node'         => $this->nodeHandler,
-        ], $userOptions);
+        ], $this->userOptions);
 
         $options['paths'] = array_unique(array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
             return $path !== $baseDir;
@@ -251,15 +272,15 @@ trait HelpersHandler
         }
     }
 
-    protected function initializePugPlugins(array $userOptions): void
+    protected function initializePugPlugins(): void
     {
         $pug = $this->getRenderer();
 
-        if ($userOptions['assets'] ?? true) {
+        if ($this->userOptions['assets'] ?? true) {
             $this->assets = new Assets($pug);
         }
 
-        if ($userOptions['component'] ?? true) {
+        if ($this->userOptions['component'] ?? true) {
             ComponentExtension::enable($pug);
 
             $this->componentExtension = $pug->getModule(ComponentExtension::class);

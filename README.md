@@ -19,56 +19,28 @@ When your are asked to install automatically needed settings, enter yes.
 Note: Since the version 2.5.0, running the command with the `--no-interaction`
 option will install all settings automatically if possible.
 
-It for any reason, you do not can or want to use it, here is how to do
-a manual installation:
+It for any reason, you do not can or want to use it, you will have to add to
+your **config/bundles.php** file:
 
-- [Symfony 4+ manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
-- [Symfony 2 and 3 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation)
-
-If you installed Symfony in a custom way, you might be warned about
-missing "templating.engine.twig" service. We highly recommend you to
-install it (`composer require twig/twig`) to get Twig functions such
-as `css_url`, `form_start` and so on available from Pug templates.
-
-If you're sure you don't need Twig utils, you can simply remove
-"templating.engine.twig" from your "templating" services settings.
-
-## Configure
-
-You can set pug options by accessing the container (from controller or from the kernel) in Symfony.
 ```php
-$services = $kernel->getContainer();
-$pug = $services->get('templating.engine.pug');
-$pug->setOptions(array(
-  'pretty' => true,
-  'pugjs' => true,
-  // ...
-));
-// You can get the Pug engine to call any method available in pug-php
-$pug->getEngine()->share('globalVar', 'foo');
-$pug->getEngine()->addKeyword('customKeyword', $bar);
-```
-See the options in the pug-php README: https://github.com/pug-php/pug
-And methods directly available on the service: https://github.com/pug-php/pug-symfony/blob/master/src/Jade/JadeSymfonyEngine.php
-
-Initial options can also be passed in parameters in your **config/services.yaml** in Symfony 4,
-**config.yml** in older versions:
-```yaml
-parameters:
-    pug:
-        expressionLanguage: php
+Pug\PugSymfonyBundle\PugSymfonyBundle::class => ['all' => true],
 ```
 
 ## Usage
 
-Create jade views by creating files with .pug extension
-in **app/Resources/views** such as contact.pug with
-some Jade like this:
+Create Pug views by creating files with .pug extension
+in **app/Resources/views** such as contact.pug:
 ```pug
 h1
-  | Hello
+  | Contact
   =name
 ```
+
+Note: standard Twig functions are also available in your pug templates, for instance:
+```pug
+!=form_start(form, {method: 'GET'})
+```
+
 Then call it in your controller:
 ```php
 /**
@@ -77,19 +49,64 @@ Then call it in your controller:
 public function contactAction()
 {
     return $this->render('contact/contact.pug', [
-        'name' => 'Bob',
+        'name' => 'Us',
     ]);
 }
 ```
 
+## Configure
+
+You can inject `Pug\PugSymfonyEngine` to change options, share values, add plugins to Pug:
+
+```php
+public function contactAction(\Pug\PugSymfonyEngine $pug)
+{
+    $pug->setOptions(array(
+      'pretty' => true,
+      'pugjs' => true,
+      // ...
+    ));
+    $pug->share('globalVar', 'foo');
+    $pug->getRenderer()->addKeyword('customKeyword', $bar);
+    
+    return $this->render('contact/contact.pug', [
+        'name' => 'Us',
+    ]);
+}
+```
+
+Same can be ran globally on a given event such as `onKernelView` to apply customization before any
+view rendering.
+
+See the options in the pug-php documentation: https://phug-lang.com/#options
+
+Initial options can also be passed in parameters in your **config/services.yaml**:
+```yaml
+parameters:
+    pug:
+        expressionLanguage: php
+```
+
+Services can also be injected in the view using the option `shared_services`:
+```yaml
+parameters:
+    pug:
+        shared_services:
+            translator: translator
+```
+
+Make the translator available in every views:
+```pug
+p=translator.trans('Hello %name%', {'%name%': 'Jack'})
+```
+
+Keys (left) passed to `shared_services` are the variable name to be used in the view, values (right) are
+the class name (can be `\App\MyService`) or the alias to resolve the dependency injection.
+
 ## Deployment
 
-In production, you better have to pre-render all your templates to improve performances. To do that, you have
-`Pug\PugSymfonyBundle\PugSymfonyBundle` in your registered bundles. It should be already done if you
-followed the automated install with success. Else check installation instructions ([add bundle in Symfony 4+](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation#configbundlesphp),
-[add bundle in Symfony 2 and 3](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation#appappkenelphp))
-
-This will make the `assets:publish` command available, now each time you deploy your app, enter the command below:
+In production, you better have to pre-render all your templates to improve performances using the
+command below:
 ```shell
 php bin/console assets:publish --env=prod
 ```
