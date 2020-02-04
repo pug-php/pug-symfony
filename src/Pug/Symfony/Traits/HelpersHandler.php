@@ -82,24 +82,6 @@ trait HelpersHandler
         'translator',
     ];
 
-    protected static $globalHelpers = [];
-
-    /**
-     * Get a global helper by name.
-     *
-     * @param string $name
-     *
-     * @return callable
-     */
-    public static function getGlobalHelper($name)
-    {
-        return is_callable(static::$globalHelpers[$name])
-            ? static::$globalHelpers[$name]
-            : function ($input = null) {
-                return $input;
-            };
-    }
-
     /**
      * Get an helper by name.
      *
@@ -478,22 +460,6 @@ trait HelpersHandler
         }
     }
 
-    protected function globalizeHelpers(): void
-    {
-        foreach ($this->twigHelpers as $name => $callable) {
-            if (is_array($callable) && !is_callable($callable) && isset($this->helpers[$callable[0]])) {
-                $subCallable = $callable;
-                $subCallable[0] = $this->helpers[$subCallable[0]];
-
-                $callable = function () use ($subCallable) {
-                    return call_user_func_array($subCallable, func_get_args());
-                };
-            }
-
-            static::$globalHelpers[$name] = $callable;
-        }
-    }
-
     protected function registerHelpers(array $helpers): void
     {
         $this->helpers = [];
@@ -501,6 +467,5 @@ trait HelpersHandler
         $this->copyTwigFunctions();
         $this->copyStandardHelpers();
         $this->copyUserHelpers($helpers);
-        $this->globalizeHelpers();
     }
 }

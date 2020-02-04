@@ -23,14 +23,6 @@ class MixedLoader implements LoaderInterface
         $this->base = $base;
     }
 
-    public function uniqueTemplate($template): string
-    {
-        $name = uniqid();
-        $this->setTemplateSource($name, $template);
-
-        return $name;
-    }
-
     public function setTemplateSource($name, $template): void
     {
         $this->extraTemplates[$name] = $template;
@@ -43,18 +35,6 @@ class MixedLoader implements LoaderInterface
         }
 
         return $this->base->getSourceContext($name);
-    }
-
-    /**
-     * @param string $name
-     *
-     * @throws LoaderError
-     *
-     * @return string
-     */
-    public function getSource($name): string
-    {
-        return $this->getSourceContext($name)->getCode();
     }
 
     public function __call($name, $arguments)

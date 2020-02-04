@@ -1,6 +1,5 @@
 <phpunit
     bootstrap="tests/bootstrap.php"
-    processIsolation="true"
     colors="true"
     convertErrorsToExceptions="true"
     convertNoticesToExceptions="true"

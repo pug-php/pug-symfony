@@ -2,6 +2,7 @@
 
 namespace Pug;
 
+use ArrayAccess;
 use ErrorException;
 use Exception;
 use Phug\Compiler\Event\NodeEvent;
@@ -9,7 +10,6 @@ use Phug\Component\ComponentExtension;
 use Phug\Parser\Node\FilterNode;
 use Phug\Parser\Node\ImportNode;
 use Phug\Parser\Node\TextNode;
-use Pug\Symfony\Contracts\HelpersHandlerInterface;
 use Pug\Symfony\Contracts\InstallerInterface;
 use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
@@ -19,7 +19,7 @@ use RuntimeException;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
 
-class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHandlerInterface
+class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAccess
 {
     use Installer;
     use HelpersHandler;
@@ -124,22 +124,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, HelpersHa
         }
 
         return ($directory ? $directory.DIRECTORY_SEPARATOR : '').$name;
-    }
-
-    protected function getPugCodeLayoutStructure(string $pugCode): array
-    {
-        $parts = preg_split('/^extend(?=s?\s)/m', $pugCode, 2);
-
-        if (count($parts) === 1) {
-            return ['', $parts[0]];
-        }
-
-        $parts[1] .= "\n";
-        $parts[1] = explode("\n", $parts[1], 2);
-        $parts[0] .= 'extend'.$parts[1][0]."\n";
-        $parts[1] = substr($parts[1][1], 0, -1);
-
-        return $parts;
     }
 
     /**
