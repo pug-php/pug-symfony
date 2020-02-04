@@ -21,6 +21,9 @@ class PugDebugTemplateTemplate extends Template
     protected function doDisplay(array $context, array $blocks = [])
     {
         $macros = $this->macros;
+        if (isset($context['this'])) {
+            unset($context['this']);
+        }
         extract($context);
 
         if (isset($this->extensions['Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension'])) {

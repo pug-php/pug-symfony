@@ -5,6 +5,7 @@ namespace Pug\Tests;
 use DateTime;
 use ErrorException;
 use InvalidArgumentException;
+use Pug\Exceptions\ReservedVariable;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
@@ -113,25 +114,10 @@ class TestController extends AbstractController
     }
 }
 
-class InvalidExceptionOptionsPug extends Pug
-{
-    public function getOption($name)
-    {
-        if ($name === 'foobar') {
-            throw new InvalidArgumentException('foobar not found');
-        }
-
-        return parent::getOption($name);
-    }
-}
-
 class PugSymfonyEngineTest extends AbstractTestCase
 {
     use PrivatePropertyAccessor;
 
-    /**
-     * @throws ErrorException
-     */
     public function testRequireTwig()
     {
         self::expectException(RuntimeException::class);
@@ -305,6 +291,29 @@ class PugSymfonyEngineTest extends AbstractTestCase
         ])));
     }
 
+    /**
+     * @throws ErrorException
+     */
+    public function testRenderViaTwig()
+    {
+        $container = self::$kernel->getContainer();
+        $controller = new TestController();
+        $controller->setContainer($container);
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+
+        self::assertInstanceOf(Environment::class, $twig);
+        self::assertSame(implode('', [
+            '<p>inc-twig</p>',
+            '<p>inc-pug</p>',
+            '<div><p></p></div>',
+        ]), trim($twig->render('inc-twig.pug', [
+            'form' => $controller->index()->createView(),
+        ])));
+        self::assertInstanceOf(PugSymfonyEngine::class, $twig->getEngine());
+        self::assertInstanceOf(Pug::class, $twig->getRenderer());
+    }
+
     public function testOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -466,18 +475,18 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testForbidThis()
     {
-        self::expectException(ErrorException::class);
-        self::expectExceptionMessage('The "this" key is forbidden.');
+        self::expectException(ReservedVariable::class);
+        self::expectExceptionMessage('"this" is a reserved variable name, you can\'t overwrite it.');
 
         (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['this' => 42]);
     }
 
-    public function testForbidView()
+    public function testForbidBlocks()
     {
-        self::expectException(ErrorException::class);
-        self::expectExceptionMessage('The "view" key is forbidden.');
+        self::expectException(ReservedVariable::class);
+        self::expectExceptionMessage('"blocks" is a reserved variable name, you can\'t overwrite it.');
 
-        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['view' => 42]);
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['blocks' => 42]);
     }
 
     public function testIssue11BackgroundImage()

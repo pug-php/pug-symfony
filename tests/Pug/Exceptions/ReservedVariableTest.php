@@ -11,6 +11,6 @@ class ReservedVariableTest extends AbstractTestCase
     {
         $exception = new ReservedVariable('foobar');
 
-        self::assertSame("foobar is a reserved variable name, you can't overwrite it.", $exception->getMessage());
+        self::assertSame("\"foobar\" is a reserved variable name, you can't overwrite it.", $exception->getMessage());
     }
 }

@@ -10,6 +10,7 @@ use Phug\Component\ComponentExtension;
 use Phug\Parser\Node\FilterNode;
 use Phug\Parser\Node\ImportNode;
 use Phug\Parser\Node\TextNode;
+use Pug\Exceptions\ReservedVariable;
 use Pug\Symfony\Contracts\InstallerInterface;
 use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
@@ -156,22 +157,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAcce
     }
 
     /**
-     * Return an array of the global variables all views receive.
-     *
-     * @return array
-     */
-    public function getGlobalVariables(): array
-    {
-        return [
-            $this->getOptionDefault('shared_variables'),
-            [
-                'view' => $this,
-                'app'  => $this->kernel,
-            ],
-        ];
-    }
-
-    /**
      * Prepare and group input and global parameters.
      *
      * @param array $parameters
@@ -182,15 +167,11 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAcce
      */
     public function getParameters(array $parameters = []): array
     {
-        foreach (['view', 'this', 'app'] as $forbiddenKey) {
-            if (array_key_exists($forbiddenKey, $parameters)) {
-                throw new ErrorException('The "'.$forbiddenKey.'" key is forbidden.');
-            }
-        }
+        $parameters = array_merge($this->getOptionDefault('shared_variables'), $parameters);
 
-        foreach ($this->getGlobalVariables() as $sharedVariables) {
-            if ($sharedVariables) {
-                $parameters = array_merge($sharedVariables, $parameters);
+        foreach (['context', 'blocks', 'macros', 'this'] as $forbiddenKey) {
+            if (array_key_exists($forbiddenKey, $parameters)) {
+                throw new ReservedVariable($forbiddenKey);
             }
         }
 
@@ -273,6 +254,11 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAcce
         }
 
         return false;
+    }
+
+    public function getRenderArguments(string $name, array $context): array
+    {
+        return [$name, $this->getParameters($context)];
     }
 
     protected static function extractUniquePaths(array $paths): array

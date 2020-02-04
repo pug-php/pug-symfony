@@ -13,12 +13,11 @@ matrix:
       env:
         - COMPOSER_FLAGS='--prefer-lowest'
     - php: 7.2
-      env:
-        - COVERAGE=true
     - php: 7.3
     - php: 7.4
     - php: 7.4
       env:
+        - COVERAGE=true
         - STABILITY='dev'
 before_script:
   - |

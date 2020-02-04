@@ -21,6 +21,9 @@ class PugTemplateTemplate extends Template
     protected function doDisplay(array $context, array $blocks = [])
     {
         $macros = $this->macros;
+        if (isset($context['this'])) {
+            unset($context['this']);
+        }
         extract($context);
         // {{code}}
     }
