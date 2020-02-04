@@ -33,27 +33,20 @@ trait Options
      *
      * @param string|string[] $name  option path (string) or deep path (array of strings).
      * @param mixed           $value new value.
-     *
-     * @return Pug
      */
-    public function setOption($name, $value)
+    public function setOption($name, $value): void
     {
-        return $this->getRenderer()->setOption($name, $value);
+        $this->getRenderer()->setOption($name, $value);
     }
 
     /**
      * Set multiple options of the Pug engine.
      *
      * @param array $options
-     *
-     * @return Pug
      */
-    public function setOptions(array $options)
+    public function setOptions(array $options): void
     {
-        /** @var Pug $pug */
-        $pug = $this->getRenderer()->setOptions($options);
-
-        return $pug;
+        $this->getRenderer()->setOptions($options);
     }
 
     /**
@@ -61,7 +54,7 @@ trait Options
      *
      * @return array
      */
-    public function getSharedVariables()
+    public function getSharedVariables(): array
     {
         return $this->getOptionDefault('shared_variables', []);
     }

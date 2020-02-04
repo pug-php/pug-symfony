@@ -63,7 +63,17 @@ trait HelpersHandler
     /**
      * @var array
      */
+    protected $userHelpers = [];
+
+    /**
+     * @var array
+     */
     protected $twigHelpers;
+
+    /**
+     * @var callable
+     */
+    protected $nodeHandler;
 
     /**
      * @var array
@@ -140,13 +150,18 @@ trait HelpersHandler
             $userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
 
             $this->pug = $this->createEngine($this->getRendererOptions($cache, $userOptions));
-            $this->registerHelpers(array_slice(func_get_args(), 1));
+            $this->registerHelpers();
             $this->initializePugPlugins($userOptions);
             $this->copyTwigGlobals();
             $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
         }
 
         return $this->pug;
+    }
+
+    public function onNode(callable $nodeHandler): void
+    {
+        $this->nodeHandler = $nodeHandler;
     }
 
     protected function getRendererOptions(string $cache, array $userOptions): array
@@ -186,7 +201,7 @@ trait HelpersHandler
             'extension'       => ['.pug', '.jade'],
             'outputDirectory' => $webDir,
             'prettyprint'     => $debug,
-            'on_node'         => [$this, 'handleTwigInclude'],
+            'on_node'         => $this->nodeHandler,
         ], $userOptions);
 
         $options['paths'] = array_unique(array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
@@ -451,21 +466,21 @@ trait HelpersHandler
         $this->helpers['http'] = $this->getHttpFoundationExtension();
     }
 
-    protected function copyUserHelpers(array $helpers): void
+    protected function copyUserHelpers(): void
     {
-        foreach ($helpers as $helper) {
-            $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?$`', '$1', get_class($helper));
+        foreach ($this->userHelpers as $helper) {
+            $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?(?:Extension)?$`', '$1', get_class($helper));
             $name = strtolower(substr($name, 0, 1)).substr($name, 1);
             $this->helpers[$name] = $helper;
         }
     }
 
-    protected function registerHelpers(array $helpers): void
+    protected function registerHelpers(): void
     {
         $this->helpers = [];
         $this->copySpecialHelpers();
         $this->copyTwigFunctions();
         $this->copyStandardHelpers();
-        $this->copyUserHelpers($helpers);
+        $this->copyUserHelpers();
     }
 }

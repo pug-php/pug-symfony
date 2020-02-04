@@ -57,6 +57,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface, ArrayAcce
         $this->kernel = $kernel;
         $this->container = $container;
         $this->enhanceTwig();
+        $this->onNode([$this, 'handleTwigInclude']);
     }
 
     public function handleTwigInclude(NodeEvent $nodeEvent): void

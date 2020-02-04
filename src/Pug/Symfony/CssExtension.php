@@ -18,10 +18,10 @@ class CssExtension extends AbstractExtension
     public function getUrl($url)
     {
         if ($this->assetsHelper) {
-            $url = $this->assetsHelper->getUrl($url);
+            $url = $this->assetsHelper->getUrl("$url");
         }
 
-        return sprintf('url(%s)', var_export($url, true));
+        return sprintf('url(%s)', var_export("$url", true));
     }
 
     /**

@@ -10,9 +10,11 @@ use Pug\Pug;
 use Pug\PugSymfonyEngine;
 use Pug\Symfony\CssExtension;
 use Pug\Symfony\MixedLoader;
+use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\Twig\Environment;
 use ReflectionException;
 use ReflectionProperty;
+use RuntimeException;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
@@ -125,6 +127,27 @@ class InvalidExceptionOptionsPug extends Pug
 
 class PugSymfonyEngineTest extends AbstractTestCase
 {
+    use PrivatePropertyAccessor;
+
+    /**
+     * @throws ErrorException
+     */
+    public function testRequireTwig()
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Twig needs to be configured.');
+
+        $container = self::$kernel->getContainer();
+        foreach (['services', 'aliases', 'fileMap', 'methodMap'] as $name) {
+            /** @var ReflectionProperty $propertyAccessor */
+            $services = static::getPrivateProperty($container, $name, $propertyAccessor);
+            unset($services['twig']);
+            $propertyAccessor->setValue($container, $services);
+        }
+
+        new PugSymfonyEngine(self::$kernel);
+    }
+
     /**
      * @throws ErrorException
      */
@@ -360,13 +383,15 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertFalse($pugSymfony->hasFilter('upper'));
 
-        $pugSymfony->filter('upper', '\\Pug\\Tests\\Upper');
+        $pugSymfony->filter('upper', Upper::class);
         self::assertTrue($pugSymfony->hasFilter('upper'));
         $filter = $pugSymfony->getFilter('upper');
+
         if (!is_string($filter)) {
             $filter = get_class($filter);
         }
-        self::assertSame('Pug\\Tests\\Upper', ltrim($filter, '\\'));
+
+        self::assertSame(Upper::class, ltrim($filter, '\\'));
         self::assertSame('FOO', trim($pugSymfony->render('filter.pug')));
     }
 
@@ -481,6 +506,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertTrue($loader->isFresh('bar', 1));
         self::assertFalse($loader->exists('biz'));
 
+        self::assertSame('biz', $loader->getSourceContext('bar')->getCode());
+        self::assertSame('bar', $loader->getCacheKey('bar'));
         self::assertSame('fozz template', $loader->getSourceContext('fozz')->getCode());
         self::assertSame('bazz:bazz template', $loader->getCacheKey('bazz'));
     }

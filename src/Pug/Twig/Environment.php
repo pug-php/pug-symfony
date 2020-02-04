@@ -10,9 +10,6 @@ use Twig\Source;
 use Twig\Template;
 use Twig\TwigFunction;
 
-/**
- * @codeCoverageIgnore
- */
 class Environment extends EnvironmentBase
 {
     /**

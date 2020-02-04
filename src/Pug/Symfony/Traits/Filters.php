@@ -14,12 +14,12 @@ trait Filters
     /**
      * Set a Pug filter.
      *
-     * @param string   $name
-     * @param callable $filter
+     * @param string          $name
+     * @param callable|string $filter
      *
      * @return $this
      */
-    public function filter($name, $filter)
+    public function filter(string $name, $filter): self
     {
         $this->getRenderer()->filter($name, $filter);
 
@@ -33,7 +33,7 @@ trait Filters
      *
      * @return bool
      */
-    public function hasFilter($name)
+    public function hasFilter(string $name): bool
     {
         return $this->getRenderer()->hasFilter($name);
     }
@@ -43,9 +43,9 @@ trait Filters
      *
      * @param string $name
      *
-     * @return callable
+     * @return callable|string
      */
-    public function getFilter($name)
+    public function getFilter(string $name)
     {
         return $this->getRenderer()->getFilter($name);
     }

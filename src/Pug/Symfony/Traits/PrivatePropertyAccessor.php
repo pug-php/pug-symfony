@@ -18,7 +18,7 @@ trait PrivatePropertyAccessor
      *
      * @return mixed
      */
-    public static function getPrivateProperty($object, $property, &$propertyAccessor = null)
+    public static function getPrivateProperty(object $object, string $property, &$propertyAccessor = null)
     {
         $propertyAccessor = new ReflectionProperty($object, $property);
         $propertyAccessor->setAccessible(true);

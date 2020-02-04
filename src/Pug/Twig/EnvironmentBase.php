@@ -10,9 +10,6 @@ use Twig\Environment as TwigEnvironment;
 use Twig\Loader\LoaderInterface;
 use Twig\Source;
 
-/**
- * @codeCoverageIgnore
- */
 abstract class EnvironmentBase extends TwigEnvironment
 {
     use PrivatePropertyAccessor;
