@@ -142,7 +142,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function share($variables, $value = null): self
     {
-        $this->getRenderer()->share($variables, $value);
+        $this->getRenderer()->share(...func_get_args());
 
         return $this;
     }

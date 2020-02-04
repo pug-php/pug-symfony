@@ -332,6 +332,20 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertSame('<p>Hello Bob</p>', $pugSymfony->renderString('p=t.trans("Hello %name%", {"%name%": "Bob"})'));
     }
 
+    /**
+     * @throws ErrorException
+     */
+    public function testTwigGlobals()
+    {
+        $container = self::$kernel->getContainer();
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+        $twig->addGlobal('answer', 42);
+
+        self::assertSame('<p>42</p>', trim($pugSymfony->renderString('p=answer')));
+    }
+
     public function testOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);

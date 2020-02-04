@@ -111,7 +111,7 @@ trait HelpersHandler
             $this->pug = $this->createEngine($this->getRendererOptions($cache));
             $this->registerHelpers();
             $this->initializePugPlugins();
-            $this->copyTwigGlobals();
+            $this->share($this->getTwig()->getGlobals());
             $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
         }
 
@@ -207,24 +207,6 @@ trait HelpersHandler
         ]);
 
         return $pug;
-    }
-
-    protected function copyTwigGlobals(): void
-    {
-        foreach ($this->getTwig()->getGlobals() as $globalKey => $globalValue) {
-            if ($globalValue instanceof AppVariable) {
-                $globalValue->setDebug($this->kernel->isDebug());
-                $globalValue->setEnvironment($this->kernel->getEnvironment());
-                $globalValue->setRequestStack($this->container->get('request_stack'));
-                // @codeCoverageIgnoreStart
-                if ($this->container->has('security.token_storage')) {
-                    $globalValue->setTokenStorage($this->container->get('security.token_storage'));
-                }
-                // @codeCoverageIgnoreEnd
-            }
-
-            $this->share($globalKey, $globalValue);
-        }
     }
 
     protected function initializePugPlugins(): void
