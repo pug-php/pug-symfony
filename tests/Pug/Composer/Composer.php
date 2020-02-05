@@ -2,6 +2,7 @@
 
 namespace Composer;
 
-class Composer {
+class Composer
+{
     // noop
 }

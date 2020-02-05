@@ -13,7 +13,7 @@
 namespace Composer\EventDispatcher;
 
 /**
- * The base event class
+ * The base event class.
  *
  * @author Nils Adermann <naderman@naderman.de>
  */
@@ -46,7 +46,7 @@ class Event
      * @param array  $args  Arguments passed by the user
      * @param array  $flags Optional flags to pass data not as argument
      */
-    public function __construct($name, array $args = array(), array $flags = array())
+    public function __construct($name, array $args = [], array $flags = [])
     {
         $this->name = $name;
         $this->args = $args;
@@ -84,7 +84,7 @@ class Event
     }
 
     /**
-     * Checks if stopPropagation has been called
+     * Checks if stopPropagation has been called.
      *
      * @return bool Whether propagation has been stopped
      */
@@ -94,7 +94,7 @@ class Event
     }
 
     /**
-     * Prevents the event from being passed to further listeners
+     * Prevents the event from being passed to further listeners.
      */
     public function stopPropagation()
     {

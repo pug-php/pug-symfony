@@ -107,7 +107,8 @@ interface IOInterface
      * @param string $default  The default answer if none is given by the user
      *
      * @throws \RuntimeException If there is no data to read in the input stream
-     * @return string            The user answer
+     *
+     * @return string The user answer
      */
     public function ask($question, $default = null);
 
@@ -136,6 +137,7 @@ interface IOInterface
      * @param mixed    $default   The default answer if none is given by the user
      *
      * @throws \Exception When any of the validators return an error
+     *
      * @return mixed
      */
     public function askAndValidate($question, $validator, $attempts = null, $default = null);
@@ -160,7 +162,8 @@ interface IOInterface
      * @param bool        $multiselect  Select more than one value separated by comma
      *
      * @throws \InvalidArgumentException
-     * @return int|string|array          The selected value or values (the key of the choices array)
+     *
+     * @return int|string|array The selected value or values (the key of the choices array)
      */
     public function select($question, $choices, $default, $attempts = false, $errorMessage = 'Value "%s" is invalid', $multiselect = false);
 
@@ -199,7 +202,7 @@ interface IOInterface
     public function setAuthentication($repositoryName, $username, $password = null);
 
     /**
-     * Loads authentications from a config instance
+     * Loads authentications from a config instance.
      *
      * @param Config $config
      */

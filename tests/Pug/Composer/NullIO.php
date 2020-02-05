@@ -13,14 +13,14 @@
 namespace Composer\IO;
 
 /**
- * IOInterface that is not interactive and never writes the output
+ * IOInterface that is not interactive and never writes the output.
  *
  * @author Christophe Coevoet <stof@notk.org>
  */
 class NullIO extends BaseIO
 {
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function isInteractive()
     {
@@ -28,7 +28,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function isVerbose()
     {
@@ -36,7 +36,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function isVeryVerbose()
     {
@@ -44,7 +44,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function isDebug()
     {
@@ -52,7 +52,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function isDecorated()
     {
@@ -60,35 +60,35 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function write($messages, $newline = true, $verbosity = self::NORMAL)
     {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function writeError($messages, $newline = true, $verbosity = self::NORMAL)
     {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function overwrite($messages, $newline = true, $size = 80, $verbosity = self::NORMAL)
     {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function overwriteError($messages, $newline = true, $size = 80, $verbosity = self::NORMAL)
     {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function ask($question, $default = null)
     {
@@ -96,7 +96,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function askConfirmation($question, $default = true)
     {
@@ -104,7 +104,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function askAndValidate($question, $validator, $attempts = false, $default = null)
     {
@@ -112,7 +112,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function askAndHideAnswer($question)
     {
@@ -120,7 +120,7 @@ class NullIO extends BaseIO
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function select($question, $choices, $default, $attempts = false, $errorMessage = 'Value "%s" is invalid', $multiselect = false)
     {

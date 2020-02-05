@@ -19,10 +19,10 @@ use Psr\Log\LogLevel;
 
 abstract class BaseIO implements IOInterface, LoggerInterface
 {
-    protected $authentications = array();
+    protected $authentications = [];
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getAuthentications()
     {
@@ -30,15 +30,15 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function resetAuthentications()
     {
-        $this->authentications = array();
+        $this->authentications = [];
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function hasAuthentication($repositoryName)
     {
@@ -46,7 +46,7 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function getAuthentication($repositoryName)
     {
@@ -54,19 +54,19 @@ abstract class BaseIO implements IOInterface, LoggerInterface
             return $this->authentications[$repositoryName];
         }
 
-        return array('username' => null, 'password' => null);
+        return ['username' => null, 'password' => null];
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function setAuthentication($repositoryName, $username, $password = null)
     {
-        $this->authentications[$repositoryName] = array('username' => $username, 'password' => $password);
+        $this->authentications[$repositoryName] = ['username' => $username, 'password' => $password];
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function writeRaw($messages, $newline = true, $verbosity = self::NORMAL)
     {
@@ -74,7 +74,7 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function writeErrorRaw($messages, $newline = true, $verbosity = self::NORMAL)
     {
@@ -98,7 +98,7 @@ abstract class BaseIO implements IOInterface, LoggerInterface
 
             $this->writeError(
                 sprintf(
-                    "<warning>Warning: You should avoid overwriting already defined auth settings for %s.</warning>",
+                    '<warning>Warning: You should avoid overwriting already defined auth settings for %s.</warning>',
                     $repositoryName
                 )
             );
@@ -107,15 +107,15 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function loadConfiguration(Config $config)
     {
-        $bitbucketOauth = $config->get('bitbucket-oauth') ?: array();
-        $githubOauth = $config->get('github-oauth') ?: array();
-        $gitlabOauth = $config->get('gitlab-oauth') ?: array();
-        $gitlabToken = $config->get('gitlab-token') ?: array();
-        $httpBasic = $config->get('http-basic') ?: array();
+        $bitbucketOauth = $config->get('bitbucket-oauth') ?: [];
+        $githubOauth = $config->get('github-oauth') ?: [];
+        $gitlabOauth = $config->get('gitlab-oauth') ?: [];
+        $gitlabToken = $config->get('gitlab-token') ?: [];
+        $httpBasic = $config->get('http-basic') ?: [];
 
         // reload oauth tokens from config if available
 
@@ -150,11 +150,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     /**
      * System is unusable.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function emergency($message, array $context = array())
+    public function emergency($message, array $context = [])
     {
         return $this->log(LogLevel::EMERGENCY, $message, $context);
     }
@@ -165,11 +166,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
      * Example: Entire website down, database unavailable, etc. This should
      * trigger the SMS alerts and wake you up.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function alert($message, array $context = array())
+    public function alert($message, array $context = [])
     {
         return $this->log(LogLevel::ALERT, $message, $context);
     }
@@ -179,11 +181,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
      *
      * Example: Application component unavailable, unexpected exception.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function critical($message, array $context = array())
+    public function critical($message, array $context = [])
     {
         return $this->log(LogLevel::CRITICAL, $message, $context);
     }
@@ -192,11 +195,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
      * Runtime errors that do not require immediate action but should typically
      * be logged and monitored.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function error($message, array $context = array())
+    public function error($message, array $context = [])
     {
         return $this->log(LogLevel::ERROR, $message, $context);
     }
@@ -207,11 +211,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
      * Example: Use of deprecated APIs, poor use of an API, undesirable things
      * that are not necessarily wrong.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function warning($message, array $context = array())
+    public function warning($message, array $context = [])
     {
         return $this->log(LogLevel::WARNING, $message, $context);
     }
@@ -219,11 +224,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     /**
      * Normal but significant events.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function notice($message, array $context = array())
+    public function notice($message, array $context = [])
     {
         return $this->log(LogLevel::NOTICE, $message, $context);
     }
@@ -233,11 +239,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
      *
      * Example: User logs in, SQL logs.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function info($message, array $context = array())
+    public function info($message, array $context = [])
     {
         return $this->log(LogLevel::INFO, $message, $context);
     }
@@ -245,11 +252,12 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     /**
      * Detailed debug information.
      *
-     * @param  string $message
-     * @param  array  $context
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function debug($message, array $context = array())
+    public function debug($message, array $context = [])
     {
         return $this->log(LogLevel::DEBUG, $message, $context);
     }
@@ -257,14 +265,15 @@ abstract class BaseIO implements IOInterface, LoggerInterface
     /**
      * Logs with an arbitrary level.
      *
-     * @param  mixed  $level
-     * @param  string $message
-     * @param  array  $context
+     * @param mixed  $level
+     * @param string $message
+     * @param array  $context
+     *
      * @return null
      */
-    public function log($level, $message, array $context = array())
+    public function log($level, $message, array $context = [])
     {
-        if (in_array($level, array(LogLevel::EMERGENCY, LogLevel::ALERT, LogLevel::CRITICAL, LogLevel::ERROR))) {
+        if (in_array($level, [LogLevel::EMERGENCY, LogLevel::ALERT, LogLevel::CRITICAL, LogLevel::ERROR])) {
             $this->writeError('<error>'.$message.'</error>', true, self::NORMAL);
         } elseif ($level === LogLevel::WARNING) {
             $this->writeError('<warning>'.$message.'</warning>', true, self::NORMAL);
