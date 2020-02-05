@@ -60,7 +60,7 @@ class InstallerTest extends AbstractTestCase
         self::assertFileExists(__DIR__.'/../../installed');
 
         unlink(__DIR__.'/../../installed');
-        file_put_contents("$projectDir/config/bundles.php", "No longer an array.");
+        file_put_contents("$projectDir/config/bundles.php", 'No longer an array.');
         $io->reset();
 
         self::assertTrue(PugSymfonyEngine::install(new Event('update', new Composer(), $io), $projectDir));
