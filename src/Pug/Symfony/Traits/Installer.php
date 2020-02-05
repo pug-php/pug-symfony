@@ -55,7 +55,7 @@ trait Installer
     protected static function installInSymfony5($event, $dir)
     {
         $io = $event->getIO();
-        $baseDirectory = __DIR__.'/../../../pug-symfony';
+        $baseDirectory = __DIR__.'/../../../..';
 
         $flags = 0;
 
@@ -104,16 +104,14 @@ trait Installer
             $dir = null;
         }
 
-        $io = $event->getIO();
-        $baseDirectory = __DIR__.'/../../../pug-symfony';
+        $baseDirectory = __DIR__.'/../../../..';
 
-        if (!$io->isInteractive() || file_exists($baseDirectory.'/installed')) {
+        if (file_exists($baseDirectory.'/installed')) {
             return true;
         }
 
-        $dir = is_string($dir) && is_dir($dir)
-            ? $dir
-            : $baseDirectory.'/../../..';
+        $io = $event->getIO();
+        $dir = is_string($dir) && is_dir($dir) ? $dir : $baseDirectory.'/../../..';
 
         if (!file_exists($dir.'/composer.json')) {
             $io->write('Not inside a composer vendor directory, setup skipped.');

@@ -16,9 +16,6 @@ composer require pug-php/pug-symfony
 ```
 When your are asked to install automatically needed settings, enter yes.
 
-Note: Since the version 2.5.0, running the command with the `--no-interaction`
-option will install all settings automatically if possible.
-
 It for any reason, you do not can or want to use it, you will have to add to
 your **config/bundles.php** file:
 
