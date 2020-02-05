@@ -57,16 +57,6 @@ trait HelpersHandler
     /**
      * @var array
      */
-    protected $helpers;
-
-    /**
-     * @var array
-     */
-    protected $userHelpers = [];
-
-    /**
-     * @var array
-     */
     protected $userOptions = [];
 
     /**
@@ -108,7 +98,7 @@ trait HelpersHandler
             (new Filesystem())->mkdir($cache);
 
             $this->pug = $this->createEngine($this->getRendererOptions($cache));
-            $this->registerHelpers();
+            $this->copyTwigFunctions();
             $this->initializePugPlugins();
             $this->share($this->getTwig()->getGlobals());
             $this->setOption('paths', array_unique($this->getOptionDefault('paths', [])));
@@ -305,12 +295,7 @@ trait HelpersHandler
         $argument = '';
     }
 
-    protected function getTemplatingHelper(string $name)
-    {
-        return isset($this->helpers[$name]) ? $this->helpers[$name] : null;
-    }
-
-    protected function copyTwigFunction(Environment $twig, TwigFunction $function): void
+    protected function copyTwigFunction(TwigFunction $function): void
     {
         $name = $function->getName();
 
@@ -327,7 +312,7 @@ trait HelpersHandler
         $this->twig = $this->container->has('twig') ? $this->container->get('twig') : null;
 
         if (!($this->twig instanceof TwigEnvironment)) {
-            throw new RuntimeException('Twig service not configured.');
+            throw new RuntimeException('Twig needs to be configured.');
         }
 
         $this->twig = Environment::fromTwigEnvironment($this->twig, $this, $this->container);
@@ -352,13 +337,21 @@ trait HelpersHandler
         $this->share('twig', $twig);
         $twig->extensions = $twig->getExtensions();
 
-        if (!isset($twig->extensions[AssetExtension::class])) {
+        /** @var AssetExtension $assetExtension */
+        $assetExtension = $twig->extensions[AssetExtension::class] ?? null;
+
+        if (!$assetExtension) {
             $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
             $twig->extensions[AssetExtension::class] = $assetExtension;
             $twig->addExtension($assetExtension);
         }
 
-        foreach ($this->helpers as $helper) {
+        $helpers = [
+            'css'  => new CssExtension($assetExtension),
+            'http' => $this->getHttpFoundationExtension(),
+        ];
+
+        foreach ($helpers as $helper) {
             $class = get_class($helper);
 
             if (!isset($twig->extensions[$class])) {
@@ -370,19 +363,7 @@ trait HelpersHandler
         foreach ($twig->extensions as $extension) {
             /* @var ExtensionInterface $extension */
             foreach ($extension->getFunctions() as $function) {
-                $this->copyTwigFunction($twig, $function);
-            }
-        }
-    }
-
-    protected function copyStandardHelpers(): void
-    {
-        foreach ($this->templatingHelpers as $helper) {
-            if (
-                $this->container->has('templating.helper.'.$helper) &&
-                ($instance = $this->container->get('templating.helper.'.$helper, ContainerInterface::NULL_ON_INVALID_REFERENCE))
-            ) {
-                $this->helpers[$helper] = $instance;
+                $this->copyTwigFunction($function);
             }
         }
     }
@@ -398,29 +379,5 @@ trait HelpersHandler
             : $this->container->get('router')->getContext();
 
         return new HttpFoundationExtension(new UrlHelper($stack, $context));
-    }
-
-    protected function copySpecialHelpers(): void
-    {
-        $this->helpers['css'] = new CssExtension($this->getTemplatingHelper('assets'));
-        $this->helpers['http'] = $this->getHttpFoundationExtension();
-    }
-
-    protected function copyUserHelpers(): void
-    {
-        foreach ($this->userHelpers as $helper) {
-            $name = preg_replace('`^(?:.+\\\\)([^\\\\]+?)(?:Helper)?(?:Extension)?$`', '$1', get_class($helper));
-            $name = strtolower(substr($name, 0, 1)).substr($name, 1);
-            $this->helpers[$name] = $helper;
-        }
-    }
-
-    protected function registerHelpers(): void
-    {
-        $this->helpers = [];
-        $this->copySpecialHelpers();
-        $this->copyTwigFunctions();
-        $this->copyStandardHelpers();
-        $this->copyUserHelpers();
     }
 }

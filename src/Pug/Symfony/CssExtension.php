@@ -2,24 +2,25 @@
 
 namespace Pug\Symfony;
 
-use Symfony\Bundle\FrameworkBundle\Templating\Helper\AssetsHelper;
+use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
 class CssExtension extends AbstractExtension
 {
-    protected $assetsHelper;
+    /**
+     * @var AssetExtension
+     */
+    protected $assets;
 
-    public function __construct(AssetsHelper $assetsHelper = null)
+    public function __construct(AssetExtension $assets = null)
     {
-        $this->assetsHelper = $assetsHelper;
+        $this->assets = $assets;
     }
 
     public function getUrl($url)
     {
-        if ($this->assetsHelper) {
-            $url = $this->assetsHelper->getUrl("$url");
-        }
+        $url = $this->assets->getAssetUrl("$url");
 
         return sprintf('url(%s)', var_export("$url", true));
     }

@@ -25,7 +25,6 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
-use Twig\Template;
 use Twig\TwigFunction;
 
 class TokenStorage extends BaseTokenStorage
@@ -522,7 +521,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertSame(
             '<p>alt</p>',
-            trim($pugSymfony->render('p.pug'))
+            trim($pugSymfony->render('alt.pug'))
         );
     }
 

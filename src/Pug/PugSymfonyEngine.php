@@ -44,11 +44,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     public function __construct(KernelInterface $kernel)
     {
         $container = $kernel->getContainer();
-
-        if (!$container->has('twig')) {
-            throw new RuntimeException('Twig needs to be configured.');
-        }
-
         $this->kernel = $kernel;
         $this->container = $container;
         $this->userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
