@@ -3,6 +3,7 @@
 namespace Pug\Symfony\Traits;
 
 use Composer\IO\IOInterface;
+use Composer\Script\Event;
 use Pug\Symfony\Contracts\InstallerInterface;
 
 /**
@@ -45,9 +46,14 @@ trait Installer
         );
     }
 
+    /**
+     * @param Event  $event
+     * @param string $dir
+     *
+     * @return bool
+     */
     protected static function installInSymfony5($event, $dir)
     {
-        /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
         $baseDirectory = __DIR__.'/../../../pug-symfony';
 
@@ -86,13 +92,18 @@ trait Installer
         }
     }
 
+    /**
+     * @param Event  $event
+     * @param string $dir
+     *
+     * @return bool
+     */
     public static function install($event, $dir = null)
     {
         if (!is_string($dir)) {
             $dir = null;
         }
 
-        /** @var \Composer\Script\Event $event */
         $io = $event->getIO();
         $baseDirectory = __DIR__.'/../../../pug-symfony';
 
