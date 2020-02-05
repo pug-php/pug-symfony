@@ -10,7 +10,6 @@ use Pug\Symfony\CssExtension;
 use Pug\Symfony\MixedLoader;
 use Pug\Twig\Environment;
 use RuntimeException;
-use Symfony\Bridge\Twig\AppVariable;
 use Symfony\Bridge\Twig\Extension\AssetExtension;
 use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\Asset\Package;
