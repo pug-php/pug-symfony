@@ -81,6 +81,10 @@ class Environment extends TwigEnvironment
             unset($extensions[$key]);
         }
 
+        foreach ($baseTwig->getGlobals() as $key => $value) {
+            $twig->addGlobal($key, $value);
+        }
+
         $twig->setExtensions($extensions);
 
         return $twig;

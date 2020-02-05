@@ -82,17 +82,22 @@ See the options in the pug-php documentation: https://phug-lang.com/#options
 
 Initial options can also be passed in parameters in your **config/services.yaml**:
 ```yaml
+# config/services.yaml
 parameters:
+    # ...
     pug:
         expressionLanguage: php
 ```
 
-Services can also be injected in the view using the option `shared_services`:
+Globals of Twig are available in Pug views (such as the `app` variable to get `app.token` or `app.environment`)
+and any custom global value or service you will add to **twig.yaml**:
 ```yaml
-parameters:
-    pug:
-        shared_services:
-            translator: translator
+# config/packages/twig.yaml
+twig:
+    # ...
+    globals:
+        translator: '@translator'
+
 ```
 
 Make the translator available in every views:
@@ -100,8 +105,9 @@ Make the translator available in every views:
 p=translator.trans('Hello %name%', {'%name%': 'Jack'})
 ```
 
-Keys (left) passed to `shared_services` are the variable name to be used in the view, values (right) are
-the class name (can be `\App\MyService`) or the alias to resolve the dependency injection.
+Keys (left) passed to `globals` are the variable name to be used in the view, values (right) are
+the class name (can be `'@\App\MyService'`) or the alias to resolve the dependency injection. It
+can also be static values such as `ga_tracking: 'UA-xxxxx-x'`.
 
 ## Deployment
 

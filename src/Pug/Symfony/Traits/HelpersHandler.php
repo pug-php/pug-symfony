@@ -122,23 +122,6 @@ trait HelpersHandler
         $this->nodeHandler = $nodeHandler;
     }
 
-    protected function shareServices(): void
-    {
-        $services = $this->userOptions['shared_services'] ?? [];
-
-        if (!count($services)) {
-            return;
-        }
-
-        if (!isset($this->userOptions['shared_variables'])) {
-            $this->userOptions['shared_variables'] = [];
-        }
-
-        foreach ($services as $name => $service) {
-            $this->userOptions['shared_variables'][$name] = $this->container->get($service);
-        }
-    }
-
     protected function getRendererOptions(string $cache): array
     {
         $environment = $this->kernel->getEnvironment();

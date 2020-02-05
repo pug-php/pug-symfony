@@ -321,15 +321,12 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testServicesSharing()
     {
-        $kernel = new TestKernel(function (Container $container) {
-            $container->setParameter('pug', [
-                'shared_services' => ['t' => 'translator'],
-            ]);
-        });
-        $kernel->boot();
-        $pugSymfony = new PugSymfonyEngine($kernel);
+        /** @var Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+        $twig->addGlobal('t', self::$kernel->getContainer()->get('translator'));
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertSame('<p>Hello Bob</p>', $pugSymfony->renderString('p=t.trans("Hello %name%", {"%name%": "Bob"})'));
+        self::assertSame('<p>Hello Bob</p>', trim($pugSymfony->renderString('p=t.trans("Hello %name%", {"%name%": "Bob"})')));
     }
 
     /**

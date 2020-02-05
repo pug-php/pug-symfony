@@ -57,7 +57,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
         $this->kernel = $kernel;
         $this->container = $container;
         $this->userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
-        $this->shareServices();
         $this->enhanceTwig();
         $this->onNode([$this, 'handleTwigInclude']);
     }
