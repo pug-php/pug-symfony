@@ -41,11 +41,6 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     protected $defaultTemplateDirectory;
 
-    /**
-     * @var string
-     */
-    protected $fallbackTemplateDirectory;
-
     public function __construct(KernelInterface $kernel)
     {
         $container = $kernel->getContainer();
@@ -81,9 +76,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
 
     protected function crawlDirectories(string $srcDir, array &$assetsDirectories, array &$viewDirectories): ?string
     {
-        $baseDir = isset($viewDirectories[0]) && file_exists($viewDirectories[0])
-            ? $viewDirectories[0]
-            : $this->fallbackTemplateDirectory;
+        $baseDir = file_exists($viewDirectories[0]) ? $viewDirectories[0] : null;
 
         if (file_exists($srcDir)) {
             foreach (scandir($srcDir) as $directory) {

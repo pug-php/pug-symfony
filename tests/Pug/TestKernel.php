@@ -14,13 +14,32 @@ class TestKernel extends Kernel
      */
     private $containerConfigurator;
 
-    public function __construct(Closure $containerConfigurator, $environment = 'test', $debug = false)
+    /**
+     * @var string
+     */
+    private $projectDirectory;
+
+    public function __construct(Closure $containerConfigurator = null, $environment = 'test', $debug = false)
     {
-        $this->containerConfigurator = $containerConfigurator;
+        $this->containerConfigurator = $containerConfigurator ?? function () {
+        };
 
         parent::__construct($environment, $debug);
 
         $this->rootDir = $this->getRootDir();
+    }
+
+    public function getProjectDir(): string
+    {
+        return $this->projectDirectory ?? parent::getProjectDir();
+    }
+
+    /**
+     * @param string $projectDirectory
+     */
+    public function setProjectDirectory(string $projectDirectory): void
+    {
+        $this->projectDirectory = $projectDirectory;
     }
 
     public function getLogDir()

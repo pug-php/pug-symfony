@@ -23,7 +23,10 @@ use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
+use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
+use Twig\Template;
+use Twig\TwigFunction;
 
 class TokenStorage extends BaseTokenStorage
 {
@@ -502,6 +505,44 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
+    public function testCustomPaths()
+    {
+        $container = self::$kernel->getContainer();
+        $property = new ReflectionProperty($container, 'parameters');
+        $property->setAccessible(true);
+        $value = $property->getValue($container);
+        $value['pug']['prettyprint'] = false;
+        $value['pug']['paths'] = [__DIR__.'/../project-s5/templates-bis'];
+        $property->setValue($container, $value);
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(
+            '<p>alt</p>',
+            trim($pugSymfony->render('p.pug'))
+        );
+    }
+
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
+    public function testMissingDir()
+    {
+        $kernel = new TestKernel();
+        $kernel->boot();
+        $kernel->setProjectDirectory(__DIR__.'/../project');
+        $pugSymfony = new PugSymfonyEngine($kernel);
+
+        self::assertSame(
+            '<h1>Page</h1>',
+            trim($pugSymfony->render('page.pug'))
+        );
+    }
+
     public function testForbidThis()
     {
         self::expectException(ReservedVariable::class);
@@ -564,5 +605,48 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $css = new CssExtension($helper);
 
         self::assertSame("url('fake:foo')", $css->getUrl('foo'));
+    }
+
+    public function testCompileException()
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Unable to compile void function.');
+
+        new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+        $twig->compileCode(new TwigFunction('void'), '{# comment #}');
+    }
+
+    public function testLoadTemplate()
+    {
+        new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+
+        try {
+            $twig->loadTemplate('a', 'b', 1);
+        } catch (LoaderError $e) {
+            // noop
+        }
+
+        $classNames = self::getPrivateProperty($twig, 'classNames');
+
+        self::assertSame('a___1', $classNames['b']);
+    }
+
+    public function testDefaultOption()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(42, $pugSymfony->getOptionDefault('does-not-exist', 42));
+    }
+
+    public function testGetSharedVariables()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->share('foo', 'bar');
+
+        self::assertSame('bar', $pugSymfony->getSharedVariables()['foo']);
     }
 }

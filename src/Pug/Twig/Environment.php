@@ -7,6 +7,8 @@ use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Twig\Environment as TwigEnvironment;
+use Twig\Extension\EscaperExtension;
+use Twig\Extension\OptimizerExtension;
 use Twig\Loader\LoaderInterface;
 use Twig\Parser;
 use Twig\Source;
@@ -60,16 +62,10 @@ class Environment extends TwigEnvironment
             'debug'            => $baseTwig->isDebug(),
             'charset'          => $baseTwig->getCharset(),
             'strict_variables' => $baseTwig->isStrictVariables(),
-            'autoescape'       => static::getPrivateProperty(
-                $baseTwig->getExtension('Twig\\Extension\\EscaperExtension'),
-                'defaultStrategy'
-            ),
+            'autoescape'       => static::getPrivateExtensionProperty($baseTwig, EscaperExtension::class, 'defaultStrategy'),
             'cache'            => $baseTwig->getCache(true),
             'auto_reload'      => $baseTwig->isAutoReload(),
-            'optimizations'    => static::getPrivateProperty(
-                $baseTwig->getExtension('Twig\\Extension\\OptimizerExtension'),
-                'optimizers'
-            ),
+            'optimizations'    => static::getPrivateExtensionProperty($baseTwig, OptimizerExtension::class, 'optimizers'),
         ]);
 
         $twig->setPugSymfonyEngine($pugSymfonyEngine);
@@ -83,6 +79,14 @@ class Environment extends TwigEnvironment
 
         foreach ($baseTwig->getGlobals() as $key => $value) {
             $twig->addGlobal($key, $value);
+        }
+
+        foreach ($baseTwig->getFilters() as $filter) {
+            $twig->addFilter($filter);
+        }
+
+        foreach ($baseTwig->getFunctions() as $function) {
+            $twig->addFunction($function);
         }
 
         $twig->setExtensions($extensions);
@@ -213,5 +217,10 @@ class Environment extends TwigEnvironment
         }
 
         return trim($match[1]);
+    }
+
+    protected static function getPrivateExtensionProperty(TwigEnvironment $twig, string $extension, string $property)
+    {
+        return static::getPrivateProperty($twig->getExtension($extension), $property);
     }
 }
