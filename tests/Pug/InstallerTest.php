@@ -67,6 +67,17 @@ class InstallerTest extends AbstractTestCase
         self::assertSame(['Sorry, config/bundles.php has a format we can\'t handle automatically.'], $io->getLastOutput());
         self::assertFileNotExists(__DIR__.'/../../installed');
 
+        file_put_contents("$projectDir/config/bundles.php", file_get_contents(__DIR__.'/../project-s5/config/bundles-before.php'));
+        $io->reset();
+        $io->setInteractive(true);
+        $io->setPermissive(false);
+
+        self::assertTrue(PugSymfonyEngine::install(new Event('update', new Composer(), $io), $projectDir));
+        self::assertSame([], $io->getLastOutput());
+        self::assertFileEquals(__DIR__.'/../project-s5/config/bundles-before.php', "$projectDir/config/bundles.php");
+        self::assertFileExists(__DIR__.'/../../installed');
+
+        unlink(__DIR__.'/../../installed');
         $fs->remove($projectDir);
     }
 }
