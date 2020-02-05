@@ -15,7 +15,6 @@ use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
-use RuntimeException;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
 

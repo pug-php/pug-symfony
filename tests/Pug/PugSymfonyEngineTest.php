@@ -9,7 +9,6 @@ use Pug\Exceptions\ReservedVariable;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
-use Pug\Symfony\CssExtension;
 use Pug\Symfony\MixedLoader;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\Twig\Environment;
@@ -18,8 +17,6 @@ use ReflectionProperty;
 use RuntimeException;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
-use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
@@ -32,14 +29,6 @@ class TokenStorage extends BaseTokenStorage
     public function getToken(): string
     {
         return 'the token';
-    }
-}
-
-class CustomHelper
-{
-    public function foo(): string
-    {
-        return 'bar';
     }
 }
 
@@ -588,22 +577,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertSame('bar', $loader->getCacheKey('bar'));
         self::assertSame('fozz template', $loader->getSourceContext('fozz')->getCode());
         self::assertSame('bazz:bazz template', $loader->getCacheKey('bazz'));
-    }
-
-    public function testCssWithCustomAssetsHelper()
-    {
-        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\AssetsHelper')) {
-            include_once __DIR__.'/AssetsHelper.php';
-        }
-
-        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\FakeAssetsHelper')) {
-            include_once __DIR__.'/FakeAssetsHelper.php';
-        }
-
-        $helper = new FakeAssetsHelper(new Packages());
-        $css = new CssExtension($helper);
-
-        self::assertSame("url('fake:foo')", $css->getUrl('foo'));
     }
 
     public function testCompileException()

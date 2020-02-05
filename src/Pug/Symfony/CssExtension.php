@@ -13,7 +13,7 @@ class CssExtension extends AbstractExtension
      */
     protected $assets;
 
-    public function __construct(AssetExtension $assets = null)
+    public function __construct(AssetExtension $assets)
     {
         $this->assets = $assets;
     }
