@@ -13,11 +13,11 @@
 namespace Composer\Script;
 
 use Composer\Composer;
-use Composer\IO\IOInterface;
 use Composer\EventDispatcher\Event as BaseEvent;
+use Composer\IO\IOInterface;
 
 /**
- * The script event class
+ * The script event class.
  *
  * @author François Pluchino <francois.pluchino@opendisplay.com>
  * @author Nils Adermann <naderman@naderman.de>
@@ -54,7 +54,7 @@ class Event extends BaseEvent
      * @param array       $args     Arguments passed by the user
      * @param array       $flags    Optional flags to pass data not as argument
      */
-    public function __construct($name, Composer $composer, IOInterface $io, $devMode = false, array $args = array(), array $flags = array())
+    public function __construct($name, Composer $composer, IOInterface $io, $devMode = false, array $args = [], array $flags = [])
     {
         parent::__construct($name, $args, $flags);
         $this->composer = $composer;
@@ -84,7 +84,7 @@ class Event extends BaseEvent
     }
 
     /**
-     * Return the dev mode flag
+     * Return the dev mode flag.
      *
      * @return bool
      */
@@ -107,6 +107,7 @@ class Event extends BaseEvent
      * Set the originating event.
      *
      * @param \Composer\EventDispatcher\Event $event
+     *
      * @return $this
      */
     public function setOriginatingEvent(BaseEvent $event)
@@ -120,11 +121,12 @@ class Event extends BaseEvent
      * Returns the upper-most event in chain.
      *
      * @param \Composer\EventDispatcher\Event $event
+     *
      * @return \Composer\EventDispatcher\Event
      */
     private function calculateOriginatingEvent(BaseEvent $event)
     {
-        if ($event instanceof Event && $event->getOriginatingEvent()) {
+        if ($event instanceof self && $event->getOriginatingEvent()) {
             return $this->calculateOriginatingEvent($event->getOriginatingEvent());
         }
 
