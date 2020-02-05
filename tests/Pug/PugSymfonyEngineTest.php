@@ -2,6 +2,7 @@
 
 namespace Pug\Tests;
 
+use App\Service\PugInterceptor;
 use DateTime;
 use ErrorException;
 use InvalidArgumentException;
@@ -620,5 +621,26 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $pugSymfony->share('foo', 'bar');
 
         self::assertSame('bar', $pugSymfony->getSharedVariables()['foo']);
+    }
+
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
+    public function testRenderInterceptor()
+    {
+        $container = self::$kernel->getContainer();
+        $property = new ReflectionProperty($container, 'parameters');
+        $property->setAccessible(true);
+        $value = $property->getValue($container);
+        $value['pug']['interceptors'] = [PugInterceptor::class];
+        $property->setValue($container, $value);
+        $controller = new TestController();
+        $controller->setContainer($container);
+        new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+
+        self::assertSame(Environment::class, trim($twig->render('new-var.pug')));
     }
 }

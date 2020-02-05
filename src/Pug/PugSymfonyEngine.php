@@ -11,10 +11,13 @@ use Phug\Parser\Node\ImportNode;
 use Phug\Parser\Node\TextNode;
 use Pug\Exceptions\ReservedVariable;
 use Pug\Symfony\Contracts\InstallerInterface;
+use Pug\Symfony\Contracts\InterceptorInterface;
+use Pug\Symfony\RenderEvent;
 use Pug\Symfony\Traits\Filters;
 use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
 
@@ -144,25 +147,25 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     /**
      * Prepare and group input and global parameters.
      *
-     * @param array $parameters
+     * @param array $locals
      *
      * @throws ErrorException when a forbidden parameter key is used
      *
      * @return array input parameters with global parameters
      */
-    public function getParameters(array $parameters = []): array
+    public function getParameters(array $locals = []): array
     {
-        $parameters = array_merge($this->getOptionDefault('shared_variables'), $parameters);
+        $locals = array_merge($this->getOptionDefault('shared_variables'), $locals);
 
         foreach (['context', 'blocks', 'macros', 'this'] as $forbiddenKey) {
-            if (array_key_exists($forbiddenKey, $parameters)) {
+            if (array_key_exists($forbiddenKey, $locals)) {
                 throw new ReservedVariable($forbiddenKey);
             }
         }
 
-        $parameters['this'] = $this->getTwig();
+        $locals['this'] = $this->getTwig();
 
-        return $parameters;
+        return $locals;
     }
 
     /**
@@ -188,20 +191,20 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      * Render a template string.
      *
      * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
-     * @param array                                                           $parameters
+     * @param array                                                           $locals
      *
      * @throws ErrorException when a forbidden parameter key is used
      *
      * @return string
      */
-    public function renderString($code, array $parameters = []): string
+    public function renderString($code, array $locals = []): string
     {
         $pug = $this->getRenderer();
         $method = method_exists($pug, 'renderString') ? 'renderString' : 'render';
 
         return $pug->$method(
             $code,
-            $this->getParameters($parameters)
+            $this->getParameters($locals)
         );
     }
 
@@ -241,11 +244,26 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
         return false;
     }
 
-    public function getRenderArguments(string $name, array $context): array
+    public function getRenderArguments(string $name, array $locals): array
     {
-        $context = $this->getParameters($context);
+        $event = new RenderEvent($name, $locals, $this);
+        $container = $this->container;
 
-        return [$name, $context];
+        if ($container->has('event_dispatcher')) {
+            /** @var EventDispatcher $dispatcher */
+            $dispatcher = $container->get('event_dispatcher');
+            $dispatcher->dispatch($event, RenderEvent::NAME);
+
+            $interceptors = array_map(static function (string $interceptorClass) use ($container) {
+                return $container->get($interceptorClass);
+            }, $this->userOptions['interceptors'] ?? []);
+
+            array_walk($interceptors, static function (InterceptorInterface $interceptor) use ($event) {
+                $interceptor->intercept($event);
+            });
+        }
+
+        return [$event->getName(), $this->getParameters($event->getLocals())];
     }
 
     protected static function extractUniquePaths(array $paths): array
