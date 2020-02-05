@@ -637,10 +637,14 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $property->setValue($container, $value);
         $controller = new TestController();
         $controller->setContainer($container);
-        new PugSymfonyEngine(self::$kernel);
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
         /** @var Environment $twig */
         $twig = $container->get('twig');
 
         self::assertSame(Environment::class, trim($twig->render('new-var.pug')));
+
+        $pugSymfony->setOption('special-thing', true);
+
+        self::assertSame('<div><p></p></div>', preg_replace('/\s/', '', $twig->render('new-var.pug')));
     }
 }

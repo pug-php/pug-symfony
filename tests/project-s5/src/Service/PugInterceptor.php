@@ -25,6 +25,10 @@ class PugInterceptor implements InterceptorInterface
             $locals = $event->getLocals();
             $locals['newVar'] = get_class($this->twig);
             $event->setLocals($locals);
+
+            if ($event->getEngine()->getOptionDefault('special-thing', false)) {
+                $event->setName('p.pug');
+            }
         }
     }
 }
