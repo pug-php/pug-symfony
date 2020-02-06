@@ -110,12 +110,12 @@ class Environment extends TwigEnvironment
         $this->container = $container;
     }
 
-    public function compileSourceBase(Source $source)
+    public function compileSource(Source $source): string
     {
         $path = $source->getPath();
 
         if ($this->pugSymfonyEngine->supports($path)) {
-            $pug = $this->pugSymfonyEngine->getRenderer();
+            $pug = $this->getRenderer();
             $code = $source->getCode();
             $php = $pug->compile($code, $path);
             $codeFirstLine = $this->isDebug() ? 31 : 25;
@@ -170,11 +170,6 @@ class Environment extends TwigEnvironment
         return $html;
     }
 
-    public function compileSource(Source $source): string
-    {
-        return $this->compileSourceBase($source);
-    }
-
     public function loadTemplate(string $cls, string $name, int $index = null): Template
     {
         if ($index !== null) {
@@ -211,12 +206,13 @@ class Environment extends TwigEnvironment
         $parser = new Parser($this);
         $path = '__twig_function_'.$name.'_'.sha1($code).'.html.twig';
         $stream = $this->tokenize(new Source($code, $path, $path));
+        $output = $this->compile($parser->parse($stream));
 
-        if (!preg_match('/^\s*echo\s(.*);\s*$/m', $this->compile($parser->parse($stream)), $match)) {
+        if (!preg_match('/^\s*echo\s(.*);\s*$/m', $output, $match)) {
             throw new RuntimeException('Unable to compile '.$name.' function.');
         }
 
-        return trim($match[1]);
+        return '('.trim($match[1]).')'."\n";
     }
 
     protected static function getPrivateExtensionProperty(TwigEnvironment $twig, string $extension, string $property)

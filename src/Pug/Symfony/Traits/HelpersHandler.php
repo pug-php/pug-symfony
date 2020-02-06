@@ -70,23 +70,6 @@ trait HelpersHandler
     protected $nodeHandler;
 
     /**
-     * @var array
-     */
-    protected $templatingHelpers = [
-        'actions',
-        'assets',
-        'code',
-        'form',
-        'request',
-        'router',
-        'security',
-        'session',
-        'slots',
-        'stopwatch',
-        'translator',
-    ];
-
-    /**
      * Get the Pug engine.
      *
      * @return Pug
@@ -94,10 +77,7 @@ trait HelpersHandler
     public function getRenderer(): Pug
     {
         if ($this->pug === null) {
-            $cache = $this->getCacheDir();
-            (new Filesystem())->mkdir($cache);
-
-            $this->pug = $this->createEngine($this->getRendererOptions($cache));
+            $this->pug = $this->createEngine($this->getRendererOptions());
             $this->copyTwigFunctions();
             $this->initializePugPlugins();
             $this->share($this->getTwig()->getGlobals());
@@ -112,51 +92,60 @@ trait HelpersHandler
         $this->nodeHandler = $nodeHandler;
     }
 
-    protected function getRendererOptions(string $cache): array
+    protected function getRendererOptions(): array
     {
-        $environment = $this->kernel->getEnvironment();
-        $projectDirectory = $this->kernel->getProjectDir();
-        $assetsDirectories = [$projectDirectory.'/Resources/assets'];
-        $viewDirectories = [$projectDirectory.'/templates'];
+        if ($this->options === null) {
+            $environment = $this->kernel->getEnvironment();
+            $projectDirectory = $this->kernel->getProjectDir();
+            $assetsDirectories = [$projectDirectory.'/Resources/assets'];
+            $viewDirectories = [$projectDirectory.'/templates'];
 
-        if (($loader = $this->getTwig()->getLoader()) instanceof FilesystemLoader &&
-            is_array($paths = $loader->getPaths()) &&
-            isset($paths[0])
-        ) {
-            $viewDirectories[] = $paths[0];
+            if (($loader = $this->getTwig()->getLoader()) instanceof FilesystemLoader &&
+                is_array($paths = $loader->getPaths()) &&
+                isset($paths[0])
+            ) {
+                $viewDirectories[] = $paths[0];
+            }
+
+            $srcDir = $projectDirectory.'/src';
+            $webDir = $projectDirectory.'/public';
+            $baseDir = isset($this->userOptions['baseDir'])
+                ? $this->userOptions['baseDir']
+                : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
+            $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
+            $this->defaultTemplateDirectory = $baseDir;
+
+            if (isset($this->userOptions['paths'])) {
+                $viewDirectories = array_merge($viewDirectories, $this->userOptions['paths'] ?: []);
+            }
+
+            $debug = $this->kernel->isDebug();
+            $options = array_merge([
+                'debug'           => $debug,
+                'assetDirectory'  => static::extractUniquePaths($assetsDirectories),
+                'viewDirectories' => static::extractUniquePaths($viewDirectories),
+                'baseDir'         => $baseDir,
+                'cache'           => $debug ? false : $this->getCacheDir(),
+                'environment'     => $environment,
+                'extension'       => ['.pug', '.jade'],
+                'outputDirectory' => $webDir,
+                'prettyprint'     => $debug,
+                'on_node'         => $this->nodeHandler,
+            ], $this->userOptions);
+            $cache = $options['cache'] ?? $options['cache_dir'] ?? null;
+
+            if ($cache) {
+                (new Filesystem())->mkdir($cache);
+            }
+
+            $options['paths'] = array_unique(array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
+                return $path !== $baseDir;
+            }));
+
+            $this->options = $options;
         }
 
-        $srcDir = $projectDirectory.'/src';
-        $webDir = $projectDirectory.'/public';
-        $baseDir = isset($this->userOptions['baseDir'])
-            ? $this->userOptions['baseDir']
-            : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
-        $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
-        $this->defaultTemplateDirectory = $baseDir;
-
-        if (isset($this->userOptions['paths'])) {
-            $viewDirectories = array_merge($viewDirectories, $this->userOptions['paths'] ?: []);
-        }
-
-        $debug = $this->kernel->isDebug();
-        $options = array_merge([
-            'debug'           => $debug,
-            'assetDirectory'  => static::extractUniquePaths($assetsDirectories),
-            'viewDirectories' => static::extractUniquePaths($viewDirectories),
-            'baseDir'         => $baseDir,
-            'cache'           => $debug ? false : $cache,
-            'environment'     => $environment,
-            'extension'       => ['.pug', '.jade'],
-            'outputDirectory' => $webDir,
-            'prettyprint'     => $debug,
-            'on_node'         => $this->nodeHandler,
-        ], $this->userOptions);
-
-        $options['paths'] = array_unique(array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
-            return $path !== $baseDir;
-        }));
-
-        return $options;
+        return $this->options;
     }
 
     protected function createEngine(array $options): Pug
@@ -232,9 +221,11 @@ trait HelpersHandler
                             case ')':
                                 if ((--$opening) !== 0) {
                                     $argument .= ')';
+
+                                    break;
                                 }
 
-                                break;
+                                break 2;
 
                             case ',':
                                 if ($opening > 1) {

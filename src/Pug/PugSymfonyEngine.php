@@ -82,7 +82,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
                 }
 
                 if (is_dir($viewDirectory = $srcDir.'/'.$directory.'/Resources/views')) {
-                    if (is_null($baseDir)) {
+                    if ($baseDir === null) {
                         $baseDir = $viewDirectory;
                     }
 
@@ -131,7 +131,15 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function share($variables, $value = null): self
     {
-        $this->getRenderer()->share(...func_get_args());
+        if (func_num_args() === 2) {
+            $variables = [
+                $variables => $value,
+            ];
+        }
+
+        $variables = array_merge($this->getOptionDefault('shared_variables', []), $variables);
+
+        $this->setOption('shared_variables', $variables);
 
         return $this;
     }
@@ -155,7 +163,11 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function getParameters(array $locals = []): array
     {
-        $locals = array_merge($this->getOptionDefault('shared_variables'), $locals);
+        $locals = array_merge(
+            $this->getOptionDefault('globals', []),
+            $this->getOptionDefault('shared_variables', []),
+            $locals
+        );
 
         foreach (['context', 'blocks', 'macros', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $locals)) {
@@ -235,7 +247,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function supports($name): bool
     {
-        foreach ($this->getOptionDefault('extensions', []) as $extension) {
+        foreach ($this->getOptionDefault('extensions', ['.pug', '.jade']) as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
             }
