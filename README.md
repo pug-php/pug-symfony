@@ -4,7 +4,7 @@
 [![StyleCI](https://styleci.io/repos/61784988/shield?style=flat)](https://styleci.io/repos/61784988)
 [![Test Coverage](https://codeclimate.com/github/pug-php/pug-symfony/badges/coverage.svg)](https://codecov.io/github/pug-php/pug-symfony?branch=master)
 
-Pug template engine for Symfony
+[Pug template](https://phug-lang.com/) engine for Symfony
 
 This is the documentation for the ongoing version 3.0. [Click here to load the documentation for 2.8](https://github.com/pug-php/pug-symfony/tree/2.8.0#pug-symfony)
 
