@@ -431,6 +431,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertTrue($pugSymfony->exists('logout.pug'));
         self::assertFalse($pugSymfony->exists('login.pug'));
+        self::assertTrue($pugSymfony->exists('bundle.pug'));
     }
 
     public function testSupports()
@@ -611,6 +612,10 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testDefaultOption()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(42, $pugSymfony->getOptionDefault('does-not-exist', 42));
+
+        $pugSymfony->getRenderer();
 
         self::assertSame(42, $pugSymfony->getOptionDefault('does-not-exist', 42));
     }
