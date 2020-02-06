@@ -7,10 +7,16 @@ use Pug\Pug;
 /**
  * Trait Options.
  *
- * @method Pug getRenderer()
+ * @method Pug   getRenderer()
+ * @method array getRendererOptions()
  */
 trait Options
 {
+    /**
+     * @var array
+     */
+    protected $options;
+
     /**
      * Get a Pug engine option or the default value passed as second parameter (null if omitted).
      *
@@ -21,11 +27,9 @@ trait Options
      */
     public function getOptionDefault($name, $default = null)
     {
-        $pug = $this->getRenderer();
+        $options = $this->getRendererOptions();
 
-        return method_exists($pug, 'hasOption') && !$pug->hasOption($name)
-            ? $default
-            : $pug->getOption($name);
+        return array_key_exists($name, $options) ? $options[$name] : $default;
     }
 
     /**
@@ -36,6 +40,12 @@ trait Options
      */
     public function setOption($name, $value): void
     {
+        if ($this->pug === null) {
+            $this->options[$name] = $value;
+
+            return;
+        }
+
         $this->getRenderer()->setOption($name, $value);
     }
 
@@ -46,6 +56,12 @@ trait Options
      */
     public function setOptions(array $options): void
     {
+        if ($this->pug === null) {
+            $this->options = array_merge($this->options, $options);
+
+            return;
+        }
+
         $this->getRenderer()->setOptions($options);
     }
 

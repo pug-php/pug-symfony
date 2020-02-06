@@ -82,7 +82,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
                 }
 
                 if (is_dir($viewDirectory = $srcDir.'/'.$directory.'/Resources/views')) {
-                    if (is_null($baseDir)) {
+                    if ($baseDir === null) {
                         $baseDir = $viewDirectory;
                     }
 
@@ -131,7 +131,15 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function share($variables, $value = null): self
     {
-        $this->getRenderer()->share(...func_get_args());
+        if (func_num_args() === 2) {
+            $variables = [
+                $variables => $value,
+            ];
+        }
+
+        $variables = array_merge($this->getOptionDefault('shared_variables', []), $variables);
+
+        $this->setOption('shared_variables', $variables);
 
         return $this;
     }

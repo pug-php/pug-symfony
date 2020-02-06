@@ -115,7 +115,7 @@ class Environment extends TwigEnvironment
         $path = $source->getPath();
 
         if ($this->pugSymfonyEngine->supports($path)) {
-            $pug = $this->pugSymfonyEngine->getRenderer();
+            $pug = $this->getRenderer();
             $code = $source->getCode();
             $php = $pug->compile($code, $path);
             $codeFirstLine = $this->isDebug() ? 31 : 25;
