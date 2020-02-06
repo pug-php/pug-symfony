@@ -2,53 +2,40 @@
 
 namespace Pug\Tests;
 
-use AppKernel;
-use Closure;
-use Composer\Composer;
-use Composer\Script\Event;
+use App\Service\PugInterceptor;
 use DateTime;
+use ErrorException;
 use InvalidArgumentException;
-use Jade\Symfony\Css;
-use Jade\Symfony\MixedLoader;
+use Pug\Exceptions\ReservedVariable;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
+use Pug\Symfony\MixedLoader;
+use Pug\Symfony\Traits\PrivatePropertyAccessor;
+use Pug\Twig\Environment;
+use ReflectionException;
 use ReflectionProperty;
+use RuntimeException;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Bundle\FrameworkBundle\Templating\Helper\FakeAssetsHelper;
-use Symfony\Component\Asset\Packages;
-use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\Container;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
+use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
+use Twig\TwigFunction;
 
 class TokenStorage extends BaseTokenStorage
 {
-    public function __construct()
-    {
-    }
-
-    public function getToken()
+    public function getToken(): string
     {
         return 'the token';
     }
 }
 
-class CustomHelper
-{
-    public function foo()
-    {
-        return 'bar';
-    }
-}
-
 class Upper extends AbstractFilter
 {
-    public function parse($code)
+    public function parse(string $code): string
     {
         return strtoupper($code);
     }
@@ -56,78 +43,18 @@ class Upper extends AbstractFilter
 
 class LogoutUrlGenerator extends BaseLogoutUrlGenerator
 {
-    public function getLogoutUrl($key = null)
+    public function getLogoutUrl(string $key = null): string
     {
         return 'logout-url';
     }
 
-    public function getLogoutPath($key = null)
+    public function getLogoutPath(string $key = null): string
     {
         return 'logout-path';
     }
 }
 
-class TestKernel extends AppKernel
-{
-    /**
-     * @var Closure
-     */
-    private $containerConfigurator;
-
-    public function __construct(Closure $containerConfigurator, $environment = 'test', $debug = false)
-    {
-        $this->containerConfigurator = $containerConfigurator;
-
-        parent::__construct($environment, $debug);
-
-        $this->rootDir = $this->getRootDir();
-    }
-
-    public function getProjectDir()
-    {
-    }
-
-    public function getLogDir()
-    {
-        return sys_get_temp_dir() . '/pug-symfony-log';
-    }
-
-    public function getRootDir()
-    {
-        return realpath(__DIR__ . '/../project/app');
-    }
-
-    public function registerContainerConfiguration(LoaderInterface $loader)
-    {
-        parent::registerContainerConfiguration($loader);
-        $loader->load(__DIR__ . '/../project/app/config/config.yml');
-        $loader->load($this->containerConfigurator);
-    }
-
-    public function getCacheDir()
-    {
-        return sys_get_temp_dir() . '/pug-symfony-cache';
-    }
-
-    /**
-     * Override the parent method to force recompiling the container.
-     * For performance reasons the container is also not dumped to disk.
-     */
-    protected function initializeContainer()
-    {
-        $this->container = $this->buildContainer();
-        $this->container->compile();
-        $this->container->set('kernel', $this);
-    }
-}
-
-class TestFormBuilder extends FormBuilder
-{
-    public function getCompound()
-    {
-        return true;
-    }
-}
+require_once __DIR__.'/TestKernel.php';
 
 class Task
 {
@@ -156,7 +83,7 @@ class Task
 }
 
 if (!class_exists('Symfony\Bundle\FrameworkBundle\Controller\AbstractController')) {
-    include __DIR__ . '/AbstractController.php';
+    include __DIR__.'/AbstractController.php';
 }
 
 class TestController extends AbstractController
@@ -179,28 +106,29 @@ class TestController extends AbstractController
     }
 }
 
-class InvalidExceptionOptionsPug extends Pug
-{
-    public function getOption($name)
-    {
-        if ($name === 'foobar') {
-            throw new InvalidArgumentException('foobar not found');
-        }
-
-        return parent::getOption($name);
-    }
-}
-
-class InvalidExceptionOptionsPugSymfony extends PugSymfonyEngine
-{
-    public function getEngineClassName()
-    {
-        return '\Pug\Tests\InvalidExceptionOptionsPug';
-    }
-}
-
 class PugSymfonyEngineTest extends AbstractTestCase
 {
+    use PrivatePropertyAccessor;
+
+    public function testRequireTwig()
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Twig needs to be configured.');
+
+        $container = self::$kernel->getContainer();
+        foreach (['services', 'aliases', 'fileMap', 'methodMap'] as $name) {
+            /** @var ReflectionProperty $propertyAccessor */
+            $services = static::getPrivateProperty($container, $name, $propertyAccessor);
+            unset($services['twig']);
+            $propertyAccessor->setValue($container, $services);
+        }
+
+        new PugSymfonyEngine(self::$kernel);
+    }
+
+    /**
+     * @throws ErrorException
+     */
     public function testPreRenderPhp()
     {
         $kernel = new TestKernel(function (Container $container) {
@@ -218,6 +146,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testPreRenderJs()
     {
         $kernel = new TestKernel(function (Container $container) {
@@ -251,14 +182,11 @@ class PugSymfonyEngineTest extends AbstractTestCase
         ]));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testPreRenderCsrfToken()
     {
-        if ($this->isAtLeastSymfony5()) {
-            self::markTestSkipped('CSRF token function not available with Symfony 5.0.');
-
-            return;
-        }
-
         $kernel = new TestKernel(function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
@@ -266,48 +194,26 @@ class PugSymfonyEngineTest extends AbstractTestCase
         });
         $kernel->boot();
         $pugSymfony = new PugSymfonyEngine($kernel);
+        $this->addFormRenderer($kernel->getContainer());
 
         self::assertSame('<p>Hello</p>', $pugSymfony->renderString('p Hello'));
 
-        self::assertRegExp('/<p>[a-zA-Z0-9_-]{10,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
+        self::assertRegExp('/<p>[a-zA-Z0-9_-]{20,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
     }
 
     public function testGetEngine()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        self::assertRegExp('/^\\\\?Jade\\\\Symfony\\\\(Jade|Pug)Engine$/', get_class($pugSymfony->getEngine()));
+        self::assertInstanceOf(Pug::class, $pugSymfony->getRenderer());
     }
 
-    public function testFallbackAppDir()
-    {
-        $this->markTestSkipped('The baseDir option is now aligned on default template directory.');
-
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $baseDir = realpath($pugSymfony->getOption('baseDir'));
-        $appView = __DIR__ . '/../project/app/Resources/views';
-        $srcView = __DIR__ . '/../project/src/TestBundle/Resources/views';
-
-        self::assertTrue($baseDir !== false);
-        self::assertSame(realpath($srcView), $baseDir);
-
-        rename($srcView, $srcView . '.save');
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        $baseDir = realpath($pugSymfony->getOption('baseDir'));
-        rename($srcView . '.save', $srcView);
-
-        self::assertTrue($baseDir !== false);
-        self::assertSame(realpath($appView), $baseDir);
-    }
-
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
     public function testSecurityToken()
     {
-        if (version_compare($this->getSymfonyVersion(), '3.3', '<') || $this->isAtLeastSymfony5()) {
-            self::markTestSkipped('security.token_storage compatible since 3.3 and until 5.0.');
-
-            return;
-        }
-
         $tokenStorage = new TokenStorage();
         $container = self::$kernel->getContainer();
         $reflectionProperty = new ReflectionProperty($container, 'services');
@@ -316,18 +222,19 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $services['security.token_storage'] = $tokenStorage;
         $reflectionProperty->setValue($container, $services);
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $this->addFormRenderer($container);
 
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
 
     /**
-     * @throws \ErrorException
-     * @throws \ReflectionException
+     * @throws ErrorException
+     * @throws ReflectionException
      */
     public function testLogoutHelper()
     {
         $generator = new LogoutUrlGenerator();
-        /* @var \Twig_Environment $twig */
+        /* @var Environment $twig */
         $twig = self::$kernel->getContainer()->get('twig');
 
         foreach ($twig->getExtensions() as $extension) {
@@ -341,7 +248,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         }
 
         if ($generator) {
-            include_once __DIR__ . '/LogoutUrlHelper.php';
+            include_once __DIR__.'/LogoutUrlHelper.php';
             $logoutUrlHelper = new LogoutUrlHelper($generator);
             self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
         }
@@ -352,93 +259,93 @@ class PugSymfonyEngineTest extends AbstractTestCase
     }
 
     /**
-     * @throws \ErrorException
+     * @throws ErrorException
      */
     public function testFormHelpers()
     {
-        if (version_compare($this->getSymfonyVersion(), '4.4', '>=')) {
-            self::markTestSkipped('Test not compatible with Symfony 4.4+.');
-
-            return;
-        }
-
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $container = self::$kernel->getContainer();
+        $this->addFormRenderer($container);
         $controller = new TestController();
-        $controller->setContainer(self::$kernel->getContainer());
+        $controller->setContainer($container);
 
-        self::assertRegExp('/^' . implode('', [
-            '<form name="form" method="get"( action="")?\s*>\s*',
-            '<div\s*>\s*<label for="form_name" class="required"\s*>Name<\/label>\s*',
-            '<input type="text" id="form_name" name="form\[name\]" required="required"\s*\/>\s*<\/div>\s*',
-            '<div\s*>\s*<label class="required"\s*>Due date<\/label>\s*<div id="form_dueDate"\s*>\s*(',
+        self::assertRegExp('/^'.implode('', [
+            '<form name="form" method="get">',
+            '<input type="text" id="form_name" name="form\[name\]" required="required" class="foo"\s*\/>',
+            '<div\s*><label class="required">Due date<\/label><div id="form_dueDate">(',
             '<select id="form_dueDate_day" name="form\[dueDate\]\[day\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*|',
             '<select id="form_dueDate_month" name="form\[dueDate\]\[month\]"\s*>\s*(<option value="\d+"\s*>[^<]+<\/option>\s*)+<\/select>\s*|',
             '<select id="form_dueDate_year" name="form\[dueDate\]\[year\]"\s*>\s*(<option value="\d+"\s*>\d+<\/option>\s*)+<\/select>\s*){3}',
             '<\/div>\s*<\/div>\s*<div\s*>\s*<button type="submit" id="form_save" name="form\[save\]"\s*>Submit me<\/button>\s*<\/div>\s*',
             '<input type="hidden" id="form__token" name="form\[_token\]" value="[^"]+"\s*\/>\s*<\/form>',
-        ]) . '$/', trim($pugSymfony->renderString(implode("\n", [
-            '!=form_start(form, {method: "GET"})',
-            '!=form_errors(form)',
-            '!=form_row(form.name)',
-            '!=form_widget(form.name, {attr: {class: "foo"}})',
-            '!=form_row(form.dueDate)',
-            '!=form_row(form.save, {label: "Submit me"})',
-            '!=form_end(form)',
-        ]), [
+        ]).'$/', trim($pugSymfony->render('form', [
             'form' => $controller->index()->createView(),
         ])));
     }
 
-    public function testCustomHelper()
+    /**
+     * @throws ErrorException
+     */
+    public function testRenderViaTwig()
     {
-        self::clearCache();
-        $helper = new CustomHelper();
-        $kernel = new TestKernel(function (Container $container) {
-            $container->setParameter('pug', [
-                'expressionLanguage' => 'php',
-            ]);
-        });
-        $kernel->boot();
-        $pugSymfony = new PugSymfonyEngine($kernel, $helper);
+        $container = self::$kernel->getContainer();
+        $controller = new TestController();
+        $controller->setContainer($container);
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
 
-        self::assertTrue(isset($pugSymfony['custom']));
-        self::assertSame($helper, $pugSymfony['custom']);
+        self::assertInstanceOf(Environment::class, $twig);
+        self::assertInstanceOf(PugSymfonyEngine::class, $twig->getEngine());
+        self::assertInstanceOf(Pug::class, $twig->getRenderer());
+        self::assertSame(implode("\n", [
+            '<p>inc-twig</p>',
+            '<p>inc-pug</p>',
+            '<div>',
+            '  <p></p>',
+            '</div>',
+        ]), str_replace("\r", '', trim($twig->render('inc-twig.pug', [
+            'form' => $controller->index()->createView(),
+        ]))));
+    }
 
-        self::assertSame('<u>bar</u>', trim($pugSymfony->render('custom-helper.pug')));
+    /**
+     * @throws ErrorException
+     */
+    public function testServicesSharing()
+    {
+        /** @var Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+        $twig->addGlobal('t', self::$kernel->getContainer()->get('translator'));
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
-        unset($pugSymfony['custom']);
-        self::assertFalse(isset($pugSymfony['custom']));
+        self::assertSame('<p>Hello Bob</p>', trim($pugSymfony->renderString('p=t.trans("Hello %name%", {"%name%": "Bob"})')));
+    }
 
-        self::assertSame('<s>Noop</s>', trim($pugSymfony->render('custom-helper.pug')));
+    /**
+     * @throws ErrorException
+     */
+    public function testTwigGlobals()
+    {
+        $container = self::$kernel->getContainer();
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+        $twig->addGlobal('answer', 42);
 
-        $pugSymfony['custom'] = $helper;
-        self::assertTrue(isset($pugSymfony['custom']));
-        self::assertSame($helper, $pugSymfony['custom']);
-
-        self::assertSame('<u>bar</u>', trim($pugSymfony->render('custom-helper.pug')));
+        self::assertSame('<p>42</p>', trim($pugSymfony->renderString('p=answer')));
     }
 
     public function testOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOptions(['foo' => 'bar']);
 
-        $message = method_exists($pugSymfony->getEngine(), 'hasOption') && $pugSymfony->getOption('foo') === null
-            ? 'foo is not a valid option name.'
-            : null;
-        if ($message === null) {
-            try {
-                $pugSymfony->getOption('foo');
-            } catch (InvalidArgumentException $e) {
-                $message = $e->getMessage();
-            }
-        }
-
-        self::assertSame('foo is not a valid option name.', $message);
-
-        $pugSymfony->setCustomOptions(['foo' => 'bar']);
-        self::assertSame('bar', $pugSymfony->getOption('foo'));
+        self::assertSame('bar', $pugSymfony->getOptionDefault('foo'));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testBundleView()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -447,19 +354,22 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertSame('<section>World</section>', trim($pugSymfony->render('TestBundle:directory:file.pug')));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testAssetHelperPhp()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'php');
 
         self::assertSame(
-            '<div style="' .
-                'background-position: 50% -402px; ' .
-                'background-image: url(\'/assets/img/patterns/5.png\');' .
-                '" class="foo"></div>' . "\n" .
-            '<div style="' .
-                'background-position:50% -402px;' .
-                'background-image:url(\'/assets/img/patterns/5.png\')' .
+            '<div style="'.
+                'background-position: 50% -402px; '.
+                'background-image: url(\'/assets/img/patterns/5.png\');'.
+                '" class="foo"></div>'."\n".
+            '<div style="'.
+                'background-position:50% -402px;'.
+                'background-image:url(\'/assets/img/patterns/5.png\')'.
                 '" class="foo"></div>',
             preg_replace(
                 '/<div( class="[^"]+")(.+?)></',
@@ -469,19 +379,22 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testAssetHelperJs()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
         $pugSymfony->setOption('expressionLanguage', 'js');
 
         self::assertSame(
-            '<div style="' .
-                'background-position: 50% -402px; ' .
-                'background-image: url(\'/assets/img/patterns/5.png\');' .
-                '" class="foo"></div>' . "\n" .
-            '<div style="' .
-                'background-position:50% -402px;' .
-                'background-image:url(\'/assets/img/patterns/5.png\')' .
+            '<div style="'.
+                'background-position: 50% -402px; '.
+                'background-image: url(\'/assets/img/patterns/5.png\');'.
+                '" class="foo"></div>'."\n".
+            '<div style="'.
+                'background-position:50% -402px;'.
+                'background-image:url(\'/assets/img/patterns/5.png\')'.
                 '" class="foo"></div>',
             preg_replace(
                 '/<div( class="[^"]+")(.+?)></',
@@ -491,19 +404,24 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testFilter()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
 
         self::assertFalse($pugSymfony->hasFilter('upper'));
 
-        $pugSymfony->filter('upper', '\\Pug\\Tests\\Upper');
+        $pugSymfony->filter('upper', Upper::class);
         self::assertTrue($pugSymfony->hasFilter('upper'));
         $filter = $pugSymfony->getFilter('upper');
+
         if (!is_string($filter)) {
             $filter = get_class($filter);
         }
-        self::assertSame('Pug\\Tests\\Upper', ltrim($filter, '\\'));
+
+        self::assertSame(Upper::class, ltrim($filter, '\\'));
         self::assertSame('FOO', trim($pugSymfony->render('filter.pug')));
     }
 
@@ -525,6 +443,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertFalse($pugSymfony->supports('foo-bar'));
     }
 
+    /**
+     * @throws ErrorException
+     */
     public function testCustomOptions()
     {
         $pugSymfony = new PugSymfonyEngine(self::$kernel);
@@ -536,7 +457,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $pugSymfony->setOption('indentSize', 3);
         $pugSymfony->setOption('prettyprint', '   ');
 
-        self::assertSame(3, $pugSymfony->getOption('indentSize'));
+        self::assertSame(3, $pugSymfony->getOptionDefault('indentSize'));
         self::assertSame(
             "<div>\n   <p></p>\n</div>",
             str_replace("\r", '', trim($pugSymfony->render('p.pug')))
@@ -544,8 +465,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         $pugSymfony->setOptions(['indentSize' => 5, 'prettyprint' => '     ']);
 
-        self::assertSame(5, $pugSymfony->getOption('indentSize'));
-        self::assertSame(5, $pugSymfony->getEngine()->getOption('indentSize'));
+        self::assertSame(5, $pugSymfony->getOptionDefault('indentSize'));
+        self::assertSame(5, $pugSymfony->getRenderer()->getOption('indentSize'));
         self::assertSame(
             "<div>\n     <p></p>\n</div>",
             str_replace("\r", '', trim($pugSymfony->render('p.pug')))
@@ -553,21 +474,78 @@ class PugSymfonyEngineTest extends AbstractTestCase
     }
 
     /**
-     * @expectedException        \ErrorException
-     * @expectedExceptionMessage The "this" key is forbidden.
+     * @throws ErrorException
+     * @throws ReflectionException
      */
-    public function testForbidThis()
+    public function testCustomBaseDir()
     {
-        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['this' => 42]);
+        $container = self::$kernel->getContainer();
+        $property = new ReflectionProperty($container, 'parameters');
+        $property->setAccessible(true);
+        $value = $property->getValue($container);
+        $value['pug']['prettyprint'] = false;
+        $value['pug']['baseDir'] = __DIR__.'/../project-s5/templates-bis';
+        $property->setValue($container, $value);
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(
+            '<section><p></p></section>',
+            trim($pugSymfony->render('p.pug'))
+        );
     }
 
     /**
-     * @expectedException        \ErrorException
-     * @expectedExceptionMessage The "view" key is forbidden.
+     * @throws ErrorException
+     * @throws ReflectionException
      */
-    public function testForbidView()
+    public function testCustomPaths()
     {
-        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['view' => 42]);
+        $container = self::$kernel->getContainer();
+        $property = new ReflectionProperty($container, 'parameters');
+        $property->setAccessible(true);
+        $value = $property->getValue($container);
+        $value['pug']['prettyprint'] = false;
+        $value['pug']['paths'] = [__DIR__.'/../project-s5/templates-bis'];
+        $property->setValue($container, $value);
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(
+            '<p>alt</p>',
+            trim($pugSymfony->render('alt.pug'))
+        );
+    }
+
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
+    public function testMissingDir()
+    {
+        $kernel = new TestKernel();
+        $kernel->boot();
+        $kernel->setProjectDirectory(__DIR__.'/../project');
+        $pugSymfony = new PugSymfonyEngine($kernel);
+
+        self::assertSame(
+            '<h1>Page</h1>',
+            trim($pugSymfony->render('page.pug'))
+        );
+    }
+
+    public function testForbidThis()
+    {
+        self::expectException(ReservedVariable::class);
+        self::expectExceptionMessage('"this" is a reserved variable name, you can\'t overwrite it.');
+
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['this' => 42]);
+    }
+
+    public function testForbidBlocks()
+    {
+        self::expectException(ReservedVariable::class);
+        self::expectExceptionMessage('"blocks" is a reserved variable name, you can\'t overwrite it.');
+
+        (new PugSymfonyEngine(self::$kernel))->render('p.pug', ['blocks' => 42]);
     }
 
     public function testIssue11BackgroundImage()
@@ -578,363 +556,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $html = preg_replace('/<div( class="[^"]+")([^>]+)>/', '<div$2$1>', $html);
 
         self::assertSame('<div style="background-image: url(foo);" class="slide"></div>', $html);
-    }
-
-    /**
-     * @group install
-     */
-    public function testInstall()
-    {
-        if ($this->isAtLeastSymfony5()) {
-            $this->markTestSkipped('Symfony < 5 test');
-        }
-
-        include_once __DIR__ . '/CaptureIO.php';
-        $io = new CaptureIO();
-        $composer = new Composer();
-        $installedFile = __DIR__ . '/../../installed';
-        $fs = new Filesystem();
-        touch($installedFile);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
-
-        $fs->remove($installedFile);
-        $io->setInteractive(true);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project'));
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        $io->setPermissive(true);
-        $io->reset();
-        $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs->remove($dir);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Not inside a composer vendor directory, setup skipped.',
-        ], $io->getLastOutput());
-
-        $io->reset();
-        $fs->mkdir($dir);
-        $fs->touch($dir . '/composer.json');
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'framework entry not found in config.yml.',
-            'Sorry, AppKernel.php has a format we can\'t handle automatically.',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileNotExists($installedFile);
-
-        foreach (['/app/config/config.yml', '/app/AppKernel.php'] as $file) {
-            $fs->copy(__DIR__ . '/../project' . $file, $dir . $file);
-        }
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'templating.engine.pug setting in config.yml already exists.',
-            'Pug engine already exist in framework.templating.engines in config.yml.',
-            'The bundle already exists in AppKernel.php',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir . '/app/config/config.yml', str_replace(
-            ['pug', 'services:'],
-            ['x', 'x:'],
-            file_get_contents($dir . '/app/config/config.yml')
-        ));
-        file_put_contents($dir . '/app/AppKernel.php', str_replace(
-            'Pug',
-            'X',
-            file_get_contents($dir . '/app/AppKernel.php')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Engine service added in config.yml',
-            'Engine added to framework.templating.engines in config.yml',
-            'Bundle added to AppKernel.php',
-        ], $io->getLastOutput());
-        self::assertContains(
-            'Pug\PugSymfonyBundle\PugSymfonyBundle()',
-            file_get_contents($dir . '/app/AppKernel.php')
-        );
-        self::assertContains(
-            'templating.engine.pug',
-            file_get_contents($dir . '/app/config/config.yml')
-        );
-        clearstatcache();
-        self::assertFileExists($installedFile);
-    }
-
-    /**
-     * @group install
-     */
-    public function testInstallPartialStates()
-    {
-        if ($this->isAtLeastSymfony5()) {
-            $this->markTestSkipped('Symfony < 5 test');
-        }
-
-        include_once __DIR__ . '/CaptureIO.php';
-        $io = new CaptureIO();
-        $composer = new Composer();
-        $installedFile = __DIR__ . '/../../installed';
-        $io->setPermissive(true);
-        $io->setInteractive(true);
-        $io->reset();
-        $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs = new Filesystem();
-        $fs->mkdir($dir);
-        $fs->touch($dir . '/composer.json');
-        $fs->remove($installedFile);
-        clearstatcache();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        $fs->remove($installedFile);
-
-        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    engines: ["twig","php"]',
-            '    bar3: biz',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-            'bar: biz',
-        ]));
-        PugSymfonyEngine::install(new Event('install', $composer, $io), $dir);
-        self::assertSame(implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'services:',
-            '    templating.engine.pug:',
-            '        public: true',
-            '        class: Pug\PugSymfonyEngine',
-            '        arguments: ["@kernel"]',
-            '',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    engines: ["pug","twig","php"]',
-            '    bar3: biz',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-            'bar: biz',
-        ]), file_get_contents($dir . '/app/config/config.yml'));
-        self::assertFileExists($installedFile);
-        $fs->remove($installedFile);
-
-        file_put_contents($dir . '/app/config/config.yml', implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    bar3: biz',
-            'bar:',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-        ]));
-        PugSymfonyEngine::install(new Event('install', $composer, $io), $dir);
-        self::assertSame(implode("\n", [
-            'foo:',
-            '  bar: biz',
-            'services:',
-            '    templating.engine.pug:',
-            '        public: true',
-            '        class: Pug\PugSymfonyEngine',
-            '        arguments: ["@kernel"]',
-            '',
-            'framework:',
-            '  bar1: biz',
-            '  templating:',
-            '    bar2: biz',
-            '  templating:',
-            '    bar2: biz',
-            '    bar3: biz',
-            'bar:',
-            '  engines: ["twig","php"]',
-            '  bar4: biz',
-        ]), file_get_contents($dir . '/app/config/config.yml'));
-        self::assertFileNotExists($installedFile);
-    }
-
-    /**
-     * @group install
-     */
-    public function testInstallSymfony4()
-    {
-        if ($this->isAtLeastSymfony5()) {
-            $this->markTestSkipped('Symfony < 5 test');
-        }
-
-        include_once __DIR__ . '/CaptureIO.php';
-        $io = new CaptureIO();
-        $composer = new Composer();
-        $installedFile = __DIR__ . '/../../installed';
-        $fs = new Filesystem();
-        $fs->touch($installedFile);
-        $version = static::isAtLeastSymfony5() ? 5 : 4;
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s' . $version));
-
-        $fs->remove($installedFile);
-        $io->setInteractive(true);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), __DIR__ . '/../project-s' . $version));
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        $io->setPermissive(true);
-        $io->reset();
-        $dir = sys_get_temp_dir() . '/pug-temp';
-        $fs->remove($dir);
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Not inside a composer vendor directory, setup skipped.',
-        ], $io->getLastOutput());
-
-        $io->reset();
-        $fs->mkdir($dir);
-        $fs->touch($dir . '/composer.json');
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'framework entry not found in config.yml.',
-            'Sorry, AppKernel.php has a format we can\'t handle automatically.',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileNotExists($installedFile);
-
-        foreach (['/config/services.yaml', '/config/packages/framework.yaml', '/config/bundles.php'] as $file) {
-            $fs->copy(__DIR__ . '/../project-s' . $version . $file, $dir . $file);
-        }
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'templating.engine.pug setting in config/packages/framework.yaml already exists.',
-            'templating.engine.pug setting in config/services.yaml already exists.',
-            'The bundle already exists in config/bundles.php',
-        ], $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir . '/config/services.yaml', str_replace(
-            'pug',
-            'x',
-            file_get_contents($dir . '/config/services.yaml')
-        ));
-        file_put_contents($dir . '/config/packages/framework.yaml', str_replace(
-            ['pug', 'templating'],
-            ['X', 'foo'],
-            file_get_contents($dir . '/config/packages/framework.yaml')
-        ));
-        file_put_contents($dir . '/config/bundles.php', str_replace(
-            'Pug',
-            'X',
-            file_get_contents($dir . '/config/bundles.php')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'Engine service added in config/packages/framework.yaml',
-            'Engine service added in config/services.yaml',
-            'Bundle added to config/bundles.php',
-        ], $io->getLastOutput());
-        self::assertContains(
-            'Pug\PugSymfonyBundle\PugSymfonyBundle',
-            file_get_contents($dir . '/config/bundles.php')
-        );
-        self::assertContains(
-            'templating.engine.pug',
-            file_get_contents($dir . '/config/services.yaml')
-        );
-        self::assertContains(
-            "'pug'",
-            file_get_contents($dir . '/config/packages/framework.yaml')
-        );
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir . '/config/packages/framework.yaml', str_replace(
-            'pug',
-            'X',
-            file_get_contents($dir . '/config/packages/framework.yaml')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir . '/config/packages/framework.yaml', preg_replace(
-            '/^(\s+)engines\s*:\s*\[[^\]]+]/m',
-            "\$1engines:\n\$1    - twig",
-            file_get_contents($dir . '/config/packages/framework.yaml')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertContains('Engine service added in config/packages/framework.yaml', $io->getLastOutput());
-        clearstatcache();
-        self::assertFileExists($installedFile);
-
-        $fs->remove($installedFile);
-        file_put_contents($dir . '/config/services.yaml', str_replace(
-            ['services', 'pug'],
-            ['x', 'x'],
-            file_get_contents($dir . '/config/services.yaml')
-        ));
-        file_put_contents($dir . '/config/packages/framework.yaml', str_replace(
-            ['pug', 'twig', 'framework'],
-            ['x', 'x', 'x'],
-            file_get_contents($dir . '/config/packages/framework.yaml')
-        ));
-        file_put_contents($dir . '/config/bundles.php', preg_replace(
-            '/\[\s*\n\s*/',
-            '[',
-            file_get_contents($dir . '/config/bundles.php')
-        ));
-        $io->reset();
-
-        self::assertTrue(PugSymfonyEngine::install(new Event('install', $composer, $io), $dir));
-        self::assertSame([
-            'framework entry not found in config/packages/framework.yaml.',
-            'services entry not found in config/services.yaml.',
-            'Sorry, config/bundles.php has a format we can\'t handle automatically.',
-        ], $io->getLastOutput());
-        $fs->remove($installedFile);
-    }
-
-    public function testOptionDefaultingOnException()
-    {
-        $engine = new InvalidExceptionOptionsPugSymfony(self::$kernel);
-
-        self::assertSame('my default', $engine->getOptionDefault('foobar', 'my default'));
     }
 
     public function testMixedLoader()
@@ -953,23 +574,77 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertTrue($loader->isFresh('bar', 1));
         self::assertFalse($loader->exists('biz'));
 
+        self::assertSame('biz', $loader->getSourceContext('bar')->getCode());
+        self::assertSame('bar', $loader->getCacheKey('bar'));
         self::assertSame('fozz template', $loader->getSourceContext('fozz')->getCode());
         self::assertSame('bazz:bazz template', $loader->getCacheKey('bazz'));
     }
 
-    public function testCssWithCustomAssetsHelper()
+    public function testCompileException()
     {
-        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\AssetsHelper')) {
-            include_once __DIR__ . '/AssetsHelper.php';
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage('Unable to compile void function.');
+
+        new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+        $twig->compileCode(new TwigFunction('void'), '{# comment #}');
+    }
+
+    public function testLoadTemplate()
+    {
+        new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = self::$kernel->getContainer()->get('twig');
+
+        try {
+            $twig->loadTemplate('a', 'b', 1);
+        } catch (LoaderError $e) {
+            // noop
         }
 
-        if (!class_exists('Symfony\\Bundle\\FrameworkBundle\\Templating\\Helper\\FakeAssetsHelper')) {
-            include_once __DIR__ . '/FakeAssetsHelper.php';
-        }
+        $classNames = self::getPrivateProperty($twig, 'classNames');
 
-        $helper = new FakeAssetsHelper(new Packages());
-        $css = new Css($helper);
+        self::assertSame('a___1', $classNames['b']);
+    }
 
-        self::assertSame("url('fake:foo')", $css->getUrl('foo'));
+    public function testDefaultOption()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+
+        self::assertSame(42, $pugSymfony->getOptionDefault('does-not-exist', 42));
+    }
+
+    public function testGetSharedVariables()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->share('foo', 'bar');
+
+        self::assertSame('bar', $pugSymfony->getSharedVariables()['foo']);
+    }
+
+    /**
+     * @throws ErrorException
+     * @throws ReflectionException
+     */
+    public function testRenderInterceptor()
+    {
+        $container = self::$kernel->getContainer();
+        $property = new ReflectionProperty($container, 'parameters');
+        $property->setAccessible(true);
+        $value = $property->getValue($container);
+        $value['pug']['interceptors'] = [PugInterceptor::class];
+        $property->setValue($container, $value);
+        $controller = new TestController();
+        $controller->setContainer($container);
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+
+        self::assertSame(Environment::class, trim($twig->render('new-var.pug')));
+
+        $pugSymfony->setOption('special-thing', true);
+
+        self::assertSame('<div><p></p></div>', preg_replace('/\s/', '', $twig->render('new-var.pug')));
     }
 }

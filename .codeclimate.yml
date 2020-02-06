@@ -1,6 +1,7 @@
 ---
 version: "2"
 exclude_patterns:
+  - "cache-templates/"
   - "tests/"
   - "templates/"
   - "genTravis.php"

@@ -1,16 +1,14 @@
 <phpunit
     bootstrap="tests/bootstrap.php"
-    processIsolation="true"
     colors="true"
     convertErrorsToExceptions="true"
     convertNoticesToExceptions="true"
     convertWarningsToExceptions="true"
-    >
+>
     <testsuites>
         <testsuite name="Adapter">
             <directory suffix="Test.php">tests/</directory>
-            <exclude>tests/project/app/cache</exclude>
-            <exclude>tests/project/app/logs</exclude>
+            <exclude>tests/project-s5/var</exclude>
         </testsuite>
     </testsuites>
     <filter>
@@ -19,8 +17,7 @@
         </whitelist>
     </filter>
     <php>
-        <server name="KERNEL_DIR" value="tests/project/app/" />
-        <server name="KERNEL_CLASS" value="AppKernel" />
+        <server name="KERNEL_CLASS" value="App\Kernel" />
     </php>
     <logging>
         <log type="coverage-clover" target="coverage/result.xml" />

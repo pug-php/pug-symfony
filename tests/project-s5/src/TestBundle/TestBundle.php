@@ -1,6 +1,6 @@
 <?php
 
-namespace TestBundle;
+namespace App\TestBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

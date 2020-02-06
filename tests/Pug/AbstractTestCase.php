@@ -2,63 +2,59 @@
 
 namespace Pug\Tests;
 
+use Pug\Twig\Environment;
+use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Form\FormRenderer;
+use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 abstract class AbstractTestCase extends KernelTestCase
 {
     protected static $originalFiles = [];
 
-    private static function getConfigFiles()
+    protected static $cachePath = __DIR__.'/../project-s5/var/cache/test';
+
+    private static function getConfigFiles(): array
     {
         return [
-            __DIR__ . '/../project-s4/config/packages/framework.yaml',
-            __DIR__ . '/../project/app/config.yml',
-            __DIR__ . '/../project/app/config/config.yml',
+            __DIR__.'/../project-s5/config/packages/framework.yaml',
         ];
     }
 
-    protected static function isAtLeastSymfony5()
+    protected static function clearCache(): void
     {
-        return defined('Symfony\\Component\\HttpKernel\\Kernel::VERSION') &&
-            version_compare(Kernel::VERSION, '5.0.0-dev', '>=');
-    }
-
-    protected static function clearCache()
-    {
-        foreach (['app', 'var'] as $directory) {
-            try {
-                (new Filesystem())->remove(__DIR__ . "/../project/$directory/cache");
-            } catch (\Exception $e) {
-                // noop
-            }
+        try {
+            (new Filesystem())->remove(static::$cachePath);
+        } catch (\Exception $e) {
+            // noop
         }
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
-        if (static::isAtLeastSymfony5()) {
-            foreach (self::getConfigFiles() as $file) {
-                $contents = file_get_contents($file);
+        foreach (self::getConfigFiles() as $file) {
+            $contents = file_get_contents($file);
 
-                if (!isset(static::$originalFiles[$file])) {
-                    static::$originalFiles[$file] = $contents;
-                }
-
-                file_put_contents($file, strtr($contents, [
-                    '%kernel.root_dir%'                            => '%kernel.project_dir%',
-                    "templating: { engines: ['pug', 'php'] }"      => '',
-                    "templating:\n        engines: ['pug', 'php']" => '',
-                ]));
+            if (!isset(static::$originalFiles[$file])) {
+                static::$originalFiles[$file] = $contents;
             }
+
+            file_put_contents($file, strtr($contents, [
+                '%kernel.root_dir%'                            => '%kernel.project_dir%',
+                "templating: { engines: ['pug', 'php'] }"      => '',
+                "templating:\n        engines: ['pug', 'php']" => '',
+            ]));
         }
+
         self::clearCache();
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         self::clearCache();
+
         foreach (self::getConfigFiles() as $file) {
             if (isset(static::$originalFiles[$file])) {
                 file_put_contents($file, static::$originalFiles[$file]);
@@ -66,13 +62,34 @@ abstract class AbstractTestCase extends KernelTestCase
         }
     }
 
-    public function setUp()
+    public function setUp(): void
     {
+        try {
+            (new Filesystem())->mkdir(static::$cachePath);
+        } catch (\Exception $e) {
+            // noop
+        }
+
+        chdir(__DIR__.'/../..');
+
         self::bootKernel();
+
+        $this->addFormRenderer(static::$container);
     }
 
-    protected function getSymfonyVersion()
+    protected function addFormRenderer(ContainerInterface $container)
     {
-        return Kernel::VERSION;
+        require_once __DIR__.'/TestCsrfTokenManager.php';
+
+        /** @var Environment $twig */
+        $twig = $container->get('twig');
+        $csrfManager = new TestCsrfTokenManager();
+        $formEngine = new TwigRendererEngine(['form_div_layout.html.twig'], $twig);
+
+        $twig->addRuntimeLoader(new FactoryRuntimeLoader([
+            FormRenderer::class => static function () use ($formEngine, $csrfManager) {
+                return new FormRenderer($formEngine, $csrfManager);
+            },
+        ]));
     }
 }

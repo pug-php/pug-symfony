@@ -6,6 +6,8 @@
 
 Pug template engine for Symfony
 
+This is the documentation for the ongoing version 3.0. [Click here to load the documentation for 2.8](https://github.com/pug-php/pug-symfony/tree/2.8.0#pug-symfony)
+
 ## Install
 
 In the root directory of your Symfony project, open a terminal and enter.
@@ -14,80 +16,192 @@ composer require pug-php/pug-symfony
 ```
 When your are asked to install automatically needed settings, enter yes.
 
-Note: Since the version 2.5.0, running the command with the `--no-interaction`
-option will install all settings automatically if possible.
+It for any reason, you do not can or want to use it, you will have to add to
+your **config/bundles.php** file:
 
-It for any reason, you do not can or want to use it, here is how to do
-a manual installation:
-
-- [Symfony 4+ manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation)
-- [Symfony 2 and 3 manual installation](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation)
-
-If you installed Symfony in a custom way, you might be warned about
-missing "templating.engine.twig" service. We highly recommend you to
-install it (`composer require twig/twig`) to get Twig functions such
-as `css_url`, `form_start` and so on available from Pug templates.
-
-If you're sure you don't need Twig utils, you can simply remove
-"templating.engine.twig" from your "templating" services settings.
-
-## Configure
-
-You can set pug options by accessing the container (from controller or from the kernel) in Symfony.
 ```php
-$services = $kernel->getContainer();
-$pug = $services->get('templating.engine.pug');
-$pug->setOptions(array(
-  'pretty' => true,
-  'pugjs' => true,
-  // ...
-));
-// You can get the Pug engine to call any method available in pug-php
-$pug->getEngine()->share('globalVar', 'foo');
-$pug->getEngine()->addKeyword('customKeyword', $bar);
-```
-See the options in the pug-php README: https://github.com/pug-php/pug
-And methods directly available on the service: https://github.com/pug-php/pug-symfony/blob/master/src/Jade/JadeSymfonyEngine.php
-
-Initial options can also be passed in parameters in your **config/services.yaml** in Symfony 4,
-**config.yml** in older versions:
-```yaml
-parameters:
-    pug:
-        expressionLanguage: php
+Pug\PugSymfonyBundle\PugSymfonyBundle::class => ['all' => true],
 ```
 
 ## Usage
 
-Create jade views by creating files with .pug extension
-in **app/Resources/views** such as contact.pug with
-some Jade like this:
+Create Pug views by creating files with .pug extension
+in **app/Resources/views** such as contact.pug:
 ```pug
 h1
-  | Hello
+  | Contact
   =name
 ```
+
+Note: standard Twig functions are also available in your pug templates, for instance:
+```pug
+!=form_start(form, {method: 'GET'})
+```
+
 Then call it in your controller:
 ```php
-/**
- * @Route("/contact")
- */
-public function contactAction()
+namespace App\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
+class MyController extends AbstractController
 {
+    /**
+     * @Route("/contact")
+     */
+    public function contactAction()
+    {
+        return $this->render('contact/contact.pug', [
+            'name' => 'Us',
+        ]);
+    }
+}
+```
+
+## Configure
+
+You can inject `Pug\PugSymfonyEngine` to change options, share values, add plugins to Pug
+at route level:
+
+```php
+// In a controller method
+public function contactAction(\Pug\PugSymfonyEngine $pug)
+{
+    $pug->setOptions(array(
+      'pretty' => true,
+      'pugjs' => true,
+      // ...
+    ));
+    $pug->share('globalVar', 'foo');
+    $pug->getRenderer()->addKeyword('customKeyword', $bar);
+    
     return $this->render('contact/contact.pug', [
-        'name' => 'Bob',
+        'name' => 'Us',
     ]);
 }
 ```
 
+Same can be ran globally on a given event such as `onKernelView` to apply customization before any
+view rendering.
+
+See the options in the pug-php documentation: https://phug-lang.com/#options
+
+Initial options can also be passed in parameters in your **config/services.yaml**:
+```yaml
+# config/services.yaml
+parameters:
+    # ...
+    pug:
+        expressionLanguage: php
+```
+
+Note: you can also create a **config/packages/pug.yaml** to store the Pug settings.
+
+Globals of Twig are available in Pug views (such as the `app` variable to get `app.token` or `app.environment`)
+and any custom global value or service you will add to **twig.yaml**:
+```yaml
+# config/packages/twig.yaml
+twig:
+    # ...
+    globals:
+        translator: '@translator'
+
+```
+
+Make the translator available in every views:
+```pug
+p=translator.trans('Hello %name%', {'%name%': 'Jack'})
+```
+
+Keys (left) passed to `globals` are the variable name to be used in the view, values (right) are
+the class name (can be `'@\App\MyService'`) or the alias to resolve the dependency injection. It
+can also be static values such as `ga_tracking: 'UA-xxxxx-x'`.
+
+If you need more advanced customizations to be applied for every Pug rendering,
+you can use interceptor services.
+```yaml
+# config/services.yaml
+parameters:
+    # ...
+    pug:
+        interceptors:
+            - App\Service\PugInterceptor
+            # You can add more interceptors
+
+services:
+    # ...
+
+    # They all need to be public
+    App\Service\PugInterceptor:
+        public: true
+```
+
+Then the interceptor would look like this:
+```php
+// src/Service/PugInterceptor.php
+namespace App\Service;
+
+use Pug\Symfony\Contracts\InterceptorInterface;
+use Pug\Symfony\RenderEvent;
+use Symfony\Contracts\EventDispatcher\Event;
+
+class PugInterceptor implements InterceptorInterface
+{
+    public function intercept(Event $event)
+    {
+        if ($event instanceof RenderEvent) {
+            // Here you can any method on the engine or the renderer:
+            $event->getEngine()->getRenderer()->addKeyword('customKeyword', $bar);
+            $event->getEngine()->getRenderer()->addExtension(MyPlugin::class);
+
+            // Or/and manipulate the local variables passed to the view:
+            $locals = $event->getLocals();
+            $locals['foo']++;
+            $event->setLocals($locals);
+
+            // Or/and get set the name of the view that is about to be rendered:
+            if ($event->getName() === 'profile.pug') {
+                // if user variable is missing
+                if (!isset($event->getLocals()['user'])) {
+                    $event->setName('search-user.pug');
+                    // Render the search-user.pug instead of profile.pug
+                }
+            }
+        }
+    }
+}
+```
+
+As services, interceptors can inject any dependency in their constructor to
+use it in the `intercept` method:
+```php
+class PugInterceptor implements InterceptorInterface
+{
+    private $service;
+
+    public function __construct(MyOtherService $service)
+    {
+        $this->service = $service;
+    }
+
+    public function intercept(Event $event)
+    {
+        if ($event instanceof RenderEvent) {
+            $event->getEngine()->share('anwser', $this->service->getAnwser());
+        }
+    }
+}
+```
+
+And interceptors are lazy-loaded, it means in the example above, neither `PugInterceptor`
+nor `MyOtherService` will be loaded if they are not used elsewhere and if the current request
+does not end with a pug rendering (pure-Twig view, API response, websocket, etc.) so it's a
+good way to optimize things you only need to do before pug rendering.
+
 ## Deployment
 
-In production, you better have to pre-render all your templates to improve performances. To do that, you have
-`Pug\PugSymfonyBundle\PugSymfonyBundle` in your registered bundles. It should be already done if you
-followed the automated install with success. Else check installation instructions ([add bundle in Symfony 4+](https://github.com/pug-php/pug-symfony/wiki/Symfony-4-manual-installation#configbundlesphp),
-[add bundle in Symfony 2 and 3](https://github.com/pug-php/pug-symfony/wiki/Symfony-2-and-3-manual-installation#appappkenelphp))
-
-This will make the `assets:publish` command available, now each time you deploy your app, enter the command below:
+In production, you better have to pre-render all your templates to improve performances using the
+command below:
 ```shell
 php bin/console assets:publish --env=prod
 ```

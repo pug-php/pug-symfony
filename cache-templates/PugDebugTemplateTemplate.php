@@ -21,16 +21,19 @@ class PugDebugTemplateTemplate extends Template
     protected function doDisplay(array $context, array $blocks = [])
     {
         $macros = $this->macros;
+        if (isset($context['this'])) {
+            unset($context['this']);
+        }
         extract($context);
 
-        if (isset($this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"])) {
-            $__internal_1 = $this->extensions["Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension"];
-            $__internal_1->enter($__internal_1_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "template", "{{filename}}"));
+        if (isset($this->extensions['Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension'])) {
+            $__internal_1 = $this->extensions['Symfony\\Bundle\\WebProfilerBundle\\Twig\\WebProfilerExtension'];
+            $__internal_1->enter($__internal_1_prof = new \Twig\Profiler\Profile($this->getTemplateName(), 'template', '{{filename}}'));
         }
 
-        if (isset($this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"])) {
-            $__internal_2 = $this->extensions["Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension"];
-            $__internal_2->enter($__internal_2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), "template", "{{filename}}"));
+        if (isset($this->extensions['Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension'])) {
+            $__internal_2 = $this->extensions['Symfony\\Bridge\\Twig\\Extension\\ProfilerExtension'];
+            $__internal_2->enter($__internal_2_prof = new \Twig\Profiler\Profile($this->getTemplateName(), 'template', '{{filename}}'));
         }
 
         // {{code}}
@@ -46,7 +49,7 @@ class PugDebugTemplateTemplate extends Template
 
     public function getTemplateName()
     {
-        return "{{filename}}";
+        return '{{filename}}';
     }
 
     public function isTraitable()
@@ -61,6 +64,6 @@ class PugDebugTemplateTemplate extends Template
 
     public function getSourceContext()
     {
-        return new Source("{{source}}", "{{filename}}", "{{path}}");
+        return new Source('{{source}}', '{{filename}}', '{{path}}');
     }
 }

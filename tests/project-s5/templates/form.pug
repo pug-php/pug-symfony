@@ -1,0 +1,6 @@
+!=form_start(form, {method: "GET"})
+!=form_errors(form)
+!=form_widget(form.name, {attr: {class: "foo"}})
+!=form_row(form.dueDate)
+!=form_row(form.save, {label: "Submit me"})
+!=form_end(form)

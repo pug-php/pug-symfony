@@ -21,13 +21,16 @@ class PugTemplateTemplate extends Template
     protected function doDisplay(array $context, array $blocks = [])
     {
         $macros = $this->macros;
+        if (isset($context['this'])) {
+            unset($context['this']);
+        }
         extract($context);
         // {{code}}
     }
 
     public function getTemplateName()
     {
-        return "{{filename}}";
+        return '{{filename}}';
     }
 
     public function isTraitable()
@@ -42,6 +45,6 @@ class PugTemplateTemplate extends Template
 
     public function getSourceContext()
     {
-        return new Source("", "{{filename}}", "{{path}}");
+        return new Source('', '{{filename}}', '{{path}}');
     }
 }
