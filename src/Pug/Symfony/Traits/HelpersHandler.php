@@ -221,9 +221,11 @@ trait HelpersHandler
                             case ')':
                                 if ((--$opening) !== 0) {
                                     $argument .= ')';
+
+                                    break;
                                 }
 
-                                break;
+                                break 2;
 
                             case ',':
                                 if ($opening > 1) {
