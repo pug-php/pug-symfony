@@ -7,6 +7,8 @@ use Pug\Pug;
 /**
  * Trait Options.
  *
+ * @property Pug|null $pug
+ *
  * @method Pug   getRenderer()
  * @method array getRendererOptions()
  */
