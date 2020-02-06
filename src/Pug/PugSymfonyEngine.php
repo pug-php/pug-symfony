@@ -163,7 +163,11 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function getParameters(array $locals = []): array
     {
-        $locals = array_merge($this->getOptionDefault('shared_variables'), $locals);
+        $locals = array_merge(
+            $this->getOptionDefault('globals', []),
+            $this->getOptionDefault('shared_variables', []),
+            $locals
+        );
 
         foreach (['context', 'blocks', 'macros', 'this'] as $forbiddenKey) {
             if (array_key_exists($forbiddenKey, $locals)) {
@@ -243,7 +247,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function supports($name): bool
     {
-        foreach ($this->getOptionDefault('extensions', []) as $extension) {
+        foreach ($this->getOptionDefault('extensions', ['.pug', '.jade']) as $extension) {
             if (substr($name, -strlen($extension)) === $extension) {
                 return true;
             }

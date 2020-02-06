@@ -27,9 +27,17 @@ trait Options
      */
     public function getOptionDefault($name, $default = null)
     {
-        $options = $this->getRendererOptions();
+        if ($this->pug === null) {
+            $options = $this->getRendererOptions();
 
-        return array_key_exists($name, $options) ? $options[$name] : $default;
+            return array_key_exists($name, $options) ? $options[$name] : $default;
+        }
+
+        $pug = $this->getRenderer();
+
+        return method_exists($pug, 'hasOption') && !$pug->hasOption($name)
+            ? $default
+            : $pug->getOption($name);
     }
 
     /**
@@ -41,6 +49,7 @@ trait Options
     public function setOption($name, $value): void
     {
         if ($this->pug === null) {
+            $this->getRendererOptions();
             $this->options[$name] = $value;
 
             return;
@@ -57,7 +66,7 @@ trait Options
     public function setOptions(array $options): void
     {
         if ($this->pug === null) {
-            $this->options = array_merge($this->options, $options);
+            $this->options = array_merge($this->getRendererOptions(), $options);
 
             return;
         }
