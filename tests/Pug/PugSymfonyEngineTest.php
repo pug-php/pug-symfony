@@ -146,6 +146,18 @@ class PugSymfonyEngineTest extends AbstractTestCase
         );
     }
 
+    public function testMixin()
+    {
+        $pugSymfony = new PugSymfonyEngine(self::$kernel);
+        $pugSymfony->setOption('expressionLanguage', 'js');
+        $pugSymfony->setOption('prettyprint', false);
+
+        self::assertSame(
+            '<ul><li class="pet">cat</li><li class="pet">dog</li><li class="pet">pig</li></ul>',
+            $pugSymfony->render('mixin.pug')
+        );
+    }
+
     /**
      * @throws ErrorException
      */
