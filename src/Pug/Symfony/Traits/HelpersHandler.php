@@ -196,9 +196,13 @@ trait HelpersHandler
         for ($index = 0; $index < $count; $index++) {
             $token = $tokens[$index];
 
-            if (is_array($token) && $token[0] === T_STRING && $tokens[$index + 1] === '(') {
+            if (is_array($token) && $token[0] === T_STRING && ($tokens[$index + 1] ?? null) === '(') {
                 if ($token[1] === 'function_exists') {
-                    if ($tokens[$index + 3] === ')' && is_array($tokens[$index + 2]) && $tokens[$index + 2][0] === T_CONSTANT_ENCAPSED_STRING && isset($this->twigHelpers[substr($tokens[$index + 2][1], 1, -1)])) {
+                    if ($tokens[$index + 3] === ')' &&
+                        is_array($tokens[$index + 2]) &&
+                        $tokens[$index + 2][0] === T_CONSTANT_ENCAPSED_STRING &&
+                        isset($this->twigHelpers[substr($tokens[$index + 2][1], 1, -1)])
+                    ) {
                         $output .= 'true';
                         $index += 3;
                         continue;
