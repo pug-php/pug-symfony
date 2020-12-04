@@ -42,12 +42,12 @@ class TestKernel extends Kernel
         $this->projectDirectory = $projectDirectory;
     }
 
-    public function getLogDir()
+    public function getLogDir(): string
     {
         return sys_get_temp_dir().'/pug-symfony-log';
     }
 
-    public function getRootDir()
+    public function getRootDir(): string
     {
         return realpath(__DIR__.'/../project-s5');
     }
@@ -57,14 +57,14 @@ class TestKernel extends Kernel
      *
      * @throws Exception
      */
-    public function registerContainerConfiguration(LoaderInterface $loader)
+    public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         parent::registerContainerConfiguration($loader);
         $loader->load(__DIR__.'/../project-s5/config/packages/framework.yaml');
         $loader->load($this->containerConfigurator);
     }
 
-    public function getCacheDir()
+    public function getCacheDir(): string
     {
         return sys_get_temp_dir().'/pug-symfony-cache';
     }
@@ -73,7 +73,7 @@ class TestKernel extends Kernel
      * Override the parent method to force recompiling the container.
      * For performance reasons the container is also not dumped to disk.
      */
-    protected function initializeContainer()
+    protected function initializeContainer(): void
     {
         $this->container = $this->buildContainer();
         $this->container->compile();
