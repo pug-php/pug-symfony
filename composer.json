@@ -6,7 +6,7 @@
   "description": "Pug template engine for Symfony",
   "type": "library",
   "require": {
-    "php": "^7.2.5",
+    "php": "^7.2.5 || ^8.0",
     "phug/component": "^1.1.0",
     "pug/installer": "^1.0.0",
     "pug-php/pug": "^3.4.0",
