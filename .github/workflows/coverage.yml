@@ -1,0 +1,51 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        php: ['7.4']
+
+    name: PHP ${{ matrix.php }} - ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        tools: composer:v2
+        coverage: xdebug
+
+    - name: Install dependencies
+      run: composer update --prefer-dist --no-progress --no-suggest --prefer-stable ${{ matrix.php >= 8 && '--ignore-platform-req=php' || '' }};
+
+    - name: Run test suite
+      run: vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
+
+    - name: Code Climate Test Reporter
+      if: matrix.coverage
+      uses: aktions/codeclimate-test-reporter@v1
+      with:
+        codeclimate-test-reporter-id: ${{ secrets.CC_TEST_REPORTER_ID }}
+        command: after-build -t clover
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      continue-on-error: true
+
+    - name: Coverage
+      if: matrix.coverage
+      run: bash <(curl -s https://codecov.io/bash)
+      env:
+        PHP_VERSION: ${{ matrix.php }}

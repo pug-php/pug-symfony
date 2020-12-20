@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest']
+        php: ['7.2', '7.3', '7.4', '8.0', '8.1']
+
+    name: PHP ${{ matrix.php }} - ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        tools: composer:v2
+        coverage: none
+
+    - name: Install dependencies
+      run: composer update --prefer-dist --no-progress --no-suggest --prefer-stable ${{ matrix.php >= 8 && '--ignore-platform-req=php' || '' }};
+
+    - name: Run test suite
+      run: vendor/bin/phpunit --verbose --no-coverage
