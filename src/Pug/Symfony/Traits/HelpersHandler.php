@@ -313,7 +313,8 @@ trait HelpersHandler
         $this->twig = Environment::fromTwigEnvironment($this->twig, $this, $this->container);
 
         $services = static::getPrivateProperty($this->container, 'services', $propertyAccessor);
-        $services['twig'] = $this->twig;
+        $key = isset($services['.container.private.twig']) ? '.container.private.twig' : 'twig';
+        $services[$key] = $this->twig;
         $propertyAccessor->setValue($this->container, $services);
     }
 
