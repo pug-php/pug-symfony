@@ -48,8 +48,15 @@ class InstallerTest extends AbstractTestCase
         self::assertTrue(PugSymfonyEngine::install(new Event('update', new Composer(), $io), $projectDir));
         self::assertSame(['Bundle added to config/bundles.php'], $io->getLastOutput());
         self::assertFileExists(__DIR__.'/../../installed');
-        $expected = preg_replace('/(\S)\s+=>/', '$1 =>', file_get_contents(__DIR__.'/../project-s5/config/bundles.php'));
-        $actual = preg_replace('/(\S)\s+=>/', '$1 =>', file_get_contents("$projectDir/config/bundles.php"));
+        $getContent = static function (string $file): string {
+            return preg_replace(
+                '/(\S)\s+=>/',
+                '$1 =>',
+                str_replace("\r", '', file_get_contents($file))
+            );
+        };
+        $expected = $getContent(__DIR__.'/../project-s5/config/bundles.php');
+        $actual = $getContent("$projectDir/config/bundles.php");
         self::assertSame($expected, $actual);
 
         unlink(__DIR__.'/../../installed');
