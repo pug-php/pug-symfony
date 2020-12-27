@@ -7,6 +7,7 @@ use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Twig\Environment as TwigEnvironment;
+use Twig\Error\RuntimeError;
 use Twig\Extension\EscaperExtension;
 use Twig\Extension\OptimizerExtension;
 use Twig\Loader\LoaderInterface;
@@ -39,6 +40,11 @@ class Environment extends TwigEnvironment
      */
     public $extensions = [];
 
+    /**
+     * @var TwigEnvironment
+     */
+    public $rootEnv;
+
     public function __construct(LoaderInterface $loader, $options = [])
     {
         parent::__construct($loader, $options);
@@ -56,6 +62,23 @@ class Environment extends TwigEnvironment
         return $this->pugSymfonyEngine->getRenderer();
     }
 
+    public function getRuntime(string $class)
+    {
+        try {
+            return parent::getRuntime($class);
+        } catch (RuntimeError $error) {
+            if (!$this->rootEnv) {
+                throw $error;
+            }
+
+            try {
+                return $this->rootEnv->getRuntime($class);
+            } catch (RuntimeError $_) {
+                throw $error;
+            }
+        }
+    }
+
     public static function fromTwigEnvironment(TwigEnvironment $baseTwig, PugSymfonyEngine $pugSymfonyEngine, ContainerInterface $container)
     {
         $twig = new static($baseTwig->getLoader(), [
@@ -67,6 +90,7 @@ class Environment extends TwigEnvironment
             'auto_reload'      => $baseTwig->isAutoReload(),
             'optimizations'    => static::getPrivateExtensionProperty($baseTwig, OptimizerExtension::class, 'optimizers'),
         ]);
+        $twig->rootEnv = $baseTwig;
 
         $twig->setPugSymfonyEngine($pugSymfonyEngine);
         $twig->setContainer($container);
