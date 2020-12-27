@@ -210,7 +210,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertSame('<p>Hello</p>', $pugSymfony->renderString('p Hello'));
 
-        self::assertRegExp('/<p>[a-zA-Z0-9_-]{20,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authentificate")'));
+        self::assertRegExp('/<p>[a-zA-Z0-9_-]{20,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authenticate")'));
     }
 
     public function testGetEngine()
