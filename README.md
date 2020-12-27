@@ -2,7 +2,7 @@
 [![Latest Stable Version](https://poser.pugx.org/pug-php/pug-symfony/v/stable.png)](https://packagist.org/packages/pug-php/pug-symfony)
 [![GitHub Actions](https://github.com/pug-php/pug-symfony/workflows/Tests/badge.svg)](https://github.com/pug-php/pug-symfony/actions)
 [![StyleCI](https://styleci.io/repos/61784988/shield?style=flat)](https://styleci.io/repos/61784988)
-[![Test Coverage](https://codeclimate.com/github/pug-php/pug-symfony/badges/coverage.svg)](https://codecov.io/github/pug-php/pug-symfony?branch=master)
+[![Test Coverage](https://codecov.io/gh/pug-php/pug-symfony/branch/master/graph/badge.svg?token=yzjEnZzRNm)](https://codecov.io/github/pug-php/pug-symfony?branch=master)
 
 [Pug template](https://phug-lang.com/) engine for Symfony
 
