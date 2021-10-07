@@ -352,7 +352,10 @@ trait HelpersHandler
 
             if (!isset($twig->extensions[$class])) {
                 $twig->extensions[$class] = $helper;
-                $twig->addExtension($helper);
+
+                if (!$twig->hasExtension($class)) {
+                    $twig->addExtension($helper);
+                }
             }
         }
 
