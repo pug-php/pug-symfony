@@ -52,7 +52,8 @@
   },
   "config": {
     "allow-plugins": {
-      "nodejs-php-fallback/nodejs-php-fallback": true
+      "nodejs-php-fallback/nodejs-php-fallback": true,
+      "pug/installer": true
     }
   }
 }
