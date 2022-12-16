@@ -49,5 +49,10 @@
       "dev-master": "3.x-dev"
     },
     "installer": "Pug\\PugSymfonyEngine::install"
+  },
+  "config": {
+    "allow-plugins": {
+      "nodejs-php-fallback/nodejs-php-fallback": true
+    }
   }
 }
