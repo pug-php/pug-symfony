@@ -14,7 +14,7 @@ In the root directory of your Symfony project, open a terminal and enter.
 ```shell
 composer require pug-php/pug-symfony
 ```
-When your are asked to install automatically needed settings, enter yes.
+When you are asked to install automatically needed settings, enter yes.
 
 It for any reason, you do not can or want to use it, you will have to add to
 your **config/bundles.php** file:
@@ -46,9 +46,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class MyController extends AbstractController
 {
-    /**
-     * @Route("/contact")
-     */
+    #[Route('/contact')]
     public function contactAction()
     {
         return $this->render('contact/contact.pug', [
@@ -81,7 +79,7 @@ public function contactAction(\Pug\PugSymfonyEngine $pug)
 }
 ```
 
-Same can be ran globally on a given event such as `onKernelView` to apply customization before any
+Same can be run globally on a given event such as `onKernelView` to apply customization before any
 view rendering.
 
 See the options in the pug-php documentation: https://phug-lang.com/#options
@@ -108,7 +106,7 @@ twig:
 
 ```
 
-Make the translator available in every views:
+Make the translator available in every view:
 ```pug
 p=translator.trans('Hello %name%', {'%name%': 'Jack'})
 ```
