@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\Twig;
 
+use Psr\Container\ContainerInterface;
 use Pug\PugSymfonyEngine;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use RuntimeException;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Twig\Environment as TwigEnvironment;
 use Twig\Error\RuntimeError;
 use Twig\Extension\EscaperExtension;
@@ -20,30 +22,18 @@ class Environment extends TwigEnvironment
 {
     use PrivatePropertyAccessor;
 
-    /**
-     * @var PugSymfonyEngine
-     */
-    protected $pugSymfonyEngine;
+    protected PugSymfonyEngine $pugSymfonyEngine;
 
-    /**
-     * @var ContainerInterface
-     */
-    protected $container;
+    protected ContainerInterface $container;
 
     /**
      * @var string[]
      */
-    protected $classNames = [];
+    protected array $classNames = [];
 
-    /**
-     * @var array
-     */
-    public $extensions = [];
+    public array $extensions = [];
 
-    /**
-     * @var TwigEnvironment
-     */
-    public $rootEnv;
+    public TwigEnvironment $rootEnv;
 
     public function __construct(LoaderInterface $loader, $options = [])
     {
@@ -73,14 +63,17 @@ class Environment extends TwigEnvironment
 
             try {
                 return $this->rootEnv->getRuntime($class);
-            } catch (RuntimeError $_) {
+            } catch (RuntimeError) {
                 throw $error;
             }
         }
     }
 
-    public static function fromTwigEnvironment(TwigEnvironment $baseTwig, PugSymfonyEngine $pugSymfonyEngine, ContainerInterface $container)
-    {
+    public static function fromTwigEnvironment(
+        TwigEnvironment $baseTwig,
+        PugSymfonyEngine $pugSymfonyEngine,
+        ContainerInterface $container,
+    ): static {
         $twig = new static($baseTwig->getLoader(), [
             'debug'            => $baseTwig->isDebug(),
             'charset'          => $baseTwig->getCharset(),
@@ -118,17 +111,11 @@ class Environment extends TwigEnvironment
         return $twig;
     }
 
-    /**
-     * @param PugSymfonyEngine $pugSymfonyEngine
-     */
-    public function setPugSymfonyEngine(PugSymfonyEngine $pugSymfonyEngine)
+    public function setPugSymfonyEngine(PugSymfonyEngine $pugSymfonyEngine): void
     {
         $this->pugSymfonyEngine = $pugSymfonyEngine;
     }
 
-    /**
-     * @param ContainerInterface $container
-     */
     public function setContainer(ContainerInterface $container): void
     {
         $this->container = $container;
@@ -196,11 +183,7 @@ class Environment extends TwigEnvironment
 
     public function loadTemplate(string $cls, string $name, int $index = null): Template
     {
-        if ($index !== null) {
-            $cls .= '___'.$index;
-        }
-
-        $this->classNames[$name] = $cls;
+        $this->classNames[$name] = $cls.($index === null ? '' : '___'.$index);
 
         return parent::loadTemplate($cls, $name, $index);
     }
@@ -226,7 +209,6 @@ class Environment extends TwigEnvironment
     public function compileCode(TwigFunction $function, string $code)
     {
         $name = $function->getName();
-        $arguments[] = $name;
         $parser = new Parser($this);
         $path = '__twig_function_'.$name.'_'.sha1($code).'.html.twig';
         $stream = $this->tokenize(new Source($code, $path, $path));

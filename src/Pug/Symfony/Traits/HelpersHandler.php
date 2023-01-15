@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\Symfony\Traits;
 
 use Closure;
 use Phug\Component\ComponentExtension;
+use Psr\Container\ContainerInterface;
 use Pug\Assets;
 use Pug\Pug;
 use Pug\Symfony\CssExtension;
@@ -15,7 +18,6 @@ use Symfony\Bridge\Twig\Extension\HttpFoundationExtension;
 use Symfony\Component\Asset\Package;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\Asset\VersionStrategy\EmptyVersionStrategy;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
@@ -34,35 +36,17 @@ trait HelpersHandler
 {
     use PrivatePropertyAccessor;
 
-    /**
-     * @var ContainerInterface
-     */
-    protected $container;
+    protected ContainerInterface $container;
 
-    /**
-     * @var Environment
-     */
-    protected $twig;
+    protected Environment $twig;
 
-    /**
-     * @var Kernel|KernelInterface
-     */
-    protected $kernel;
+    protected Kernel|KernelInterface $kernel;
 
-    /**
-     * @var Pug|null
-     */
-    protected $pug;
+    protected ?Pug $pug = null;
 
-    /**
-     * @var array
-     */
-    protected $userOptions = [];
+    protected array $userOptions = [];
 
-    /**
-     * @var array
-     */
-    protected $twigHelpers;
+    protected array $twigHelpers;
 
     /**
      * @var callable
@@ -269,12 +253,12 @@ trait HelpersHandler
         return $output;
     }
 
-    protected function getTokenImage($token): string
+    protected function getTokenImage(array|string $token): string
     {
         return is_array($token) ? $token[1] : $token;
     }
 
-    protected function pushArgument(array &$arguments, string &$argument, bool &$argumentNeedInterpolation)
+    protected function pushArgument(array &$arguments, string &$argument, bool &$argumentNeedInterpolation): void
     {
         $argument = trim($argument);
 
@@ -302,20 +286,15 @@ trait HelpersHandler
         $this->twigHelpers[$name] = $function;
     }
 
-    protected function enhanceTwig(): void
+    protected function enhanceTwig($twig): void
     {
-        $this->twig = $this->container->has('twig') ? $this->container->get('twig') : null;
+        $twig ??= $this->container->has('twig') ? $this->container->get('twig') : null;
 
-        if (!($this->twig instanceof TwigEnvironment)) {
+        if (!($twig instanceof TwigEnvironment)) {
             throw new RuntimeException('Twig needs to be configured.');
         }
 
-        $this->twig = Environment::fromTwigEnvironment($this->twig, $this, $this->container);
-
-        $services = static::getPrivateProperty($this->container, 'services', $propertyAccessor);
-        $key = isset($services['.container.private.twig']) ? '.container.private.twig' : 'twig';
-        $services[$key] = $this->twig;
-        $propertyAccessor->setValue($this->container, $services);
+        $this->twig = Environment::fromTwigEnvironment($twig, $this, $this->container);
     }
 
     protected function getTwig(): Environment

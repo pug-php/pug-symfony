@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\Symfony\Traits;
 
 use ReflectionException;
@@ -20,9 +22,12 @@ trait PrivatePropertyAccessor
      */
     public static function getPrivateProperty(object $object, string $property, &$propertyAccessor = null)
     {
-        $propertyAccessor = new ReflectionProperty($object, $property);
-        $propertyAccessor->setAccessible(true);
+        try {
+            $propertyAccessor = new ReflectionProperty($object, $property);
 
-        return $propertyAccessor->getValue($object);
+            return $propertyAccessor->getValue($object);
+        } catch (ReflectionException) {
+            return null;
+        }
     }
 }

@@ -23,29 +23,54 @@ your **config/bundles.php** file:
 Pug\PugSymfonyBundle\PugSymfonyBundle::class => ['all' => true],
 ```
 
+Then 
+
 ## Usage
 
 Create Pug views by creating files with .pug extension
-in **app/Resources/views** such as contact.pug:
+in **templates** such as contact.pug:
 ```pug
 h1
   | Contact
   =name
 ```
 
-Note: standard Twig functions are also available in your pug templates, for instance:
-```pug
-!=form_start(form, {method: 'GET'})
-```
-
-Then call it in your controller:
+Then inject `Pug\PugSymfonyEngine` to call it in your controller:
 ```php
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Pug\PugSymfonyEngine;
+use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\Routing\Annotation\Route;
 
-class MyController extends AbstractController
+#[AsController]
+class MyController
 {
+    #[Route('/contact')]
+    public function contactAction(PugSymfonyEngine $pug)
+    {
+        return $pug->renderResponse('contact/contact.pug', [
+            'name' => 'Us',
+        ]);
+    }
+}
+```
+
+Or alternatively you can use `\Pug\Symfony\Traits\PugRenderer` to call directly `->render()` from
+any method of a controller (or service):
+
+```php
+namespace App\Controller;
+
+use Pug\Symfony\Traits\PugRenderer;
+use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\Routing\Annotation\Route;
+
+#[AsController]
+class MyController
+{
+    use PugRenderer;
+
     #[Route('/contact')]
     public function contactAction()
     {
@@ -56,6 +81,30 @@ class MyController extends AbstractController
 }
 ```
 
+No matter if your controller extends `AbstractController` as it can also render twig views, so it will just
+work the same as before rather you `->render('view.html.twig')` or `->render('view.pug')`.
+
+Note: standard Twig functions are also available in your pug templates, for instance:
+```pug
+!=form(form)
+```
+
+As per https://symfony.com/doc/current/forms.html
+
+Pass the FormView as usual from the controller:
+```php
+$task = new Task();
+// ...
+
+$form = $this->createFormBuilder($task)
+    // ...
+    ->getForm();
+
+return $pug->renderResponse('home.pug', [
+    'form' => $form->createView(),
+]);
+```
+
 ## Configure
 
 You can inject `Pug\PugSymfonyEngine` to change options, share values, add plugins to Pug
@@ -63,6 +112,7 @@ at route level:
 
 ```php
 // In a controller method
+#[Route('/contact')]
 public function contactAction(\Pug\PugSymfonyEngine $pug)
 {
     $pug->setOptions(array(
@@ -72,12 +122,14 @@ public function contactAction(\Pug\PugSymfonyEngine $pug)
     ));
     $pug->share('globalVar', 'foo');
     $pug->getRenderer()->addKeyword('customKeyword', $bar);
-    
-    return $this->render('contact/contact.pug', [
+
+    return $pug->renderResponse('contact/contact.pug', [
         'name' => 'Us',
     ]);
 }
 ```
+
+If you use the `PugRenderer` trait, you don't need to inject the service again and can just use `$this->pug`.
 
 Same can be run globally on a given event such as `onKernelView` to apply customization before any
 view rendering.

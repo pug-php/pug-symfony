@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug;
 
 use ErrorException;
@@ -18,8 +20,12 @@ use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Templating\EngineInterface;
+use Symfony\Component\Templating\TemplateReferenceInterface;
+use Twig\Environment as TwigEnvironment;
 
 class PugSymfonyEngine implements EngineInterface, InstallerInterface
 {
@@ -43,13 +49,15 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     protected $defaultTemplateDirectory;
 
-    public function __construct(KernelInterface $kernel)
-    {
+    public function __construct(
+        KernelInterface $kernel,
+        TwigEnvironment $twig,
+    ) {
         $container = $kernel->getContainer();
         $this->kernel = $kernel;
         $this->container = $container;
         $this->userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
-        $this->enhanceTwig();
+        $this->enhanceTwig($twig);
         $this->onNode([$this, 'handleTwigInclude']);
     }
 
@@ -98,7 +106,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
 
     protected function getFileFromName(string $name, string $directory = null): string
     {
-        $parts = explode(':', strval($name));
+        $parts = explode(':', $name);
 
         if (count($parts) > 1) {
             $name = $parts[2];
@@ -166,7 +174,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
         $locals = array_merge(
             $this->getOptionDefault('globals', []),
             $this->getOptionDefault('shared_variables', []),
-            $locals
+            $locals,
         );
 
         foreach (['context', 'blocks', 'macros', 'this'] as $forbiddenKey) {
@@ -183,8 +191,8 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     /**
      * Render a template by name.
      *
-     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
-     * @param array                                                           $parameters
+     * @param string|TemplateReferenceInterface $name
+     * @param array                             $parameters
      *
      * @throws ErrorException when a forbidden parameter key is used
      * @throws Exception      when the PHP code generated from the pug code throw an exception
@@ -195,15 +203,15 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     {
         return $this->getRenderer()->renderFile(
             $this->getFileFromName($name),
-            $this->getParameters($parameters)
+            $this->getParameters($parameters),
         );
     }
 
     /**
      * Render a template string.
      *
-     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
-     * @param array                                                           $locals
+     * @param string|TemplateReferenceInterface $name
+     * @param array                             $locals
      *
      * @throws ErrorException when a forbidden parameter key is used
      *
@@ -211,19 +219,16 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
      */
     public function renderString($code, array $locals = []): string
     {
-        $pug = $this->getRenderer();
-        $method = method_exists($pug, 'renderString') ? 'renderString' : 'render';
-
-        return $pug->$method(
+        return $this->getRenderer()->renderString(
             $code,
-            $this->getParameters($locals)
+            $this->getParameters($locals),
         );
     }
 
     /**
      * Check if a template exists.
      *
-     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
+     * @param string|TemplateReferenceInterface $name
      *
      * @return bool
      */
@@ -241,14 +246,14 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     /**
      * Check if a file extension is supported by Pug.
      *
-     * @param string|\Symfony\Component\Templating\TemplateReferenceInterface $name
+     * @param string|TemplateReferenceInterface $name
      *
      * @return bool
      */
     public function supports($name): bool
     {
         foreach ($this->getOptionDefault('extensions', ['.pug', '.jade']) as $extension) {
-            if (substr($name, -strlen($extension)) === $extension) {
+            if (str_ends_with($name, $extension)) {
                 return true;
             }
         }
@@ -266,9 +271,10 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
             $dispatcher = $container->get('event_dispatcher');
             $dispatcher->dispatch($event, RenderEvent::NAME);
 
-            $interceptors = array_map(static function (string $interceptorClass) use ($container) {
-                return $container->get($interceptorClass);
-            }, $this->userOptions['interceptors'] ?? []);
+            $interceptors = array_map(
+                static fn (string $interceptorClass) => $container->get($interceptorClass),
+                $this->userOptions['interceptors'] ?? [],
+            );
 
             array_walk($interceptors, static function (InterceptorInterface $interceptor) use ($event) {
                 $interceptor->intercept($event);
@@ -278,10 +284,31 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
         return [$event->getName(), $this->getParameters($event->getLocals())];
     }
 
+    public function renderResponse(
+        string|TemplateReferenceInterface $view,
+        array $parameters = [],
+        ?Response $response = null,
+    ): Response {
+        $content = $this->render($view, $parameters);
+        $response ??= new Response();
+
+        if ($response->getStatusCode() === 200) {
+            foreach ($parameters as $v) {
+                if ($v instanceof FormInterface && $v->isSubmitted() && !$v->isValid()) {
+                    $response->setStatusCode(422);
+
+                    break;
+                }
+            }
+        }
+
+        $response->setContent($content);
+
+        return $response;
+    }
+
     protected static function extractUniquePaths(array $paths): array
     {
-        return array_unique(array_map(function ($path) {
-            return realpath($path) ?: $path;
-        }, $paths));
+        return array_unique(array_map(static fn ($path) => realpath($path) ?: $path, $paths));
     }
 }

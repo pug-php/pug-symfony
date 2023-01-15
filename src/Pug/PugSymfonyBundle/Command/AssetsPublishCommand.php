@@ -1,32 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\PugSymfonyBundle\Command;
 
 use Phug\Renderer;
 use Pug\PugSymfonyEngine;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
+#[AsCommand(
+    'assets:publish',
+    'Export your assets in the web directory.',
+)]
 class AssetsPublishCommand extends Command
 {
-    protected $pugSymfonyEngine;
-
-    public function __construct(PugSymfonyEngine $pugSymfonyEngine)
+    public function __construct(protected readonly PugSymfonyEngine $pugSymfonyEngine)
     {
-        $this->pugSymfonyEngine = $pugSymfonyEngine;
-        parent::__construct(null);
+        parent::__construct();
     }
 
-    protected function configure()
-    {
-        $this
-            ->setName('assets:publish')
-            ->setDescription('Export your assets in the web directory.');
-    }
-
-    protected function cacheTemplates(Renderer $pug)
+    protected function cacheTemplates(Renderer $pug): array
     {
         $success = 0;
         $errors = 0;
