@@ -20,6 +20,7 @@ use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
@@ -27,9 +28,9 @@ use Twig\TwigFunction;
 
 class TokenStorage extends BaseTokenStorage
 {
-    public function getToken(): string
+    public function getToken(): ?TokenInterface
     {
-        return 'the token';
+        return new NullToken();
     }
 }
 
