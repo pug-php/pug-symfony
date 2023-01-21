@@ -92,6 +92,7 @@ trait HelpersHandler
             }
 
             $srcDir = $projectDirectory.'/src';
+            $assetsDirectories[] = $srcDir.'/Resources/assets';
             $webDir = $projectDirectory.'/public';
             $baseDir = isset($this->userOptions['baseDir'])
                 ? $this->userOptions['baseDir']
@@ -318,7 +319,10 @@ trait HelpersHandler
         if (!$assetExtension) {
             $assetExtension = new AssetExtension(new Packages(new Package(new EmptyVersionStrategy())));
             $twig->extensions[AssetExtension::class] = $assetExtension;
-            $twig->addExtension($assetExtension);
+
+            if (!$twig->hasExtension(AssetExtension::class)) {
+                $twig->addExtension($assetExtension);
+            }
         }
 
         $helpers = [
@@ -331,7 +335,10 @@ trait HelpersHandler
 
             if (!isset($twig->extensions[$class])) {
                 $twig->extensions[$class] = $helper;
-                $twig->addExtension($helper);
+
+                if (!$twig->hasExtension($class)) {
+                    $twig->addExtension($helper);
+                }
             }
         }
 
