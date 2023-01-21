@@ -23,8 +23,6 @@ your **config/bundles.php** file:
 Pug\PugSymfonyBundle\PugSymfonyBundle::class => ['all' => true],
 ```
 
-Then 
-
 ## Usage
 
 Create Pug views by creating files with .pug extension

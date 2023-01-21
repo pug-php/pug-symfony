@@ -8,8 +8,7 @@ return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
         ->autowire()
-        ->autoconfigure()
-    ;
+        ->autoconfigure();
 
     $services->load('Pug\\', __DIR__ . '/../../*')
         ->exclude([
@@ -17,8 +16,8 @@ return static function (ContainerConfigurator $configurator): void {
             __DIR__ . '/../../PugSymfonyBundle',
             __DIR__ . '/../../Symfony',
             __DIR__ . '/../../Twig',
-        ])
-    ;
+        ]);
+
     $services->load('Pug\\PugSymfonyBundle\\Command\\', __DIR__ . '/../../PugSymfonyBundle/Command/*')
         ->public();
 };
