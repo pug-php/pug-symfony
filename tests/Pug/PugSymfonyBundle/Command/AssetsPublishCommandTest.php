@@ -19,7 +19,7 @@ class AssetsPublishCommandTest extends AbstractTestCase
         self::$kernel->boot();
 
         $application = new Application(self::$kernel);
-        $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
+        $application->add(new AssetsPublishCommand($this->getPugSymfonyEngine()));
 
         // Convert PHP style files to JS style
         $customHelperFile = __DIR__.'/../../../project-s5/templates/custom-helper.pug';

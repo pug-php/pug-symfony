@@ -2,12 +2,15 @@
 
 namespace Pug\Tests;
 
+use Pug\PugSymfonyEngine;
 use Pug\Twig\Environment;
 use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormRenderer;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Twig\Loader\FilesystemLoader;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 abstract class AbstractTestCase extends KernelTestCase
@@ -15,6 +18,26 @@ abstract class AbstractTestCase extends KernelTestCase
     protected static $originalFiles = [];
 
     protected static $cachePath = __DIR__.'/../project-s5/var/cache/test';
+
+    protected ?Environment $twig = null;
+
+    protected ?PugSymfonyEngine $pugSymfony = null;
+
+    protected function getTwigEnvironment(): Environment
+    {
+        return $this->twig ??= new Environment(new FilesystemLoader(
+            __DIR__.'/../project-s5/templates/',
+        ));
+    }
+
+    protected function getPugSymfonyEngine(?KernelInterface $kernel = null): PugSymfonyEngine
+    {
+        $twig = $this->getTwigEnvironment();
+        $this->pugSymfony ??= new PugSymfonyEngine($kernel ?? self::$kernel, $twig);
+        $twig->setPugSymfonyEngine($this->pugSymfony);
+
+        return $this->pugSymfony;
+    }
 
     private static function getConfigFiles(): array
     {
@@ -77,12 +100,12 @@ abstract class AbstractTestCase extends KernelTestCase
         $this->addFormRenderer();
     }
 
-    protected function addFormRenderer()
+    protected function addFormRenderer(\Psr\Container\ContainerInterface $container)
     {
         require_once __DIR__.'/TestCsrfTokenManager.php';
 
         /** @var Environment $twig */
-        $twig = self::getContainer()->get('twig');
+        $twig = ($container ?? self::getContainer())->get('twig');
         $csrfManager = new TestCsrfTokenManager();
         $formEngine = new TwigRendererEngine(['form_div_layout.html.twig'], $twig);
 
