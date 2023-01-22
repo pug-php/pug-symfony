@@ -76,6 +76,11 @@ trait HelpersHandler
         $this->nodeHandler = $nodeHandler;
     }
 
+    public function getTwig(): Environment
+    {
+        return $this->twig;
+    }
+
     protected function getRendererOptions(): array
     {
         if ($this->options === null) {
@@ -94,9 +99,8 @@ trait HelpersHandler
             $srcDir = $projectDirectory.'/src';
             $assetsDirectories[] = $srcDir.'/Resources/assets';
             $webDir = $projectDirectory.'/public';
-            $baseDir = isset($this->userOptions['baseDir'])
-                ? $this->userOptions['baseDir']
-                : $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
+            $baseDir = $this->userOptions['baseDir']
+                ?? $this->crawlDirectories($srcDir, $assetsDirectories, $viewDirectories);
             $baseDir = $baseDir && file_exists($baseDir) ? realpath($baseDir) : $baseDir;
             $this->defaultTemplateDirectory = $baseDir;
 
@@ -123,9 +127,10 @@ trait HelpersHandler
                 (new Filesystem())->mkdir($cache);
             }
 
-            $options['paths'] = array_unique(array_filter($options['viewDirectories'], function ($path) use ($baseDir) {
-                return $path !== $baseDir;
-            }));
+            $options['paths'] = array_unique(array_filter(
+                $options['viewDirectories'],
+                static fn ($path) => $path !== $baseDir,
+            ));
 
             $this->options = $options;
         }
@@ -298,16 +303,10 @@ trait HelpersHandler
         $this->twig = Environment::fromTwigEnvironment($twig, $this, $this->container);
     }
 
-    protected function getTwig(): Environment
-    {
-        return $this->twig;
-    }
-
     protected function copyTwigFunctions(): void
     {
         $this->twigHelpers = [];
         $twig = $this->getTwig();
-        $twig->env = $twig;
         $loader = new MixedLoader($twig->getLoader());
         $twig->setLoader($loader);
         $this->share('twig', $twig);

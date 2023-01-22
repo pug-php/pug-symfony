@@ -74,15 +74,15 @@ abstract class AbstractTestCase extends KernelTestCase
 
         self::bootKernel();
 
-        $this->addFormRenderer(static::$container);
+        $this->addFormRenderer();
     }
 
-    protected function addFormRenderer(ContainerInterface $container)
+    protected function addFormRenderer()
     {
         require_once __DIR__.'/TestCsrfTokenManager.php';
 
         /** @var Environment $twig */
-        $twig = $container->get('twig');
+        $twig = self::getContainer()->get('twig');
         $csrfManager = new TestCsrfTokenManager();
         $formEngine = new TwigRendererEngine(['form_div_layout.html.twig'], $twig);
 

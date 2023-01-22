@@ -13,7 +13,7 @@ class TestCsrfTokenManager extends CsrfTokenManager
     {
     }
 
-    public function getToken(string $tokenId)
+    public function getToken(string $tokenId): CsrfToken
     {
         if ($tokenId === 'special') {
             return new CsrfToken('special', 'the token');

@@ -24,6 +24,7 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
+use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
 
 class TokenStorage extends BaseTokenStorage
@@ -230,7 +231,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $tokenStorage = new TokenStorage();
         $container = self::$kernel->getContainer();
         $reflectionProperty = new ReflectionProperty($container, 'services');
-        $reflectionProperty->setAccessible(true);
         $services = $reflectionProperty->getValue($container);
         $services['security.token_storage'] = $tokenStorage;
         $reflectionProperty->setValue($container, $services);
@@ -254,7 +254,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
             if ($extension instanceof LogoutUrlExtension) {
                 $reflectionClass = new \ReflectionClass('Symfony\Bridge\Twig\Extension\LogoutUrlExtension');
                 $reflectionProperty = $reflectionClass->getProperty('generator');
-                $reflectionProperty->setAccessible(true);
                 $reflectionProperty->setValue($extension, $generator);
                 $generator = null;
             }
@@ -495,7 +494,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
     {
         $container = self::$kernel->getContainer();
         $property = new ReflectionProperty($container, 'parameters');
-        $property->setAccessible(true);
         $value = $property->getValue($container);
         $value['pug']['prettyprint'] = false;
         $value['pug']['baseDir'] = __DIR__.'/../project-s5/templates-bis';
@@ -516,7 +514,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
     {
         $container = self::$kernel->getContainer();
         $property = new ReflectionProperty($container, 'parameters');
-        $property->setAccessible(true);
         $value = $property->getValue($container);
         $value['pug']['prettyprint'] = false;
         $value['pug']['paths'] = [__DIR__.'/../project-s5/templates-bis'];
@@ -649,15 +646,16 @@ class PugSymfonyEngineTest extends AbstractTestCase
     {
         $container = self::$kernel->getContainer();
         $property = new ReflectionProperty($container, 'parameters');
-        $property->setAccessible(true);
         $value = $property->getValue($container);
         $value['pug']['interceptors'] = [PugInterceptor::class];
         $property->setValue($container, $value);
         $controller = new TestController();
         $controller->setContainer($container);
-        $pugSymfony = new PugSymfonyEngine(self::$kernel);
-        /** @var Environment $twig */
-        $twig = $container->get('twig');
+        $twig = new Environment(new FilesystemLoader(
+            __DIR__.'/../project-s5/templates/',
+        ));
+        $pugSymfony = new PugSymfonyEngine(self::$kernel, $twig);
+        $twig->setPugSymfonyEngine($pugSymfony);
 
         self::assertSame(Environment::class, trim($twig->render('new-var.pug')));
 

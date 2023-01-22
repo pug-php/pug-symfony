@@ -3,7 +3,6 @@ security:
     in_memory: { memory: ~ }
   firewalls:
     main:
-      anonymous: ~
       logout:
         path:   /logout
         target: /
