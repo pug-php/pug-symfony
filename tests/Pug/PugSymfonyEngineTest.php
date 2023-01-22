@@ -377,17 +377,20 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertSame(
             '<div style="'.
                 'background-position: 50% -402px; '.
-                'background-image: url(\'/assets/img/patterns/5.png\');'.
+                'background-image: url(\'assets/img/patterns/5.png\');'.
                 '" class="foo"></div>'."\n".
             '<div style="'.
                 'background-position:50% -402px;'.
-                'background-image:url(\'/assets/img/patterns/5.png\')'.
+                'background-image:url(\'assets/img/patterns/5.png\')'.
                 '" class="foo"></div>',
             preg_replace(
                 '/<div( class="[^"]+")(.+?)></',
                 '<div$2$1><',
-                str_replace(['\'assets/', "\r"], ['\'/assets/', ''], trim($pugSymfony->render('style-php.pug')))
-            )
+                strtr(trim($pugSymfony->render('style-php.pug')), [
+                    "\r" => '',
+                    '&#039;' => "'",
+                ]),
+            ),
         );
     }
 
