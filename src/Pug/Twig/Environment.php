@@ -59,7 +59,7 @@ class Environment extends TwigEnvironment
         try {
             return parent::getRuntime($class);
         } catch (RuntimeError $error) {
-            if (!$this->rootEnv) {
+            if (!($this->rootEnv ?? null)) {
                 throw $error;
             }
 

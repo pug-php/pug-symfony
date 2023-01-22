@@ -21,8 +21,10 @@ use Pug\Symfony\Traits\Installer;
 use Pug\Symfony\Traits\Options;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Templating\EngineInterface;
 use Symfony\Component\Templating\TemplateReferenceInterface;
 use Twig\Environment as TwigEnvironment;
@@ -50,11 +52,12 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     protected $defaultTemplateDirectory;
 
     public function __construct(
-        KernelInterface $kernel,
+        protected readonly KernelInterface $kernel,
         TwigEnvironment $twig,
+        private readonly ?RequestStack $stack = null,
+        private readonly ?RequestContext $context = null,
     ) {
         $container = $kernel->getContainer();
-        $this->kernel = $kernel;
         $this->container = $container;
         $this->userOptions = ($this->container->hasParameter('pug') ? $this->container->getParameter('pug') : null) ?: [];
         $this->enhanceTwig($twig);

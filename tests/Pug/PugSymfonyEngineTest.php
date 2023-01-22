@@ -5,23 +5,32 @@ namespace Pug\Tests;
 use App\Service\PugInterceptor;
 use DateTime;
 use ErrorException;
-use InvalidArgumentException;
+use Phug\CompilerException;
+use Phug\Util\SourceLocation;
 use Pug\Exceptions\ReservedVariable;
 use Pug\Filter\AbstractFilter;
 use Pug\Pug;
 use Pug\PugSymfonyEngine;
 use Pug\Symfony\MixedLoader;
+use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
 use Pug\Twig\Environment;
 use ReflectionException;
 use ReflectionProperty;
 use RuntimeException;
 use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\FormFactory;
+use Symfony\Component\Form\FormRegistry;
+use Symfony\Component\Form\ResolvedFormTypeFactory;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
+use Symfony\Component\Translation\Translator;
 use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
 use Twig\TwigFunction;
@@ -83,27 +92,17 @@ class Task
     }
 }
 
-if (!class_exists('Symfony\Bundle\FrameworkBundle\Controller\AbstractController')) {
-    include __DIR__.'/AbstractController.php';
-}
-
-class TestController extends AbstractController
+class TestController
 {
     public function index()
     {
-        try {
-            return $this->createFormBuilder(new Task())
-                ->add('name', 'Symfony\Component\Form\Extension\Core\Type\TextType')
-                ->add('dueDate', 'Symfony\Component\Form\Extension\Core\Type\DateType')
-                ->add('save', 'Symfony\Component\Form\Extension\Core\Type\SubmitType', ['label' => 'Foo'])
-                ->getForm();
-        } catch (InvalidArgumentException $e) {
-            return $this->createFormBuilder(new Task())
-                ->add('name', 'text')
-                ->add('dueDate', 'date')
-                ->add('save', 'submit', ['label' => 'Foo'])
-                ->getForm();
-        }
+        $factory = new FormFactory(new FormRegistry([], new ResolvedFormTypeFactory()));
+
+        return $factory->createBuilder(FormType::class, new Task())
+            ->add('name', TextType::class)
+            ->add('dueDate', DateType::class)
+            ->add('save', SubmitType::class, ['label' => 'Foo'])
+            ->getForm();
     }
 }
 
@@ -116,15 +115,16 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Twig needs to be configured.');
 
-        $container = self::$kernel->getContainer();
-        foreach (['services', 'aliases', 'fileMap', 'methodMap'] as $name) {
-            /** @var ReflectionProperty $propertyAccessor */
-            $services = static::getPrivateProperty($container, $name, $propertyAccessor);
-            unset($services['twig']);
-            $propertyAccessor->setValue($container, $services);
-        }
+        $object = new class () {
+            use HelpersHandler;
 
-        $this->getPugSymfonyEngine();
+            public function wrongEnhance(): void
+            {
+                $this->enhanceTwig(new \stdClass());
+            }
+        };
+
+        $object->wrongEnhance();
     }
 
     /**
@@ -139,11 +139,12 @@ class PugSymfonyEngineTest extends AbstractTestCase
         });
         $kernel->boot();
         $pugSymfony = $this->getPugSymfonyEngine();
+        $pugSymfony->setOption('prettyprint', false);
 
-        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("/foo")'));
+        self::assertSame('<p>/foo</p>', trim($pugSymfony->renderString('p=asset("/foo")')));
         self::assertSame(
             '<html><head><title>My Site</title></head><body><p>/foo</p><footer><p></p>Some footer text</footer></body></html>',
-            $pugSymfony->render('asset.pug')
+            $pugSymfony->render('asset.pug'),
         );
     }
 
@@ -155,7 +156,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertSame(
             '<ul><li class="pet">cat</li><li class="pet">dog</li><li class="pet">pig</li></ul>',
-            $pugSymfony->render('mixin.pug')
+            $pugSymfony->render('mixin.pug'),
         );
     }
 
@@ -172,7 +173,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $kernel->boot();
         $pugSymfony = $this->getPugSymfonyEngine();
 
-        self::assertSame('<p>/foo</p>', $pugSymfony->renderString('p=asset("/foo")'));
+        self::assertSame('<p>/foo</p>', trim($pugSymfony->renderString('p=asset("/foo")')));
     }
 
     public function testPreRenderFile()
@@ -208,7 +209,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         });
         $kernel->boot();
         $pugSymfony = $this->getPugSymfonyEngine($kernel);
-        $this->addFormRenderer($kernel->getContainer());
+        $this->addFormRenderer();
 
         self::assertSame('<p>Hello</p>', $pugSymfony->renderString('p Hello'));
 
@@ -235,7 +236,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $services['security.token_storage'] = $tokenStorage;
         $reflectionProperty->setValue($container, $services);
         $pugSymfony = $this->getPugSymfonyEngine();
-        $this->addFormRenderer($container);
+        $this->addFormRenderer();
 
         self::assertSame('<p>the token</p>', trim($pugSymfony->render('token.pug')));
     }
@@ -247,8 +248,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testLogoutHelper()
     {
         $generator = new LogoutUrlGenerator();
-        /* @var Environment $twig */
-        $twig = self::$kernel->getContainer()->get('twig');
+        $twig = $this->getTwigEnvironment();
 
         foreach ($twig->getExtensions() as $extension) {
             if ($extension instanceof LogoutUrlExtension) {
@@ -276,10 +276,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testFormHelpers()
     {
         $pugSymfony = $this->getPugSymfonyEngine();
-        $container = self::$kernel->getContainer();
-        $this->addFormRenderer($container);
+        $this->addFormRenderer();
         $controller = new TestController();
-        $controller->setContainer($container);
 
         self::assertRegExp('/^'.implode('', [
             '<form name="form" method="get">',
@@ -303,8 +301,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $container = self::$kernel->getContainer();
         $controller = new TestController();
         $controller->setContainer($container);
-        /** @var Environment $twig */
-        $twig = $container->get('twig');
+        $twig = $this->getTwigEnvironment();
+        $this->getPugSymfonyEngine();
 
         self::assertInstanceOf(Environment::class, $twig);
         self::assertInstanceOf(PugSymfonyEngine::class, $twig->getEngine());
@@ -325,9 +323,8 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testServicesSharing()
     {
-        /** @var Environment $twig */
-        $twig = self::$kernel->getContainer()->get('twig');
-        $twig->addGlobal('t', self::$kernel->getContainer()->get('translator'));
+        $twig = $this->getTwigEnvironment();
+        $twig->addGlobal('t', new Translator('en_US'));
         $pugSymfony = $this->getPugSymfonyEngine();
 
         self::assertSame('<p>Hello Bob</p>', trim($pugSymfony->renderString('p=t.trans("Hello %name%", {"%name%": "Bob"})')));
@@ -338,11 +335,9 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testTwigGlobals()
     {
-        $container = self::$kernel->getContainer();
-        $pugSymfony = $this->getPugSymfonyEngine();
-        /** @var Environment $twig */
-        $twig = $container->get('twig');
+        $twig = $this->getTwigEnvironment();
         $twig->addGlobal('answer', 42);
+        $pugSymfony = $this->getPugSymfonyEngine();
 
         self::assertSame('<p>42</p>', trim($pugSymfony->renderString('p=answer')));
     }
@@ -405,17 +400,20 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::assertSame(
             '<div style="'.
                 'background-position: 50% -402px; '.
-                'background-image: url(\'/assets/img/patterns/5.png\');'.
+                'background-image: url(\'assets/img/patterns/5.png\');'.
                 '" class="foo"></div>'."\n".
             '<div style="'.
                 'background-position:50% -402px;'.
-                'background-image:url(\'/assets/img/patterns/5.png\')'.
+                'background-image:url(\'assets/img/patterns/5.png\')'.
                 '" class="foo"></div>',
             preg_replace(
                 '/<div( class="[^"]+")(.+?)></',
                 '<div$2$1><',
-                str_replace(['\'assets/', "\r"], ['\'/assets/', ''], trim($pugSymfony->render('style-js.pug')))
-            )
+                strtr(trim($pugSymfony->render('style-js.pug')), [
+                    "\r" => '',
+                    '&#039;' => "'",
+                ]),
+            ),
         );
     }
 
@@ -535,15 +533,16 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testMissingDir()
     {
+        self::expectExceptionObject(new CompilerException(
+            new SourceLocation('page.pug', 1,0),
+            'Source file page.pug not found',
+        ));
+
         $kernel = new TestKernel();
         $kernel->boot();
         $kernel->setProjectDirectory(__DIR__.'/../project');
-        $pugSymfony = $this->getPugSymfonyEngine();
 
-        self::assertSame(
-            '<h1>Page</h1>',
-            trim($pugSymfony->render('page.pug'))
-        );
+        $this->getPugSymfonyEngine()->render('page.pug');
     }
 
     public function testForbidThis()
@@ -600,16 +599,14 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::expectExceptionMessage('Unable to compile void function.');
 
         $this->getPugSymfonyEngine();
-        /** @var Environment $twig */
-        $twig = self::$kernel->getContainer()->get('twig');
+        $twig = $this->getTwigEnvironment();
         $twig->compileCode(new TwigFunction('void'), '{# comment #}');
     }
 
     public function testLoadTemplate()
     {
         $this->getPugSymfonyEngine();
-        /** @var Environment $twig */
-        $twig = self::$kernel->getContainer()->get('twig');
+        $twig = $this->getTwigEnvironment();
 
         try {
             $twig->loadTemplate('a', 'b', 1);
@@ -652,8 +649,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $value = $property->getValue($container);
         $value['pug']['interceptors'] = [PugInterceptor::class];
         $property->setValue($container, $value);
-        $controller = new TestController();
-        $controller->setContainer($container);
         $twig = $this->getTwigEnvironment();
         $pugSymfony = $this->getPugSymfonyEngine();
 

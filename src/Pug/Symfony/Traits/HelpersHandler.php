@@ -21,8 +21,6 @@ use Symfony\Component\Asset\VersionStrategy\EmptyVersionStrategy;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
-use Symfony\Component\HttpKernel\Kernel;
-use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\RequestContext;
 use Twig\Environment as TwigEnvironment;
 use Twig\Extension\ExtensionInterface;
@@ -39,8 +37,6 @@ trait HelpersHandler
     protected ContainerInterface $container;
 
     protected Environment $twig;
-
-    protected Kernel|KernelInterface $kernel;
 
     protected ?Pug $pug = null;
 
@@ -353,12 +349,13 @@ trait HelpersHandler
     protected function getHttpFoundationExtension(): HttpFoundationExtension
     {
         /* @var RequestStack $stack */
-        $stack = $this->container->get('request_stack');
+        $stack = $this->stack ?? $this->container->get('request_stack');
 
         /* @var RequestContext $context */
-        $context = $this->container->has('router.request_context')
+        $context = $this->context ?? ($this->container->has('router.request_context')
             ? $this->container->get('router.request_context')
-            : $this->container->get('router')->getContext();
+            : $this->container->get('router')->getContext()
+        );
 
         return new HttpFoundationExtension(new UrlHelper($stack, $context));
     }
