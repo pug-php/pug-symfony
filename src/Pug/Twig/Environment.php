@@ -35,6 +35,8 @@ class Environment extends TwigEnvironment
 
     public TwigEnvironment $rootEnv;
 
+    public TwigEnvironment $env;
+
     public function __construct(LoaderInterface $loader, $options = [])
     {
         parent::__construct($loader, $options);

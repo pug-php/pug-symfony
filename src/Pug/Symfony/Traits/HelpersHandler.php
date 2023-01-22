@@ -307,6 +307,7 @@ trait HelpersHandler
     {
         $this->twigHelpers = [];
         $twig = $this->getTwig();
+        $twig->env = $twig;
         $loader = new MixedLoader($twig->getLoader());
         $twig->setLoader($loader);
         $this->share('twig', $twig);

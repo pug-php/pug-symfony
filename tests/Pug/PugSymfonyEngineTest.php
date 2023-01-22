@@ -24,7 +24,6 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Twig\Error\LoaderError;
 use Twig\Loader\ArrayLoader;
-use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
 
 class TokenStorage extends BaseTokenStorage
@@ -133,7 +132,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testPreRenderPhp()
     {
-        $kernel = new TestKernel(function (Container $container) {
+        $kernel = new TestKernel(static function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'php',
             ]);
@@ -165,7 +164,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testPreRenderJs()
     {
-        $kernel = new TestKernel(function (Container $container) {
+        $kernel = new TestKernel(static function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
             ]);
@@ -178,13 +177,14 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
     public function testPreRenderFile()
     {
-        $kernel = new TestKernel(function (Container $container) {
+        $kernel = new TestKernel(static function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
             ]);
         });
         $kernel->boot();
         $pugSymfony = $this->getPugSymfonyEngine();
+        $pugSymfony->setOption('prettyprint', false);
 
         self::assertSame(implode('', [
             '<html>',
@@ -201,7 +201,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testPreRenderCsrfToken()
     {
-        $kernel = new TestKernel(function (Container $container) {
+        $kernel = new TestKernel(static function (Container $container) {
             $container->setParameter('pug', [
                 'expressionLanguage' => 'js',
             ]);

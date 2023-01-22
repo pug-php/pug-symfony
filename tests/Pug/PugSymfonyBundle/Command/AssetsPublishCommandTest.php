@@ -3,7 +3,6 @@
 namespace Pug\Tests\PugSymfonyBundle\Command;
 
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
-use Pug\PugSymfonyEngine;
 use Pug\Tests\AbstractTestCase;
 use Pug\Tests\TestKernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
