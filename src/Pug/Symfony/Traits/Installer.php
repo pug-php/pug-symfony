@@ -18,6 +18,9 @@ trait Installer
         return !$io->isInteractive() || $io->askConfirmation($message);
     }
 
+    /**
+     * @SuppressWarnings(PHPMD.ErrorControlOperator)
+     */
     protected static function installSymfonyBundle(
         IOInterface $io,
         string $dir,

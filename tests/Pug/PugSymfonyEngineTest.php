@@ -14,6 +14,7 @@ use Pug\PugSymfonyEngine;
 use Pug\Symfony\MixedLoader;
 use Pug\Symfony\Traits\HelpersHandler;
 use Pug\Symfony\Traits\PrivatePropertyAccessor;
+use Pug\Symfony\Traits\PugRenderer;
 use Pug\Twig\Environment;
 use ReflectionException;
 use ReflectionProperty;
@@ -28,6 +29,8 @@ use Symfony\Component\Form\Extension\Csrf\CsrfExtension;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\Form\ResolvedFormTypeFactory;
+use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
@@ -130,6 +133,31 @@ class TestController
             ->add('dueDate', DateType::class)
             ->add('save', SubmitType::class, ['label' => 'Foo'])
             ->getForm();
+    }
+}
+
+#[AsController]
+class S6Controller
+{
+    #[Route('/contact')]
+    public function contactAction(PugSymfonyEngine $pug)
+    {
+        return $pug->renderResponse('layout/welcome.pug', [
+            'name' => 'Pug',
+        ]);
+    }
+}
+
+class TraitController
+{
+    use PugRenderer;
+
+    #[Route('/contact')]
+    public function contactAction()
+    {
+        return $this->render('layout/welcome.pug', [
+            'name' => 'Pug',
+        ]);
     }
 }
 
@@ -676,5 +704,35 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $pugSymfony->setOption('special-thing', true);
 
         self::assertSame('<div><p></p></div>', preg_replace('/\s/', '', $twig->render('new-var.pug')));
+    }
+
+    public function testSymfony6Controller()
+    {
+        $controller = new S6Controller();
+        $pugSymfony = new PugSymfonyEngine(self::$kernel, $this->getTwigEnvironment());
+        $pugSymfony->setOption('prettyprint', false);
+
+        self::assertSame(
+            implode('', [
+                '<html>',
+                '<head><title>My Site</title></head>',
+                '<body><h1>Welcome Pug</h1><p>42</p><footer><p></p>Some footer text</footer></body>',
+                '</html>',
+            ]),
+            $controller->contactAction($pugSymfony)->getContent(),
+        );
+
+        $controller = new TraitController();
+        $controller->setPug($pugSymfony);
+
+        self::assertSame(
+            implode('', [
+                '<html>',
+                '<head><title>My Site</title></head>',
+                '<body><h1>Welcome Pug</h1><p>42</p><footer><p></p>Some footer text</footer></body>',
+                '</html>',
+            ]),
+            $controller->contactAction()->getContent(),
+        );
     }
 }
