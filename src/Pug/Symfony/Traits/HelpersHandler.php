@@ -140,7 +140,7 @@ trait HelpersHandler
         /** @var Closure|null $transformation */
         $transformation = $pug->hasOption('patterns')
             ? ($pug->getOption('patterns')['transform_expression'] ?? null)
-            : null;
+            : null; // @codeCoverageIgnore
         $pug->setOptionsRecursive([
             'patterns' => [
                 'transform_expression' => function ($code) use ($transformation) {
