@@ -2,11 +2,11 @@
 
 namespace Pug\Tests;
 
-use Psr\Container\ContainerInterface;
 use Pug\PugSymfonyEngine;
 use Pug\Twig\Environment;
 use Symfony\Bridge\Twig\Extension\CsrfExtension;
 use Symfony\Bridge\Twig\Extension\CsrfRuntime;
+use Symfony\Bridge\Twig\Extension\FormExtension;
 use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
@@ -15,7 +15,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\RequestContext;
 use Twig\Loader\FilesystemLoader;
-use Twig\RuntimeLoader\ContainerRuntimeLoader;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 abstract class AbstractTestCase extends KernelTestCase
@@ -35,6 +34,7 @@ abstract class AbstractTestCase extends KernelTestCase
                 __DIR__.'/../project-s5/templates/',
             ));
             $this->twig->addExtension(new CsrfExtension());
+            $this->twig->addExtension(new FormExtension());
             $this->twig->addRuntimeLoader(new FactoryRuntimeLoader([
                 CsrfRuntime::class => static fn () => new CsrfRuntime(new TestCsrfTokenManager()),
             ]));

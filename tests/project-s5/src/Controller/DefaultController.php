@@ -6,17 +6,11 @@ use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormRenderer;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
-use Twig\Environment;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 class DefaultController extends AbstractController
 {
     protected $twig;
-
-//    public function __construct(Environment $twig)
-//    {
-//        $this->twig = $twig;
-//    }
 
     public function index()
     {
