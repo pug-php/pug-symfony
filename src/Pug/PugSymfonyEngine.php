@@ -92,7 +92,9 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
                     continue;
                 }
 
-                if (is_dir($viewDirectory = $srcDir.'/'.$directory.'/Resources/views')) {
+                $viewDirectory = $srcDir.'/'.$directory.'/Resources/views';
+
+                if (is_dir($viewDirectory)) {
                     $baseDir ??= $viewDirectory;
 
                     $viewDirectories[] = $srcDir.'/'.$directory.'/Resources/views';

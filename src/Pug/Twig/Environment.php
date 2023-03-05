@@ -131,7 +131,7 @@ class Environment extends TwigEnvironment
             $pug = $this->getRenderer();
             $code = $source->getCode();
             $php = $pug->compile($code, $path);
-            $codeFirstLine = $this->isDebug() ? 31 : 25;
+            $codeFirstLine = $this->isDebug() ? 39 : 28;
             $templateLine = 1;
             $debugInfo = [$codeFirstLine => $templateLine];
             $lines = explode("\n", $php);
@@ -159,18 +159,20 @@ class Environment extends TwigEnvironment
             $fileName = $this->isDebug() ? 'PugDebugTemplateTemplate' : 'PugTemplateTemplate';
             $templateFile = __DIR__."/../../../cache-templates/$fileName.php";
             $name = $source->getName();
-            $className = isset($this->classNames[$name]) ? $this->classNames[$name] : '__Template_'.sha1($path);
+            $className = $this->classNames[$name] ?? '__Template_'.sha1($path);
+            $pathExport = var_export($path, true);
             $replacements = [
                 $fileName               => $className,
                 '"{{filename}}"'        => var_export($name, true),
                 '{{filename}}'          => $name,
-                '"{{path}}"'            => var_export($path, true),
+                "'{{path}}'"            => $pathExport,
                 '// {{code}}'           => "?>$php<?php",
-                '[/* {{debugInfo}} */]' => var_export($debugInfo, true),
+                '[/* {{debugInfo}} */]' => var_export(array_reverse($debugInfo, true), true),
             ];
 
             if ($this->isDebug()) {
-                $replacements['"{{source}}"'] = var_export($code, true);
+                $sourceExport = var_export($code, true);
+                $replacements["'{{source}}'"] = $sourceExport;
                 $replacements['__internal_1'] = '__internal_'.sha1('1'.$path);
                 $replacements['__internal_2'] = '__internal_'.sha1('2'.$path);
             }
@@ -178,9 +180,7 @@ class Environment extends TwigEnvironment
             return strtr(file_get_contents($templateFile), $replacements);
         }
 
-        $html = parent::compileSource($source);
-
-        return $html;
+        return parent::compileSource($source);
     }
 
     public function loadTemplate(string $cls, string $name, int $index = null): Template

@@ -7,7 +7,7 @@ use Pug\Tests\AbstractTestCase;
 
 class ReservedVariableTest extends AbstractTestCase
 {
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $exception = new ReservedVariable('foobar');
 

@@ -11,7 +11,7 @@ class EnvironmentTest extends AbstractTestCase
     /**
      * @throws RuntimeError
      */
-    public function testWithoutRoot()
+    public function testWithoutRoot(): void
     {
         self::expectException(RuntimeError::class);
         self::expectExceptionMessage('Unable to load the "I-surely-does-not-exist" runtime.');
@@ -23,7 +23,7 @@ class EnvironmentTest extends AbstractTestCase
     /**
      * @throws RuntimeError
      */
-    public function testWithRoot()
+    public function testWithRoot(): void
     {
         self::expectException(RuntimeError::class);
         self::expectExceptionMessage('Unable to load the "I-surely-does-not-exist" runtime.');
