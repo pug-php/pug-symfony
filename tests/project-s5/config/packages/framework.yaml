@@ -6,7 +6,7 @@ framework:
     csrf_protection: true
     validation: { enable_annotations: true }
     session:
-        storage_id: session.storage.filesystem
+        handler_id: null
 
 parameters:
     pug:

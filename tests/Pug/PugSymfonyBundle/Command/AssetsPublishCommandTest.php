@@ -3,7 +3,6 @@
 namespace Pug\Tests\PugSymfonyBundle\Command;
 
 use Pug\PugSymfonyBundle\Command\AssetsPublishCommand;
-use Pug\PugSymfonyEngine;
 use Pug\Tests\AbstractTestCase;
 use Pug\Tests\TestKernel;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -19,7 +18,7 @@ class AssetsPublishCommandTest extends AbstractTestCase
         self::$kernel->boot();
 
         $application = new Application(self::$kernel);
-        $application->add(new AssetsPublishCommand(new PugSymfonyEngine(self::$kernel)));
+        $application->add(new AssetsPublishCommand($this->getPugSymfonyEngine()));
 
         // Convert PHP style files to JS style
         $customHelperFile = __DIR__.'/../../../project-s5/templates/custom-helper.pug';

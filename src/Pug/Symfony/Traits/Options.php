@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\Symfony\Traits;
 
 use Pug\Pug;
@@ -37,9 +39,7 @@ trait Options
 
         $pug = $this->getRenderer();
 
-        return method_exists($pug, 'hasOption') && !$pug->hasOption($name)
-            ? $default
-            : $pug->getOption($name);
+        return $pug->hasOption($name) ? $pug->getOption($name) : $default;
     }
 
     /**

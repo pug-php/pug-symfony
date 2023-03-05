@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\Symfony;
 
 use Twig\Error\LoaderError;

@@ -9,19 +9,15 @@ use Symfony\Component\Config\Loader\LoaderInterface;
 
 class TestKernel extends Kernel
 {
-    /**
-     * @var Closure
-     */
-    private $containerConfigurator;
+    private Closure $containerConfigurator;
 
-    /**
-     * @var string
-     */
-    private $projectDirectory;
+    private ?string $projectDirectory = null;
+
+    private string $rootDir;
 
     public function __construct(Closure $containerConfigurator = null, $environment = 'test', $debug = false)
     {
-        $this->containerConfigurator = $containerConfigurator ?? function () {
+        $this->containerConfigurator = $containerConfigurator ?? static function () {
         };
 
         parent::__construct($environment, $debug);

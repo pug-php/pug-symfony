@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pug\Symfony\Traits;
 
 use Composer\IO\IOInterface;
@@ -11,13 +13,19 @@ use Pug\Symfony\Contracts\InstallerInterface;
  */
 trait Installer
 {
-    protected static function askConfirmation(IOInterface $io, $message)
+    protected static function askConfirmation(IOInterface $io, string $message): bool
     {
         return !$io->isInteractive() || $io->askConfirmation($message);
     }
 
-    protected static function installSymfonyBundle(IOInterface $io, $dir, $bundle, $bundleClass, $proceedTask, &$flags)
-    {
+    protected static function installSymfonyBundle(
+        IOInterface $io,
+        string $dir,
+        string $bundle,
+        string $bundleClass,
+        callable $proceedTask,
+        int &$flags,
+    ): void {
         $appFile = $dir.'/config/bundles.php';
         $contents = @file_get_contents($appFile) ?: '';
 
@@ -52,7 +60,7 @@ trait Installer
      *
      * @return bool
      */
-    protected static function installInSymfony5($event, $dir)
+    protected static function installInSymfony5($event, $dir): bool
     {
         $io = $event->getIO();
         $baseDirectory = __DIR__.'/../../../..';

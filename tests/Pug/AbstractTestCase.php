@@ -2,19 +2,64 @@
 
 namespace Pug\Tests;
 
+use Pug\PugSymfonyEngine;
 use Pug\Twig\Environment;
+use Symfony\Bridge\Twig\Extension\CsrfExtension;
+use Symfony\Bridge\Twig\Extension\CsrfRuntime;
+use Symfony\Bridge\Twig\Extension\FormExtension;
+use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
+use Symfony\Bridge\Twig\Extension\TranslationExtension;
 use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Form\FormRenderer;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Routing\RequestContext;
+use Twig\Loader\FilesystemLoader;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 
 abstract class AbstractTestCase extends KernelTestCase
 {
-    protected static $originalFiles = [];
+    protected static array $originalFiles = [];
 
-    protected static $cachePath = __DIR__.'/../project-s5/var/cache/test';
+    protected static string $cachePath = __DIR__.'/../project-s5/var/cache/test';
+
+    protected ?Environment $twig = null;
+
+    protected ?PugSymfonyEngine $pugSymfony = null;
+
+    protected function getTwigEnvironment(): Environment
+    {
+        if (!isset($this->twig)) {
+            $this->twig = new Environment(new FilesystemLoader(
+                __DIR__.'/../project-s5/templates/',
+            ));
+            $this->twig->addExtension(new CsrfExtension());
+            $this->twig->addExtension(new FormExtension());
+            $this->twig->addExtension(new LogoutUrlExtension(new LogoutUrlGenerator()));
+            $this->twig->addExtension(new TranslationExtension());
+            $this->twig->addRuntimeLoader(new FactoryRuntimeLoader([
+                CsrfRuntime::class => static fn () => new CsrfRuntime(new TestCsrfTokenManager()),
+            ]));
+        }
+
+        return $this->twig;
+    }
+
+    protected function getPugSymfonyEngine(?KernelInterface $kernel = null): PugSymfonyEngine
+    {
+        $twig = $this->getTwigEnvironment();
+        $this->pugSymfony ??= new PugSymfonyEngine(
+            $kernel ?? self::$kernel,
+            $twig,
+            new RequestStack(),
+            new RequestContext(),
+        );
+        $twig->setPugSymfonyEngine($this->pugSymfony);
+
+        return $this->pugSymfony;
+    }
 
     private static function getConfigFiles(): array
     {
@@ -74,22 +119,19 @@ abstract class AbstractTestCase extends KernelTestCase
 
         self::bootKernel();
 
-        $this->addFormRenderer(static::$container);
+        $this->addFormRenderer();
     }
 
-    protected function addFormRenderer(ContainerInterface $container)
+    protected function addFormRenderer()
     {
         require_once __DIR__.'/TestCsrfTokenManager.php';
 
-        /** @var Environment $twig */
-        $twig = $container->get('twig');
+        $twig = $this->getTwigEnvironment();
         $csrfManager = new TestCsrfTokenManager();
         $formEngine = new TwigRendererEngine(['form_div_layout.html.twig'], $twig);
 
         $twig->addRuntimeLoader(new FactoryRuntimeLoader([
-            FormRenderer::class => static function () use ($formEngine, $csrfManager) {
-                return new FormRenderer($formEngine, $csrfManager);
-            },
+            FormRenderer::class => static fn () => new FormRenderer($formEngine, $csrfManager),
         ]));
     }
 }
