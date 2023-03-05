@@ -24,11 +24,18 @@ use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Csrf\CsrfExtension;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\Form\ResolvedFormTypeFactory;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Csrf\CsrfTokenManager;
+use Symfony\Component\Security\Csrf\TokenGenerator\UriSafeTokenGenerator;
+use Symfony\Component\Security\Csrf\TokenStorage\NativeSessionTokenStorage;
+use Symfony\Component\Security\Csrf\TokenStorage\SessionTokenStorage;
+use Symfony\Component\Security\Csrf\TokenStorage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Symfony\Component\Translation\Translator;
 use Twig\Error\LoaderError;
@@ -96,7 +103,30 @@ class TestController
 {
     public function index()
     {
-        $factory = new FormFactory(new FormRegistry([], new ResolvedFormTypeFactory()));
+        $csrfGenerator = new UriSafeTokenGenerator();
+        $csrfManager = new CsrfTokenManager($csrfGenerator, new class() implements TokenStorageInterface {
+            public function getToken(string $tokenId): string
+            {
+                return "token:$tokenId";
+            }
+
+            public function setToken(string $tokenId, #[\SensitiveParameter] string $token)
+            {
+                // noop
+            }
+
+            public function removeToken(string $tokenId): ?string
+            {
+                return "token:$tokenId";
+            }
+
+            public function hasToken(string $tokenId): bool
+            {
+                return true;
+            }
+        });
+        $extensions = [new CsrfExtension($csrfManager)];
+        $factory = new FormFactory(new FormRegistry($extensions, new ResolvedFormTypeFactory()));
 
         return $factory->createBuilder(FormType::class, new Task())
             ->add('name', TextType::class)
