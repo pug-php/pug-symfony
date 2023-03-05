@@ -20,7 +20,7 @@
     "twig/twig": "^3.5.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^8.5",
+    "phpunit/phpunit": "^8.5 || ^9.6",
     "symfony/symfony": "^6.0",
     "monolog/monolog": "^3.2"
   },

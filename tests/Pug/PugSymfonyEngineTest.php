@@ -240,7 +240,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
 
         self::assertSame('<p>Hello</p>', $pugSymfony->renderString('p Hello'));
 
-        self::assertRegExp('/<p>[a-zA-Z0-9_-]{20,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authenticate")'));
+        self::assertMatchesRegularExpression('/<p>[a-zA-Z0-9_-]{20,}<\/p>/', $pugSymfony->renderString('p=csrf_token("authenticate")'));
     }
 
     public function testGetEngine()
@@ -300,7 +300,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $this->addFormRenderer();
         $controller = new TestController();
 
-        self::assertRegExp('/^'.implode('', [
+        self::assertMatchesRegularExpression('/^'.implode('', [
             '<form name="form" method="get">',
             '<input type="text" id="form_name" name="form\[name\]" required="required" class="foo"\s*\/>',
             '<div\s*><label class="required">Due date<\/label><div id="form_dueDate">(',

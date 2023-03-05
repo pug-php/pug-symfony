@@ -46,7 +46,7 @@ else
 
         $this->assertStringContainsString('16 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
         $this->assertStringContainsString('1 templates failed to be cached', $output, 'filter.pug fails as the upper filter does not exists.');
-        $this->assertRegExp('/(Unknown\sfilter\supper|upper:\sFilter\sdoes\s?n[\'o]t\sexists)/', $output, 'filter.pug fails as the upper filter does not exists.');
+        $this->assertMatchesRegularExpression('/(Unknown\sfilter\supper|upper:\sFilter\sdoes\s?n[\'o]t\sexists)/', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertStringContainsString('filter.pug', $output, 'filter.pug fails as the upper filter does not exists.');
     }
 }
