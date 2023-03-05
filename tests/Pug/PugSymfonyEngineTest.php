@@ -233,7 +233,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         $file = null;
         $context = null;
         $rawMessage = null;
-        $errorFile = realpath(__DIR__ . '/../project-s5/templates/error.pug');
+        $errorFile = realpath(__DIR__.'/../project-s5/templates/error.pug');
 
         $twig->enableDebug();
 

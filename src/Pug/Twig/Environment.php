@@ -123,6 +123,9 @@ class Environment extends TwigEnvironment
         $this->container = $container;
     }
 
+    /**
+     * @SuppressWarnings(PHPMD.DuplicatedArrayKey)
+     */
     public function compileSource(Source $source): string
     {
         $path = $source->getPath();
@@ -163,7 +166,7 @@ class Environment extends TwigEnvironment
             $pathExport = var_export($path, true);
             $replacements = [
                 $fileName               => $className,
-                '"{{filename}}"'        => var_export($name, true),
+                "'{{filename}}'"        => var_export($name, true),
                 '{{filename}}'          => $name,
                 "'{{path}}'"            => $pathExport,
                 '// {{code}}'           => "?>$php<?php",

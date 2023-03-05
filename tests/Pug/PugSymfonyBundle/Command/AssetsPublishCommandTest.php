@@ -44,7 +44,7 @@ else
         file_put_contents($customHelperFile, $customHelper);
         file_put_contents($stylePhpFile, $stylePhp);
 
-        $this->assertStringContainsString('16 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
+        $this->assertStringContainsString('17 templates cached', $output, 'All templates can be cached except filter.pug as the upper filter does not exists.');
         $this->assertStringContainsString('1 templates failed to be cached', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertMatchesRegularExpression('/(Unknown\sfilter\supper|upper:\sFilter\sdoes\s?n[\'o]t\sexists)/', $output, 'filter.pug fails as the upper filter does not exists.');
         $this->assertStringContainsString('filter.pug', $output, 'filter.pug fails as the upper filter does not exists.');
