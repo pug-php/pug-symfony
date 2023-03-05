@@ -18,6 +18,9 @@ trait Installer
         return !$io->isInteractive() || $io->askConfirmation($message);
     }
 
+    /**
+     * @SuppressWarnings(PHPMD.ErrorControlOperator)
+     */
     protected static function installSymfonyBundle(
         IOInterface $io,
         string $dir,
@@ -35,7 +38,7 @@ trait Installer
             return;
         }
 
-        if (strpos($contents, $bundleClass) !== false) {
+        if (str_contains($contents, $bundleClass)) {
             $flags |= InstallerInterface::KERNEL_OK;
             $io->write('The bundle already exists in config/bundles.php');
 
@@ -50,7 +53,7 @@ trait Installer
             file_put_contents($appFile, $contents),
             InstallerInterface::KERNEL_OK,
             'Bundle added to config/bundles.php',
-            'Unable to add the bundle engine in config/bundles.php'
+            'Unable to add the bundle engine in config/bundles.php',
         );
     }
 

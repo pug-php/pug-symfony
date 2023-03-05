@@ -17,7 +17,7 @@ require_once __DIR__.'/Composer/Event.php';
 
 class InstallerTest extends AbstractTestCase
 {
-    public function testTestInstallQuickExit()
+    public function testTestInstallQuickExit(): void
     {
         $io = new CaptureIO();
         $io->setInteractive(false);
@@ -35,7 +35,7 @@ class InstallerTest extends AbstractTestCase
         self::assertSame(['Not inside a composer vendor directory, setup skipped.'], $io->getLastOutput());
     }
 
-    public function testTestInstall()
+    public function testTestInstall(): void
     {
         $projectDir = sys_get_temp_dir().'/pug-symfony-'.mt_rand(0, 9999999);
         $fs = new Filesystem();
@@ -72,7 +72,7 @@ class InstallerTest extends AbstractTestCase
 
         self::assertTrue(PugSymfonyEngine::install(new Event('update', new Composer(), $io), $projectDir));
         self::assertSame(['Sorry, config/bundles.php has a format we can\'t handle automatically.'], $io->getLastOutput());
-        self::assertFileNotExists(__DIR__.'/../../installed');
+        self::assertFileDoesNotExist(__DIR__.'/../../installed');
 
         file_put_contents("$projectDir/config/bundles.php", file_get_contents(__DIR__.'/../project-s5/config/bundles-before.php'));
         $io->reset();

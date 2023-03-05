@@ -122,7 +122,7 @@ abstract class AbstractTestCase extends KernelTestCase
         $this->addFormRenderer();
     }
 
-    protected function addFormRenderer()
+    protected function addFormRenderer(): void
     {
         require_once __DIR__.'/TestCsrfTokenManager.php';
 
