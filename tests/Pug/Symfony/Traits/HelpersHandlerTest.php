@@ -26,7 +26,7 @@ final class HelpersHandlerTest extends TestCase
                     public function __construct()
                     {
                         $this->services = [
-                            'request_stack' => new RequestStack(),
+                            'request_stack'          => new RequestStack(),
                             'router.request_context' => RequestContext::fromUri('https://phug-lang.com/bar'),
                         ];
                     }
