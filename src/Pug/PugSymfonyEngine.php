@@ -256,7 +256,7 @@ class PugSymfonyEngine implements EngineInterface, InstallerInterface
     public function supports($name): bool
     {
         foreach ($this->getOptionDefault('extensions', ['.pug', '.jade']) as $extension) {
-            if (str_ends_with($name, $extension)) {
+            if ($extension && str_ends_with($name, $extension)) {
                 return true;
             }
         }

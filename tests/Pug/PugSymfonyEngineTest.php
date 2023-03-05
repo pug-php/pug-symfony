@@ -115,7 +115,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage('Twig needs to be configured.');
 
-        $object = new class () {
+        $object = new class() {
             use HelpersHandler;
 
             public function wrongEnhance(): void
@@ -382,7 +382,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
                 '/<div( class="[^"]+")(.+?)></',
                 '<div$2$1><',
                 strtr(trim($pugSymfony->render('style-php.pug')), [
-                    "\r" => '',
+                    "\r"     => '',
                     '&#039;' => "'",
                 ]),
             ),
@@ -410,7 +410,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
                 '/<div( class="[^"]+")(.+?)></',
                 '<div$2$1><',
                 strtr(trim($pugSymfony->render('style-js.pug')), [
-                    "\r" => '',
+                    "\r"     => '',
                     '&#039;' => "'",
                 ]),
             ),
@@ -534,7 +534,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
     public function testMissingDir()
     {
         self::expectExceptionObject(new CompilerException(
-            new SourceLocation('page.pug', 1,0),
+            new SourceLocation('page.pug', 1, 0),
             'Source file page.pug not found',
         ));
 

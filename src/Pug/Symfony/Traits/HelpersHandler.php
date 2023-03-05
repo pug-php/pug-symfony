@@ -352,9 +352,10 @@ trait HelpersHandler
         $stack = $this->stack ?? $this->container->get('request_stack');
 
         /* @var RequestContext $context */
-        $context = $this->context ?? ($this->container->has('router.request_context')
-            ? $this->container->get('router.request_context')
-            : $this->container->get('router')->getContext()
+        $context = $this->context ?? (
+            $this->container->has('router.request_context')
+                ? $this->container->get('router.request_context')
+                : $this->container->get('router')->getContext()
         );
 
         return new HttpFoundationExtension(new UrlHelper($stack, $context));
