@@ -26,6 +26,9 @@ use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Csrf\CsrfExtension;
+use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\Form\ResolvedFormTypeFactory;
@@ -99,9 +102,9 @@ class Task
     }
 }
 
-class TestController
+class TestHelper
 {
-    public function index()
+    public static function getFormBuilder(): FormBuilderInterface
     {
         $csrfGenerator = new UriSafeTokenGenerator();
         $csrfManager = new CsrfTokenManager($csrfGenerator, new class() implements TokenStorageInterface {
@@ -128,7 +131,15 @@ class TestController
         $extensions = [new CsrfExtension($csrfManager)];
         $factory = new FormFactory(new FormRegistry($extensions, new ResolvedFormTypeFactory()));
 
-        return $factory->createBuilder(FormType::class, new Task())
+        return $factory->createBuilder(FormType::class, new Task());
+    }
+}
+
+class TestController
+{
+    public function index()
+    {
+        return TestHelper::getFormBuilder()
             ->add('name', TextType::class)
             ->add('dueDate', DateType::class)
             ->add('save', SubmitType::class, ['label' => 'Foo'])
@@ -733,6 +744,17 @@ class PugSymfonyEngineTest extends AbstractTestCase
                 '</html>',
             ]),
             $controller->contactAction()->getContent(),
+        );
+
+        $form = new Form(TestHelper::getFormBuilder());
+        $form->addError(new FormError('Invalid name'));
+        $form->submit([]);
+
+        self::assertSame(
+            422,
+            $pugSymfony->renderResponse('layout/welcome.pug', [
+                'form' => $form,
+            ])->getStatusCode(),
         );
     }
 }
