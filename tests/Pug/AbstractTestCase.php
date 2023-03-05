@@ -7,6 +7,7 @@ use Pug\Twig\Environment;
 use Symfony\Bridge\Twig\Extension\CsrfExtension;
 use Symfony\Bridge\Twig\Extension\CsrfRuntime;
 use Symfony\Bridge\Twig\Extension\FormExtension;
+use Symfony\Bridge\Twig\Extension\LogoutUrlExtension;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
 use Symfony\Bridge\Twig\Form\TwigRendererEngine;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -36,6 +37,7 @@ abstract class AbstractTestCase extends KernelTestCase
             ));
             $this->twig->addExtension(new CsrfExtension());
             $this->twig->addExtension(new FormExtension());
+            $this->twig->addExtension(new LogoutUrlExtension(new LogoutUrlGenerator()));
             $this->twig->addExtension(new TranslationExtension());
             $this->twig->addRuntimeLoader(new FactoryRuntimeLoader([
                 CsrfRuntime::class => static fn () => new CsrfRuntime(new TestCsrfTokenManager()),

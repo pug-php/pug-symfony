@@ -28,13 +28,10 @@ use Symfony\Component\Form\Extension\Csrf\CsrfExtension;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\Form\ResolvedFormTypeFactory;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage as BaseTokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManager;
 use Symfony\Component\Security\Csrf\TokenGenerator\UriSafeTokenGenerator;
-use Symfony\Component\Security\Csrf\TokenStorage\NativeSessionTokenStorage;
-use Symfony\Component\Security\Csrf\TokenStorage\SessionTokenStorage;
 use Symfony\Component\Security\Csrf\TokenStorage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Logout\LogoutUrlGenerator as BaseLogoutUrlGenerator;
 use Symfony\Component\Translation\Translator;
@@ -289,12 +286,6 @@ class PugSymfonyEngineTest extends AbstractTestCase
             }
         }
 
-        if ($generator) {
-            include_once __DIR__.'/LogoutUrlHelper.php';
-            $logoutUrlHelper = new LogoutUrlHelper($generator);
-            self::$kernel->getContainer()->set('templating.helper.logout_url', $logoutUrlHelper);
-        }
-
         $pugSymfony = $this->getPugSymfonyEngine();
 
         self::assertSame('<a href="logout-url"></a><a href="logout-path"></a>', trim($pugSymfony->render('logout.pug')));
@@ -328,9 +319,7 @@ class PugSymfonyEngineTest extends AbstractTestCase
      */
     public function testRenderViaTwig()
     {
-        $container = self::$kernel->getContainer();
         $controller = new TestController();
-        $controller->setContainer($container);
         $twig = $this->getTwigEnvironment();
         $this->getPugSymfonyEngine();
 
